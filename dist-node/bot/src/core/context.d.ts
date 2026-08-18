@@ -1,0 +1,71 @@
+import type { Pool } from 'mysql2/promise';
+import type { BotClient } from '../client/BotClient';
+import type { BotConfig, EnvVars } from '../../../shared/src/index';
+import type { Logger } from './logger';
+import type { LogManager } from './logManager';
+import type { CooldownManager } from './cooldown';
+import type { ComponentRegistry } from './componentLoader';
+import type { BotCommand } from '../types/command';
+import type { CaseService } from '../moderation/caseService';
+import type { PunishmentManager } from '../moderation/punishmentManager';
+import type { PunishmentDmManager } from '../moderation/punishmentDm';
+import type { WarningEscalation } from '../moderation/warningEscalation';
+import type { PunishmentEscalation } from '../moderation/punishmentEscalation';
+import type { AutomodManager } from '../automod/manager';
+import type { RiskScoring } from '../automod/riskScoring';
+import type { RuleVersioning } from '../automod/ruleVersioning';
+import type { SchedulerService } from '../scheduler/service';
+import type { Metrics } from '../metrics/metrics';
+import type { ReportingService } from '../reporting/reportingService';
+import type { ModerationCommandGuard } from '../moderation/hierarchyGuard';
+import type { LockingService } from '../management/channelLocking';
+import type { SlowmodeScheduler } from '../management/slowmodeScheduler';
+import type { AntiRaidService } from '../security/antiRaid';
+export interface App {
+    config: BotConfig;
+    env: EnvVars;
+    db: Pool;
+    configPath: string;
+    client: BotClient;
+    logger: Logger;
+    logManager: LogManager;
+    cooldowns: CooldownManager;
+    components: ComponentRegistry;
+    commands: Map<string, BotCommand>;
+    aliases: Map<string, string>;
+    messageCommands: Map<string, BotCommand>;
+    userCommands: Map<string, BotCommand>;
+    caseService: CaseService;
+    punishmentManager: PunishmentManager;
+    punishmentDm: PunishmentDmManager;
+    warningEscalation: WarningEscalation;
+    punishmentEscalation: PunishmentEscalation;
+    modGuard: ModerationCommandGuard;
+    automod: AutomodManager;
+    riskScoring: RiskScoring;
+    ruleVersioning: RuleVersioning;
+    scheduler: SchedulerService;
+    metrics: Metrics;
+    reporting: ReportingService;
+    lockingService: LockingService;
+    slowmodeScheduler: SlowmodeScheduler;
+    antiRaid: AntiRaidService;
+    joinRate: Map<string, number[]>;
+    polls: Map<string, {
+        votes: Map<string, Set<string>>;
+        options: string[];
+        question: string;
+        messageId: string;
+        channelId: string;
+    }>;
+    customCache: Map<string, {
+        loadedAt: number;
+        commands: Map<string, {
+            response: {
+                content: string;
+            };
+            aliases: string[];
+        }>;
+    }>;
+    startedAt: number;
+}

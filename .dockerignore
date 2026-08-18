@@ -1,0 +1,7 @@
+node_modules/
+dist-node/
+dashboard/web/dist/
+.git/
+.env
+backups/
+*.log

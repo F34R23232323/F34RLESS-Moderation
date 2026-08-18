@@ -1,0 +1,85 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: f34rless-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-f34rless_moderation}
+      MYSQL_USER: ${MYSQL_USER:-bot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backups:/backups
+    ports:
+      - "3390:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  bot:
+    build:
+      context: ..
+      dockerfile: docker/bot/Dockerfile
+    container_name: f34rless-bot
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?set DISCORD_TOKEN in .env}
+      CLIENT_ID: ${CLIENT_ID:?set CLIENT_ID in .env}
+      CLIENT_SECRET: ${CLIENT_SECRET:?set CLIENT_SECRET in .env}
+      DASHBOARD_SESSION_SECRET: ${DASHBOARD_SESSION_SECRET:?set DASHBOARD_SESSION_SECRET in .env}
+      OWNER_USER_ID: ${OWNER_USER_ID:-}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-f34rless_moderation}
+      MYSQL_USER: ${MYSQL_USER:-bot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
+      REGISTER_GUILD_ID: ${REGISTER_GUILD_ID:-}
+    volumes:
+      - ../config.yml:/app/config.yml:ro
+      - ../backups:/app/backups
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:0').catch(()=>process.exit(0))"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: docker/dashboard/Dockerfile
+    container_name: f34rless-dashboard
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DASHBOARD_SESSION_SECRET: ${DASHBOARD_SESSION_SECRET:?set DASHBOARD_SESSION_SECRET in .env}
+      OWNER_USER_ID: ${OWNER_USER_ID:?set OWNER_USER_ID in .env}
+      CLIENT_ID: ${CLIENT_ID:?set CLIENT_ID in .env}
+      CLIENT_SECRET: ${CLIENT_SECRET:?set CLIENT_SECRET in .env}
+      DASHBOARD_BASE_URL: ${DASHBOARD_BASE_URL:-http://localhost:4693}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-f34rless_moderation}
+      MYSQL_USER: ${MYSQL_USER:-bot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-changeme}
+    volumes:
+      - ../config.yml:/app/config.yml:ro
+    ports:
+      - "4693:4693"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4693/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  mysql-data:

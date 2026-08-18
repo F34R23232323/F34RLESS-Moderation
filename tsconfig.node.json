@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist-node",
+    "rootDir": "."
+  },
+  "include": [
+    "shared/src/**/*.ts",
+    "bot/src/**/*.ts",
+    "dashboard/server/src/**/*.ts",
+    "scripts/**/*.ts"
+  ]
+}

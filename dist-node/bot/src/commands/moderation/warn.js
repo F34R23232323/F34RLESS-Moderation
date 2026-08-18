@@ -1,0 +1,71 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const discord_js_1 = require("discord.js");
+const v2_1 = require("../../utils/v2");
+const discord_1 = require("../../utils/discord");
+const data = new discord_js_1.SlashCommandBuilder()
+    .setName('warn')
+    .setDescription('Warn a user (creates a formal case)')
+    .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true))
+    .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(true))
+    .addStringOption((o) => o.setName('evidence').setDescription('Evidence URL or message link').setRequired(false));
+async function execute(interaction, app) {
+    await interaction.deferReply();
+    const guild = interaction.guild;
+    if (!guild)
+        return;
+    const user = await (0, discord_1.resolveUserOption)(interaction, app);
+    if (!user) {
+        await (0, v2_1.v2Reply)(interaction, 'User not found.', { ephemeral: true });
+        return;
+    }
+    const reason = interaction.options.getString('reason', true);
+    const evidence = interaction.options.getString('evidence');
+    const result = await app.punishmentManager.warn(user, {
+        reason,
+        moderatorId: interaction.user.id,
+        evidence: evidence ? [{ url: evidence }] : undefined,
+    });
+    if (!result.ok) {
+        await (0, v2_1.v2Reply)(interaction, `Failed: ${result.error}`, { ephemeral: true });
+        return;
+    }
+    await (0, v2_1.v2Reply)(interaction, `Warned <@${user.id}> — case #${result.case.case_number}. DM sent: ${result.dmSent ? 'yes' : 'no (user has DMs closed)'}.`);
+}
+async function prefixExecute(message, args, app) {
+    const targetId = args[0]?.replace(/[<@!>]/g, '');
+    const reason = args.slice(1).join(' ') || 'No reason provided';
+    const guild = message.guild;
+    if (!guild || !targetId) {
+        await message.reply({ content: 'Usage: `!warn <user> <reason>`' });
+        return;
+    }
+    const member = await guild.members.fetch(targetId).catch(() => null);
+    if (!member) {
+        await message.reply({ content: 'User not found in this server.' });
+        return;
+    }
+    const guard = app.modGuard.canModerate(member, message.member);
+    if (!guard.ok) {
+        await message.reply({ content: `Cannot warn: ${guard.reason}` });
+        return;
+    }
+    const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id });
+    if (!result.ok) {
+        await message.reply({ content: `Failed: ${result.error}` });
+        return;
+    }
+    await message.reply({ content: `Warned <@${targetId}> — case #${result.case.case_number}.` });
+}
+const command = {
+    name: 'warn',
+    category: 'moderation',
+    description: 'Warn a user (creates a formal case)',
+    data,
+    permissions: ['ModerateMembers'],
+    aliases: ['w', 'warning'],
+    execute,
+    prefixExecute,
+};
+exports.default = command;
+//# sourceMappingURL=warn.js.map

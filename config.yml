@@ -1,0 +1,2149 @@
+bot:
+  prefixes:
+    - "!"
+    - "?"
+    - .
+    - ","
+  prefix_enabled: true
+  slash_enabled: true
+  per_guild_prefixes: {}
+  status: online
+  activity:
+    type: Watching
+    text: the server
+  owner_ids:
+    - "1075077561454973020"
+commands:
+  ban:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - BanMembers
+    immune_roles: []
+    aliases:
+      - b
+      - bann
+      - tempban
+      - smite
+  kick:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - KickMembers
+    immune_roles: []
+    aliases:
+      - k
+      - kik
+  warn:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - ModerateMembers
+    immune_roles: []
+    aliases:
+      - w
+      - warning
+  mute:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - ModerateMembers
+    immune_roles: []
+    aliases:
+      - m
+      - tempmute
+      - tmute
+  timeout:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - ModerateMembers
+    immune_roles: []
+    aliases:
+      - to
+  purge:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions:
+      - ManageMessages
+    immune_roles: []
+    aliases:
+      - clear
+  help:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions: []
+    immune_roles: []
+    aliases:
+      - h
+      - commands
+  massmute:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  masswarn:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  masskick:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  massban:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  unwarn:
+    enabled: true
+    immune_roles:
+      - "1479852874635939880"
+  userinfo:
+    enabled: true
+    permissions:
+      - ModerateMembers
+    immune_roles:
+      - "1467103806561980528"
+  stickerpackinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  searchdocumentation:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  stickerinfo:
+    enabled: true
+    immune_roles:
+      - "1467103806561980528"
+  roleinfo:
+    enabled: true
+    permissions:
+      - ManageGuild
+    immune_roles:
+      - "1467103806561980528"
+  guildsplashinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  guildmembercount:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  guildinfo:
+    enabled: true
+    permissions:
+      - ManageGuild
+    immune_roles:
+      - "1467103806561980528"
+  guildiconinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  guildchannelcount:
+    enabled: true
+    permissions:
+      - ManageChannels
+    immune_roles:
+      - "1467103806561980528"
+  guildbannerinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  emojiinfo:
+    enabled: true
+    immune_roles:
+      - "1467103806561980528"
+  channelinfo:
+    enabled: true
+    permissions:
+      - ManageChannels
+    immune_roles:
+      - "1467103806561980528"
+  bannerinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  avatarinfo:
+    enabled: true
+    immune_roles:
+      - "1466990155020898413"
+      - "1467103806561980528"
+  config:
+    enabled: false
+  disable:
+    enabled: false
+  enable:
+    enabled: false
+  permissions:
+    enabled: false
+  automoderation:
+    enabled: false
+  transfer-slash-commands-to-cb:
+    enabled: false
+  joinroles:
+    enabled: false
+  log:
+    enabled: false
+  reactionroles:
+    enabled: false
+  reactionrolesconfig:
+    enabled: false
+  report-ignoreall:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  casedelete:
+    enabled: true
+    immune_roles:
+      - "1520031216651210773"
+  unmute:
+    enabled: true
+  unban:
+    enabled: true
+  timewarn:
+    enabled: true
+  timemute:
+    enabled: true
+  timekick:
+    enabled: true
+  timeban:
+    enabled: true
+  setslowmode:
+    enabled: true
+  prune:
+    enabled: true
+  nameban:
+    enabled: true
+  namemute:
+    enabled: true
+  namewarn:
+    enabled: true
+  namekick:
+    enabled: true
+  lockall:
+    enabled: true
+  lock:
+    enabled: true
+  unlock:
+    enabled: true
+  unlockall:
+    enabled: true
+  unblock-appeal-user:
+    enabled: true
+  report-blacklist:
+    enabled: true
+  report-sendmissing:
+    enabled: true
+  block-appeal-user:
+    enabled: true
+command_defaults:
+  cooldown_seconds: 3
+logging:
+  channel_create:
+    enabled: true
+    channel_id: "1487426366625284208"
+  channel_delete:
+    enabled: true
+    channel_id: "1487426366625284208"
+  channel_pins_update:
+    enabled: true
+    channel_id: "1487426366625284208"
+  channel_update:
+    enabled: true
+    channel_id: "1487426366625284208"
+  automod_rule_update:
+    enabled: true
+    channel_id: "1467189652569194636"
+  emoji_create:
+    enabled: true
+    channel_id: "1467182307981922509"
+  emoji_delete:
+    enabled: true
+    channel_id: "1467182307981922509"
+  emoji_update:
+    enabled: true
+    channel_id: "1467182307981922509"
+  scheduled_event:
+    enabled: true
+    channel_id: "1467182105174741112"
+  invite_create:
+    enabled: true
+    channel_id: "1467182232920789277"
+  invite_delete:
+    enabled: true
+    channel_id: "1467182232920789277"
+  poll_create:
+    enabled: true
+    channel_id: "1467182127920709642"
+  poll_delete:
+    enabled: true
+    channel_id: "1467182127920709642"
+  poll_finalize:
+    enabled: true
+    channel_id: "1467182127920709642"
+  poll_votes:
+    enabled: true
+    channel_id: "1467182127920709642"
+  role_create:
+    enabled: true
+    channel_id: "1497610461942648902"
+  role_delete:
+    enabled: true
+    channel_id: "1497610461942648902"
+  role_update:
+    enabled: true
+    channel_id: "1467188430932021419"
+  message_delete:
+    enabled: true
+    channel_id: "1475964127116525652"
+  message_bulk_delete:
+    enabled: true
+    channel_id: "1475964377650692331"
+  message_edit:
+    enabled: true
+    channel_id: "1475964054244950211"
+  message_publish:
+    enabled: true
+    channel_id: "1475964727757766786"
+  command_usage:
+    enabled: true
+    channel_id: "1475964482147586150"
+  stage_event:
+    enabled: true
+    channel_id: "1467189521262182451"
+  sticker_create:
+    enabled: true
+    channel_id: "1467182307981922509"
+  sticker_delete:
+    enabled: true
+    channel_id: "1467182307981922509"
+  sticker_update:
+    enabled: true
+    channel_id: "1467182307981922509"
+  soundboard_update:
+    enabled: true
+    channel_id: "1467182307981922509"
+  thread_create:
+    enabled: true
+    channel_id: "1497610133973504070"
+  thread_delete:
+    enabled: true
+    channel_id: "1497610133973504070"
+  thread_update:
+    enabled: true
+    channel_id: "1497610133973504070"
+  role_add:
+    enabled: true
+    channel_id: "1467188430932021419"
+  role_remove:
+    enabled: true
+    channel_id: "1467188430932021419"
+  member_avatar_update:
+    enabled: true
+    channel_id: "1467188152912314553"
+  member_username_update:
+    enabled: true
+    channel_id: "1467188528227160236"
+  webhook_update:
+    enabled: true
+    channel_id: "1467182268647739402"
+  automod_trigger:
+    enabled: true
+    channel_id: "1467185464124510319"
+  member_ban:
+    enabled: true
+    channel_id: "1467185509876105399"
+  member_unban:
+    enabled: true
+    channel_id: "1467185535411028229"
+  case_edit:
+    enabled: true
+    channel_id: "1497609708540924058"
+  case_voided:
+    enabled: true
+    channel_id: "1497609708540924058"
+  case_unvoided:
+    enabled: true
+    channel_id: "1497609708540924058"
+  case_linked:
+    enabled: true
+    channel_id: "1497609708540924058"
+  member_kick:
+    enabled: true
+    channel_id: "1467185535411028229"
+  member_leave:
+    enabled: true
+    channel_id: "1467185535411028229"
+  member_timeout:
+    enabled: true
+    channel_id: "1467185558928228463"
+  member_unmute:
+    enabled: true
+    channel_id: "1467185558928228463"
+  member_warn:
+    enabled: true
+    channel_id: "1467185584647831858"
+  member_unwarn:
+    enabled: true
+    channel_id: "1467185584647831858"
+  note_add:
+    enabled: true
+    channel_id: "1467187814977372423"
+  note_edit:
+    enabled: true
+    channel_id: "1467187814977372423"
+  note_remove:
+    enabled: true
+    channel_id: "1467187814977372423"
+  report_created:
+    enabled: true
+    channel_id: "1531982800830337024"
+  report_resolved:
+    enabled: true
+    channel_id: "1531982800830337024"
+  voice_state_update:
+    enabled: true
+    channel_id: "1467189062166122607"
+  guild_update:
+    enabled: true
+    channel_id: "1475965409709789376"
+  member_boost:
+    enabled: true
+    channel_id: "1475965409709789376"
+  moderation_action:
+    enabled: true
+    channel_id: "1467185535411028229"
+warnings:
+  escalation_ladder:
+    - count: 2
+      action: mute
+      duration: 14d
+    - count: 4
+      action: ban
+  decay:
+    enabled: false
+    after_days: 30
+reports:
+  enabled: true
+  cooldown_seconds: 30
+  channel_id: "1467100532278558752"
+  action_roles:
+    - "1468007718907547778"
+  archive:
+    enabled: false
+    channel_id: "000000000000000000"
+  merge_window_seconds: 300
+  false_report_warning_enabled: false
+automod:
+  enabled: true
+  global_immune_roles:
+    - "1520031216651210773"
+  log_channel_id: "1467185464124510319"
+  modules:
+    spam:
+      enabled: true
+      threshold: 5
+      window_seconds: 3
+      immune_roles:
+        - "1520031216651210773"
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: batched_summary
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Spam Detected
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because you sent too many messages too quickly.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Spamming"
+        - type: run_escalation_check
+    cross_channel:
+      enabled: true
+      threshold: 3
+      window_seconds: 5
+      immune_roles:
+        - "1520031216651210773"
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Channel Spam Detected
+          description: |-
+            Hey {user}, your messages were removed.
+
+            Your messages were removed because you posted across too many channels in a short window.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: timeout
+          duration: 24h
+          reason: "[AUTOMOD] Channel Spamming - Suspicious Account"
+        - type: run_escalation_check
+    link_filter:
+      enabled: true
+      mode: allowlist
+      allowlist:
+        - discord.com
+        - discord.gg
+      denylist: []
+      immune_roles:
+        - "1520031216651210773"
+        - "1467103806561980528"
+        - "1467223539953303705"
+        - "1467120180860555274"
+        - "1467264172470571018"
+        - "1467264208415752307"
+        - "1466990155339661390"
+        - "1467272019438469150"
+        - "1466990155339661391"
+        - "1466990155339661392"
+        - "1466990155352113308"
+        - "1466990155352113309"
+      channel_ignore_list:
+        - "1467119486489595987"
+        - "1467121220976644107"
+        - "1466990156690227319"
+        - "1467100264896139276"
+        - "1518277392727015646"
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Link Not Allowed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a link that is not allowed in this server.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+    image_spam:
+      enabled: false
+      threshold: 5
+      window_seconds: 10
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: image spam ({rule})"
+        - type: run_escalation_check
+    executable_files:
+      enabled: false
+      blocked_extensions:
+        - .exe
+        - .bat
+        - .cmd
+        - .sh
+        - .jar
+        - .msi
+        - .scr
+        - .ps1
+        - .vbs
+        - .com
+        - .dll
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: executable file ({rule})"
+        - type: run_escalation_check
+    mass_images:
+      enabled: false
+      threshold: 5
+      window_seconds: 10
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: mass image dump ({rule})"
+        - type: run_escalation_check
+    invites:
+      enabled: true
+      guild_allowlist:
+        - "1466990155020898413"
+      immune_roles:
+        - "1520031216651210773"
+      channel_ignore_list:
+        - "1467119486489595987"
+        - "1466990156690227319"
+        - "1467121220976644107"
+        - "1467100264896139276"
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Invites Not Allowed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a Discord invite link.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Posting Invites"
+        - type: run_escalation_check
+    emoji_spam:
+      enabled: false
+      threshold: 10
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: emoji spam ({rule})"
+        - type: run_escalation_check
+    line_spam:
+      enabled: false
+      per_message_lines: 20
+      multi_message_lines: 40
+      multi_message_window_seconds: 10
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: line spam ({rule})"
+        - type: run_escalation_check
+    poll_spam:
+      enabled: false
+      threshold: 3
+      window_seconds: 60
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: poll spam ({rule})"
+        - type: run_escalation_check
+  risk_scoring:
+    enabled: false
+    threshold: 50
+    join_age_weight: 1
+    automod_hit_weight: 2
+    cross_channel_weight: 1
+    decay_seconds: 3600
+  heuristics:
+    typing_speed:
+      enabled: false
+      min_characters_per_second: 15
+      window_seconds: 10
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: warn
+          reason: "Automod: typing-speed anomaly ({rule})"
+        - type: run_escalation_check
+    mass_identical_joins:
+      enabled: false
+      threshold: 5
+      window_seconds: 120
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: warn
+          reason: "Automod: mass identical joins ({rule})"
+        - type: run_escalation_check
+    new_account_velocity:
+      enabled: false
+      max_account_age_days: 7
+      threshold: 3
+      window_seconds: 600
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: warn
+          reason: "Automod: new account velocity ({rule})"
+        - type: run_escalation_check
+regex_engine:
+  enabled: true
+  rules:
+    - name: Zalgo
+      patterns:
+        - "[\\u{1F100}-\\u{1F1FF}]"
+        - "[\\uFF01-\\uFF5E]{3,}"
+        - "[\\u0370-\\u03FF]"
+        - "[\\u0400-\\u04FF]"
+        - "[\\u{1D400}-\\u{1D7FF}]"
+        - "[\\u200B-\\u200F\\u202A-\\u202E\\uFEFF]"
+        - "[\\u0300-\\u036F]{5,}"
+        - "[\\u0336\\u0337\\u0338\\u0321\\u0322\\u0327\\u0328]{3,}"
+        - "[\\u0300-\\u0315\\u0345]{4,}"
+      flags: giu
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Zalgo Text Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it used Zalgo / glitch text.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Zalgo Text"
+        - type: run_escalation_check
+    - name: Tokens & Malware
+      patterns:
+        - (discord|account)\s*(nuke(r|ing)?|raid(er|ing)?|spam(mer|ming)?)\s*(bot|tool)
+        - (cookie|session|browser)\s*(steal(er|ing)?|grab(ber|bing)?|hijack(er|ing)?)
+        - (rat|keylogger|ransom\s*ware|malware|spyware|adware)\s*(link|download|free|tool)
+        - (d{1,2}o[s5]|boot(er)?|stress(er)?)\s*(service|tool|attack)
+        - token\s*(grab|log|steal)|stealer\s*tool
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Malicious Content Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and your account was banned because it referenced token grabbing, malware, or account-compromise tools.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: ban
+          duration: 30d
+          reason: "[AUTOMOD] Distributing malicious files or attempting to compromise user accounts."
+        - type: run_escalation_check
+    - name: Threats
+      patterns:
+        - (i'?ll|i\s+will|im{1,2}[a]?|gonna|gon)\s+(k[i1]ll|h[u]rt|sh[o0]{1,2}t|st[a@]b)\s+(u|you|yu|yhu|yew)\b
+        - i\s+will\s+end\s+you\b
+        - i'?ll\s+find\s+you\s+(and|when|if|then)
+        - watch\s+your\s+back\s+(or|when|if|because)
+        - i\s+know\s+(where|who)\s+you\s+(live|are|work)
+        - (sending|calling)\s+(the\s+)?(feds|police|cops)\s+(to|on)\s+you
+        - you(?:'re|\s+are)\s+(dead|finished|done)\s+(when|if|once|already)(?:.{0,20}(i|we|gonna|will|find|get|kill|beat))
+        - (i\s+)?(will|gonna|going\s+to)\s+(come|find)\s+(to\s+)?your\s+(house|school|address|location)
+        - (i'?ll|gonna|will)\s+(k[i1]ll|sn[i1]pe|hunt)\s+(u|yu|yhu|yew|uu)\b
+        - sl[i1]t\s+(ur|y[o0]ur)\s+(wr[i1]st|thr[o0][a@]t|arm|vein)
+        - (shoot|bomb|attack)\s+(ur|y[o0]ur)\s+(school|house|home|loc)
+        - \bon\s+s[i1]ght\b(?:.{0,30}\b(i|we|gonna|will|they|he|she)\b.{0,30}\b(kill|shoot|drop|mess|hurt|beat|get|stab|end|knock|take|fuck|fck|destroy|hit)\b)|\boss\b(?:.{0,10}(kill|shoot|drop))
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Threats Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained threats of violence.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Threats"
+        - type: run_escalation_check
+    - name: Suicide Encourageme
+      patterns:
+        - (delete|remove)\s+yourself\s+(from\s+)?(life|existence|earth|planet)
+        - \byeet\s+(yourself|urself)\s+off\b
+        - rope\s*(up|yourself|urself)\b
+        - (drink|take)\s+(bleach|bleach+|the\s+bleach)\b
+        - (unalive|un-alive)\s+(yourself|urself|u)\b
+        - (k[i1]ll|end)\s*y[o0]urs3lf\b
+        - (k[i1]ll\s*ur\s*self|end\s*ur\s*self|h[a@]ng\s*ur\s*self|n[e3]ck\s*ur\s*self)
+        - do\s+it\s+already\b(?:.*?(rope|noose|blade|pills))
+        - go\s+die\s+(already|please|now|in)
+        - end\s+it\s+all\s+(now|already|please|tonight)
+        - off\s+yourself\b
+        - nobody\s+wants\s+you\s+(here|alive|around)
+        - (jump|leap)\s+off\s+(a\s+)?(bridge|roof|building|cliff|ledge)
+        - you\s+should\s+(just\s+)?(kill|end|hurt)\s+yourself
+        - (slit|cut|slash)\s+(your|my|his|her|their)\s+(wrist|arm|throat|vein)
+        - no\s*one\s+(will\s+)?(miss|care(d|s)?\s*(about)?)\s+you\b
+        - \b(you|u|they|he|she|that\s+person)\s+(just\s+)?die\s+(already|please|now)\b
+        - no\s*one\s+(will\s+)?(miss|care(d|s)?\s*(about)?)\s+you\b
+        - rope\s+yourself
+        - (go\s+)?(hang|neck)\s+yourself
+        - end\s+(your\s+(own\s+)?life|yourself)\b
+        - \bkys\b|k\.y\.s\b|k\s+y\s+s\b
+        - k[i1]ll\s*y[o0]urs[e3]lf
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Self-Harm Encouragement
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and your account was banned because it encouraged self-harm or suicide.
+
+            If you need support, please reach out to a trusted adult or a mental-health helpline. If you believe this was a mistake, contact a staff member.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: ban
+          duration: perm
+          reason: "[AUTOMOD] Encouraging self-harm is a severe safety violation and strictly prohibited."
+        - type: run_escalation_check
+    - name: Slurs
+      patterns:
+        - \bm[i1]gr[a@]nt\s*(scum|filth|crim[i1]n[a@]l)
+        - \bgr[e3][a@]se\s*b[a@4]ll\b|\b(d[a@]go|w[o0]p)\b
+        - \bcurry\s*m[u*][n*]ch[e3]r\b
+        - \bc[a@]m[e3]l\s*j[o0]ck[e3][yi]\b
+        - \b(sand|rag|towel)\s*h[e3][a@]d\b
+        - \bc+[o0]+[o0]+n+\b
+        - \bj+[i1]+[g9]+[a@]+b+[o0]+\b|\bs+[a@]+m+b+[o0]+\b|\bp+[i1]+ck+[a@]+n+[i1]+nn+[yi]+\b
+        - \bh+[o0]+[n]+[k]+[yi]+\b|\bwh+[i1]+[t]+[e3]+[yi]+\b
+        - \bw+[e3]+t+b+[a@4]+ck+\b|\bw+[o0]+g+b+[o0]+y+\b|\bw+[o0]+g+b+[o0]+[yi]+\b
+        - \bsp+[i1]+[ck]+\b
+        - \bch+[i1!]+nk+\b
+        - \bn+[i1l!|]+[g9q]+[e3a@]*r+[a-z]*\b|\bn+[i1l!|]+[g9q]{2,}[a-z]*\b|\bn+[i1!]+[g9]*g+[a@4]+[a-z]*\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Hate Speech Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a racial slur or hate speech.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Slurs"
+        - type: run_escalation_check
+    - name: Severe Language
+      patterns:
+        - (?:(?:c[u*]nt\w*|wh[o0]re\w*|b[i1]tch\w*).*?){2,}
+        - cunt
+        - c0nt
+        - cnut
+        - bastard
+        - b@stard
+        - motherfucker
+        - motherf*cker
+        - mofo
+        - son of a bitch
+        - soab
+        - whore
+        - wh0re
+        - skank
+        - slag
+        - \bwh[o0]r[e3]\b
+        - \bm[o0]th[e3]rf[u*]+ck[e3]r\b
+        - \bc[u*]+n[t*]+\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Severe Language Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained severely inappropriate language.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Severe Language"
+        - type: run_escalation_check
+    - name: Self Harm
+      patterns:
+        - \byou?r?\s+(friends|family|loved\s+ones|parents|kids|children)\s+will\s+(be\s+)?better\s+(off|without)\s+(without\s+you|if\s+(you|u|ur)\s+die)\b
+        - \blife\s+(is|s)\s+(not\s+worth|pointless|meaningless)\b
+        - \bno\s+point\s+in\s+(living|being\s+alive)\b
+        - (cut|slice|slash|slit)\s+(deep|straight|all)\s+(into|across|along)\s+(my|your|ur)\s+(wrist|arm|throat|neck)
+        - \b(knife|blade|razor|sharp)\s+(to|on|across|along)\s+(my|your|ur|his|her|their)\s+(wrist|arm|throat|neck|vein|skin|leg|thigh)\b
+        - (shoot|blow)\s+(my|your|ur)\s+(self|head|brains?)\s*(off|out)
+        - hang\s+(myself|yourself|urself)\s+(from|on)\s+(a\s+)?(ceiling\s+fan|doorknob|pipe|railing|tree)
+        - carbon\s*?monoxide\s+(poisoning|leak|gas|toxic)\s+(in\s+the\s+)?(garage|car|room|house|engine)
+        - (over\s*?dose|od)\s+(on\s+)?(pills|meds|opioids|benzos|xanax|percs|acetaminophen|tylenol|ibuprofen)
+        - (jump|step|leap)\s+(in\s+front\s+of|off|onto)\s+(a\s+)?(train|subway|bus|car|bridge|roof|building|cliff|ledge)
+        - how\s+to\s+(commit\s+suicide|kill\s+(myself|yourself|urself)|end\s+(my|your|ur)\s+life)
+        - (best|easiest|quickest|fastest|painless|surest)\s+way\s+to\s+(die|kill\s+(myself|yourself|urself))
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Self-Harm Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it discussed harming yourself outside of approved venting channels. If you are struggling, please reach out to a trusted adult or a support line.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Speaking about harming yourself outside venting areas."
+        - type: run_escalation_check
+    - name: Scam Links
+      patterns:
+        - https?://[^\s]*(discord-?nitro|nitro-?claim|nitrogift|nitrodrop)[^\s]*
+        - https?://[^\s]*(n[i1]tr[o0][-_]?(gen|gift|claim|boost|free|drop|x)|d[i1]sc[o0]rd[-\s]?n[i1]tr[o0])[^\s]*
+        - (click|open|tap)\s+(this|the|my)\s+(link|url|site)\s+(for\s+)?(free|nitro|robux|giveaway)
+        - https?://[^\s]*(discord-gift\.com|discordfree\.com|dlscordnitro\.com|appnitro\.com|nitrodrop|nitroupgrade\.info|verifydiscord\.com|discordhuman\.com|discordverif\.com|discordcheck\.com|steamnitro\.com)[^\s]*
+        - https?://[^\s]*(qr\.codes|qrco\.de|me\.qr|qr\.page)[^\s]+
+        - https?://[^\s]*(adf\.ly|ouo\.io|bc\.vc|za\.gl|ay\.gy|coinhive)[^\s]*
+        - https?://[^\s]*(paypal\.me|cash\.app|ko-fi\.com|patreon\.com|buymeacoffee\.com)/[^\s]+\s*(dm|hmu|free)
+        - https?://[^\s]*(123movies|putlocker|fmovies|solarmovie|soap2day|yesmovies|watchseries)[^\s]*
+        - disc[o0]rd\s*[\.\-]?\s*gift\s*[\.\-]?\s*(gg|com|net|io|app)
+        - https?://[^\s]*(free|get|claim)\s*[-_]?\s*(nitro|rob[u]x|vbucks|steam\s*key|gift\s*card)[^\s]*
+        - https?://[^\s]*(n[i1]tr[o0]gen[i1]um|d[i1]sc0rd|d1scord|discordl|dlscord|discrod|dicsord|dlscrod)[^\s]*
+        - https?://(www\.)?(grabify\.|iplogger\.|2no\.co|blasze\.|bit\.do|ps3cfw\.com|ipgrabber\.|yip\.su|ezstat\.ru|iplis\.ru|ip2geolocation\.com|iplogger\.org|grabify\.link|grabify\.party|webresolver\.(nl|net)|checkip\.(xyz|su|ru)|octosniff\.com|lancaster\.pm|lanc\.pm|resolve\.rip|sketch\.rip|sketch\.ink|viralweb\.net|blasze\.net|briskgram|joinhoney\.pro|cybergateway\.(xyz|pw)|stormhe\.ru|ps3\.cfw|privazer\.net|pmresolver\.com|check-host\.by)
+        - https?://[^\s]*(steamc[o0]m[^\s]*|free\s*[-_]?\s*(nitro|robux|vbucks|steam[^c])|free-?\s*(nitro|robux|vbucks))[^\s]*
+        - https?://[^\s]*discord[^\s]*(gift|n[i1]tr[o0])[^\s]*\.(ru|xyz|tk|ml|ga|cf|gg|pw|cc|to|me|net)
+        - https?://(bit\.ly|tinyurl\.com|is\.gd|cutt\.ly|ow\.ly|short\.io|rb\.gy|t\.ly|v\.gd|clck\.ru)/[^\s]+
+        - https?://[^\s]*(free-robux|free-vbucks|free-nitro|claim.*nitro|discord.*airdrop|free-nitro-claim|nitro-boost|boost-nitro)[^\s]*
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Scam Link Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and you were kicked because it contained a link commonly used for scams (free nitro, giveaways, and similar).
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: kick
+          reason: "[AUTOMOD] Posting Scam Links"
+        - type: run_escalation_check
+    - name: Phishing
+      patterns:
+        - (click|tap|go\s+to)\s+(this|the)?\s*(link|url|site).{0,30}(free|nitro|gift|reward|claim)
+        - (your\s+)?(discord\s+)?(account|token|password)\s+(has\s+been\s+)?(compromised|hacked|stolen|suspended|banned)
+        - (verify\s+(your\s+)?(discord|account|email|password|credentials?)).{0,50}(link|click|here|now)
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Phishing Attempt Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it looked like a phishing attempt.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Phishing"
+        - type: run_escalation_check
+    - name: Doxxing
+      patterns:
+        - \b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b
+        - \b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d)\b
+        - (your|ur)\s+(ip|address|location)\s+(is|=|:)\s*[\d\w]
+        - (pull|grab|trace|find)\s+(ur|your|their|his|her)\s+(ip|location|address|info)
+        - (i\s+)?(have|got|found|know)\s+(ur|your|his|her|their)\s+(add?ress|loc(ation)?|ip|info)
+        - (dropping|leaking|posting)\s+(your\s+)?(personal\s+)?(info|dox|details|address)
+        - i\s+(have|got|found)\s+(your|his|her|their)\s+(address|location|ip|info|details)
+        - (leak(ing|ed)?|expos(ing|ed)?)\s+(your|his|her|their)\s+(info|address|location|details|ip)
+        - \bsw[a@]t{1,2}(ing|ted|ter)\b
+        - \b(dropping|leaking|posting|going\s+to|will|gonna|gon)\s+(dox|doxx)\b|\bdox{1,2}(?:ed|ing|er|ers)\b(?:.{0,20}(you|your|him|her|them|their|address|ip|info|location|details))
+        - \b\d{3}[-\s]\d{2}[-\s]\d{4}\b
+        - \b(?:\d[ -]?){15,16}\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Private Info Protected
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it shared or tried to reveal personal or private information.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Doxing"
+        - type: run_escalation_check
+    - name: Grooming
+      patterns:
+        - age\?\s*(dm|pm)\s*(me|you|ur)?\s*(baby|babe|hot|sexy|cute)?
+        - (send|dm|slide)\s+(me\s+|ur|your\s+)(age)\b
+        - \b(how\s+old|what\s+age|your\s+age)\b.{0,15}(nude|pic|selfie|photo|show|snap|send\s+(me|it)|dm|pm)
+        - what.s\s+(your\s+)?age\b(?:.{0,20}(dm|pm|nude|pic|selfie|photo|send|show|snap))
+        - how\s+old\s+are\s+you\b(?:.{0,30}(snap|insta|nude|sexy|hot|cute|babe|pic|selfie|photo|send|show|dm|pm))
+        - (dm|pm|slide)\s+(me\s+)?(your\s+)?age\b(?:.{0,20}(baby|babe|hot|sexy|cute|baddie|pic|selfie|photo|snap|send|nude|show))
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Predatory Behaviour Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and your account was banned because it showed signs of predatory or grooming behaviour.
+
+            If you believe this was a mistake, contact a staff member.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: ban
+          duration: perm
+          reason: "[AUTOMOD] Grooming"
+        - type: run_escalation_check
+    - name: Gore
+      patterns:
+        - live\s*leak\s*(video|clip|link)?
+        - (snuff|torture|execution)\s+(film|video|clip|footage)
+        - (best|watch|real)\s*(gore|rekt|deaths?)(\.com|\.net|\.org)?
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Gore Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it referenced gore or shock content.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Gore / Shock"
+        - type: run_escalation_check
+    - name: Extremeism
+      patterns:
+        - 卐|卍|卐卐
+        - \b(great\s+replacement|white\s+replacement)\b
+        - \b(blood\s+and\s+soil|sieg\s+heil)\b
+        - \b14\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our|truths))\b|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))
+        - \bRace\s*war\s*(now|soon|coming|inevitable)\b
+        - (n[a@]z[i1]\s*)(germany|party|regime|salute|ideology|scum)
+        - \b(wh[i1]t[e3]\s+)(g[e3]n[o0]c[i1]de|nati[o0]nali[s5]m)\b
+        - \b(isis|isil)\b.{0,20}(right|good|correct|deserved|justified|win|winning)
+        - \b(jihad[i]?)\b.{0,30}(kill|attack|bomb|fight|war|infidel|crusade)
+        - \b(ethnic\s+cleansing|final\s+solution|white\s+genocide)\b
+        - h[e3][i1!]l\s*h[i1!]tl[e3]r
+        - 1\s*4\s*8\s*8\b(?:.{0,40}(hitler|nazi|white|race|aryan|jew|supremac|reich|germany|holocaust))
+        - (wh[i1]t[e3]\s+)(p[o0]w[e3]r|supr[e3]m(acy|ist)?)
+        - (glorif[yi]|gl[o0]r[iy]|supp[o0]rt|pr[a@]is[e3]|h[a@]il)\s+(isis|isil|terror(ist|ism)?|hitler|nazis?)
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Extremist Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained extremist or hate-group content.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Extremeism"
+        - type: run_escalation_check
+    - name: Drugs
+      patterns:
+        - \b(m[o0]ll[i1]|x[a4]ns?|p[e3]rcs?|l[e3]an|m3th)\b
+        - (trap\s+house|trap\s+phone|re-?up)\b
+        - (420|plug|dealer)\s+(needed|available|selling|for\s+sale)
+        - (ship(ping)?|mail(ing)?)\s+(drugs?|weed|coke|pills?)\b
+        - \bplug\b.{0,20}(dm|hmu|hit\s+me\s+up)
+        - (sell(ing)?|buy(ing)?|looking\s+for)\s+(weed|coc[aai]ne|heroin|meth|mdma|ecstasy|ket(amine)?|xans|percs|lean|dmt|lsd|shrooms|fent(anyl)?|crack|molly)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Drug Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it referenced buying or selling drugs.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Drugs"
+        - type: run_escalation_check
+    - name: CSAM
+      patterns:
+        - \bl[o0][l1][i1]\b|\bsh[o0]t[a@]\b|\bp[e3]d[o0]\b
+        - \b(irl\s+)?loli\b|\b(irl\s+)?shota\b
+        - how\s+(old|young).{0,15}\b(to\s+)?(fuck|date|sleep\s+with|send|meet|marry|hook\s*up)\b
+        - (send\s+(me\s+)?a?\s*(pic|photo|selfie|nude).{0,30}(young|minor|kid|underage|child))|((young|minor|kid|underage|child).{0,30}send\s+(me\s+)?a?\s*(pic|photo|selfie|nude))
+        - (c[s5][a@]m|child\s+exploit|minor\s+exploit)
+        - (child|kid|minor|underage)\s*(porn|sex|nude|nudes|nsfw|lewd|pic)
+        - p[e3]d[o0]ph[i1]l
+        - \bsh[o0]t[a@](c[o0]n)?\b|sh[o0]t@
+        - \bl[o0][l1][i1](c[o0]n)?\b
+        - \bjailb[a@4][i1]t\b
+        - \b(nomap|nambla|childlove|cl0ver)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: CSAM Content Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and your account was banned because it referenced child sexual abuse material.
+
+            If you believe this was a mistake, contact a staff member.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: ban
+          duration: perm
+          reason: "[AUTOMOD] CSAM"
+        - type: run_escalation_check
+    - name: Bombs
+      patterns:
+        - how\s+to\s+(make|build|create|buy|get)\s+(a\s+)?(gun|bomb|explosive|weapon|firearm|rifle|pistol|grenade|landmine)
+        - (i\s+will\s+bomb|planning\s+(a\s+)?attack|bomb\s+(the\s+)?(school|church|mosque|building|mall|station))
+        - (illegal(ly)?|black\s+market)\s+(gun|firearm|weapon|ammo|explosive)
+        - convert\s+(a\s+)?(semi|gun|rifle|pistol)\s+to\s+full\s+auto
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Bomb / Weapon Content
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it discussed making bombs or weapons.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Bombs / Bomb threats"
+        - type: run_escalation_check
+    - name: Text Markdown
+      patterns:
+        - ^.*#{1,3}\s+\S
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Text Formatting Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it used excessive text formatting that is not allowed here.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: run_escalation_check
+    - name: Account Trading
+      patterns:
+        - (aimbot|wallhack|esp|cheat|hack)\s+(for\s+sale|free|download|link)
+        - (sell(ing)?|buy(ing)?|for\s+sale)\s+(discord\s+)?(account|acc)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Account Trading Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it attempted to buy or sell accounts or cheats.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Account Trading"
+        - type: run_escalation_check
+    - name: NSFW
+      patterns:
+        - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]+[e3]+pth?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
+        - \bg[o0*][o0*]n(?:ing|ed|er[s]?|ette|s|session|\s+(?:session|cave|mode|squad|club|brain))?\b
+        - \bhook\s*up\b
+        - \b(ur|u)\s+(so\s+)?(sexy|hot|fine|cute|gorgeous|pretty)\b
+        - (suck|swallow|choke|ride|fuck|eat|lick|kiss|touch|spank|finger|fist|peg|edge|step\s+on|worship|breed|impregnate|raw\s*dog)\s+(my|me|your|his|her)\b
+        - my\s+(body|ass|tits|dick|pussy|boobs|cock)\s+(is\s+for|for\s+you)\b
+        - (you\s+are|ur|u\s+r)\s+(gorgeous|sexy|hot|cute|fine)\b
+        - slide\s+into\s+(my|your|the)\s+dms?\b
+        - (whats|what'?s|wassup|sup)\s+your\s+snap\s*(baby|babe|hot)?\s*$
+        - snap\s+me\s+(baby|babe|beaut|hottie|gorgeous|cutie)\b
+        - (send|dm|slide)\s+(me\s+|ur|your\s+)+(age|insta|digits)\b
+        - (snap|insta|kik|tele|discord)\s*(name|tag|handle|user|id)\s*[?:]
+        - (your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|balls|legs)\s+(is|looks?|are|be)\s+(hot|cute|good|nice|sexy|fine|amazing|pretty)
+        - (snap|insta|kik|tele|discord)\s*(me|you|us)\s*(your|the)?\s*(nude|nudes|pic|pics|body|ass|tits|dick|pussy|boobs|cock|lewd)
+        - (add\s+my\s+(snap|insta|tele|kik|discord))\s+(for|to\s+(see|get|trade|find)?\s*(nudes?|pics?|body|ass|hot|sex))\b
+        - (add|follow)\s+me\s+on\s+(snap|insta|kik|whatsapp|telegram|tinder|discord)\s+(for\s+(nudes?|pics?|body|ass|tits|dick|pussy|boobs|cock|lewd|hot|sex)\b|to\s+(see|get|trade|swap|find)\s+(nudes?|pics?|body|ass|tits|dick|pussy|boobs|cock|lewd|hot|sex)\b)
+        - (show|reveal|snap)\s+(me\s+)?(your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|cum|nude|nudes)
+        - \bp[o0*][.\-_*]?r[.\-_*]?n\b
+        - \b[s$][.\-_*|\s][e3][.\-_*|\s][x*]\b
+        - \b(xxx|XXX)\b(?:\s*(porn|video|sex|movie|site|link|content|pic|pics|nude|chat|cam|hot|adult))|\b(free|watch|hot|xxx)\s+xxx\b
+        - \b(gangbang\s+me|threesome\s+(anyone|when)?|orgy\s+when|bukkake|hotwife|gf\s+experience|cuck(?:hold)?\s+me|cbt\s+session|bondage|spanking\s+video|lactation\s+kink|feet\s+fetish|feet\s+pics?\s+for\s+sale)\b
+        - \b(dm|pm)\s+(me\s+)?(baby|babe|beaut|hottie|gorgeous|cutie|daddy|mommy)\b
+        - \br[o0]l[e3]\s*pla[yi]\s+(as|me|my|your|with)\s+(my|your|his|her|a|some|the)?\s*(slave|pet|sub|dom|daddy|mommy|master|owner|baby|boy|girl|waifu|senpai)\b
+        - \bcyber\s+(with\s+me|me|with\s+you|you)\b
+        - \b(wanna|want\s+to|lets?|gonna|down\s+to)\s+hook\s*up\b
+        - \b(wanna|want\s+to|lets?|let'?s|d[o0]wn\s+t[o0])\s+([s$][e3]xt|f[u*][ck*]+|ph[u*]ck|h[o0][o0]k\s*up|h[a@]v[e3]\s*[s$][e3]x|cyb[e3]r|r[o0]l[e3]?\s*pl[a@][yi])\b
+        - \b(tits?\s+or\s+gtfo|boob\s+reveal|cock\s+pic\s+trade)\b
+        - \b(ass|dick|pussy|tits|boobs|cock)\s*(pic|pics|shot|pics?|reveal|pic\s+trade)\b
+        - \b(send|dm|pm|share|snap|slide)\s+(me\s+)?(your\s+)?(nudes?|lewds?|feet\s*pics?|body|ass|tits|dick|pussy|boobs|cock|nude)\b
+        - \b(bl[o0]w\s+me|[s$]uck\s+(my|me|your|his|her)\s+(d[i1]ck|c[o0]ck|p[u*][s$][s$]y|t[i1]ts|b[o0]obs)|ch[o0]k[e3]\s+me|f[u*][ck*]+\s+me|ph[u*]ck\s+me|r[i1]d[e3]\s+me|[s$][i1]t\s+on\s+my\s+f[a@]c[e3]|[e3][a@]t\s+me\s+[o0]ut|f[i1]ng[e3]r\s+me|[s$]p[a@]nk\s+me|p[e3]g\s+me|f[i1][s$]t\s+me|[e3]dg[e3]\s+me|d[o0]m\s+me|[s$]t[e3]p\s+[o0]n\s+me|kn[e3][e3]l\s+(b[e3]f[o0]r[e3]|t[o0])\s+me|w[o0]r[s$]h[i1]p\s+my\s+f[e3][e3]t|br[e3][e3]d\s+me|[i1]mpr[e3]gn[a@]t[e3]\s+me|r[a@]w\s*d[o0]g\s+me|g[e3]t\s+n[a@]k[e3]d|[s$]tr[i1]p\s+f[o0]r\s+me|t[a@]k[e3]\s+[i1]t\s+[o0]ff|[s$]pr[e3][a@]d\s+f[o0]r\s+me|[o0]p[e3]n\s+y[o0]ur\s+l[e3]g[s$]?|t[o0]uch\s+y[o0]ur[s$][e3]lf|m[o0][a@]n\s+f[o0]r\s+me|[s$]cr[e3][a@]m\s+my\s+n[a@]m[e3]|[i1]'?m\s+w[e3]t|l[e3]t\s+me\s+c[u*]m|c[u*]m\s+[o0]n\s+me|j[e3]rk\s+[o0]ff|g[i1]v[e3]\s+me\s+h[e3][a@]d|bl[o0]wj[o0]b|t[i1]tty\s*f[u*][ck*]+|[a@][s$]{2}\s*t[o0]\s*m[o0]uth|cr[e3][a@]mp[i1][e3]|l[e3]t[s$]?\s*69|[a@]n[a@]l)\b
+        - \b(w[a@]nk(?:er|ing|ed)?|fapp(?:ing|ed)?)\b
+        - \b(h[o0*]rn[yi3]|h[o0]rni)\b
+        - \b(your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|legs)\s+(is|are|looks?|look|be)\b
+        - \b(you(?:'?re|r)?|u(?:'?re)?)\s+(so|really|lowkey|hella|very|so\s+damn)\s+(sexy|hot|fine|fit|cute)\b
+        - \b(my|your|his|her|their|suck|eat|choke|ride|f[u*][ck*]+|big|huge|small|tiny|fat|little)\s+c[o0*]c?k\b|\bc[o0*]c?k\s*(pic|pics|shot|size|ring|suck)\b|\bsuck\s+(my|your|his|her)\s+c[o0*]c?k\b
+        - \b(s[e3]+x+(?![yi]|u[a@]+l|ist|ism)|s3x|sex\s+(with|tape|video|chat|toy|doll|scene|act|worker|bot|cam|party|friend|me|her|him|them|us|pics?|nude|send|dm)|sext(?:ing|me|her|him|them|us|ed)?|have\s+sex|sex\s+(me|her|him|them|us)|sex\s+with)\b
+        - r[34]l?[\s_-]?p[o0]rn
+        - \bp[.\s\-_*|]+o[.\s\-_*|]+r[.\s\-_*|]+n\b
+        - \b(n[s$]+[f*]+[w*]+|l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]+[e3]+pth?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
+        - \b(p+[o0*]+r+n+[o0]*|ph[o0]*rn[o0]*|pr[o0]+n|p[o0]*rn[o0]*gr[a@]+ph[yi]*)\b
+        - (?<!\w)([h][e3]+nt[a@]+[i1]+|l[o0]+l[i1]+c?[o0]?n?|[e3]+cch[i1]+|[a@]?h[e3]+g[a@]+[o0]+|f[u*]+t[a@]+n[a@]+r[i1]+|[o0]+pp[a@]+[i1]+|p[a@]+[i1]+z[u*]+r[i1]+|tr[a@]p\s*h[e3]+nt[a@]+[i1]+|[e3]+r[o0]+\s*m[a@]+ng[a@]+|g[u*]+r[o0]+)(?!\w)
+        - \b(p[u*v][s$][s$][yi3]|d[i1!][c*]k|c[o0*]c?k|titt[yi]|titties|t[i1!][t*]s|b[o0][o0]b(?:ies?|s)?|v[a@]g[i1]n[a@]|p[e3]n[i1][s$]|cl[i1][t*]|c[u*][m*]|j[i1]zz|sp[u*]nk|sq[u*][i1]rt|s[e3]m[e3]n|b[o0]n[e3]r|[e3]r[e3]ct[i1][o0]n|[o0]rg[a@][s$]m|cr[e3][a@]mp[i1][e3]|p[u*]b[i1]c)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: NSFW Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it shared explicit or sexual content outside of allowed channels.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Sharing explicit or sexually suggestive content in a non-NSFW channel."
+        - type: run_escalation_check
+    - name: "NSFW Links "
+      patterns:
+        - https?://[^\s]*(xvideos2|xhamsterlive|bravotube|thumbzilla|letdoit)\.(com|net)
+        - https?://[^\s]*[-.](porn|nude|nsfw|hentai|blowjob|fetish|bdsm|milf|shemale|cum|creampie|orgasm)[-.]?[a-zA-Z0-9-]*\.(com|net|org|co|tv|xyz|info|biz|site|me|cc)([/\s]|$)
+        - https?://[^\s]*\.(xxx|adult|porn|sex|cams|tube)([/\s]|$)
+        - https?://[^\s]*(nhentai|hentaihaven|hanime|hentai-foundry|fakku|tsumino|hentaifox|rule34video|rule34|r34|gelbooru|sankakucomplex|e621)\.(net|com|tv|us|xxx|donmai\.us)
+        - https?://[^\s]*(camsoda|stripchat|cam4|myfreecams|livejasmin|jerkmate|camwhores|bongacams|flirt4free)\.(com|net|tv)
+        - https?://[^\s]*(onlyfans|fansly|manyvids|clips4sale|loyalfans|justforfans|modelhub|pocketstars)\.(com|net|tv)
+        - https?://[^\s]*(pornhub|xvideos|xnxx|xhamster|redtube|youporn|youjizz|chaturbate|eporner|spankbang|tubegalore|motherless|hqporner|beeg|nudevista|empflix|tnaflix|drtuber|porntrex|sunporno|porndig|pornhat|slutload|vporn)\.(com|net|org|tv|xxx)
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: NSFW Link Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a link to adult content.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Routing users to explicit or sexually suggestive content."
+        - type: run_escalation_check
+    - name: Executables
+      patterns:
+        - \.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command)(?:\?.*)?(?:$|\s|/|"|')
+        - \b[\w.-]+\.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Executable File Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a link to an executable file.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: run_escalation_check
+    - name: Homophobia
+      patterns:
+        - \btr[o0][o0]n\b
+        - \b41\s?p[e3]rc[e3]nt\b
+        - \bf[a@]k[e3]\s?(?:w[o0]m[a@]n|g[i1]rl|m[a@]n|b[o0]y)\b
+        - \btr[a@]ns\s?(?:b[i1]tch|f[u*]ck|fr[e3][a@]k|g[a@]rb[a@]g[e3]|tr[a@]sh)\b
+        - \bf[e3]m[a@]l[e3]\s?g[a@]y\b
+        - \bb[u*]tch\s?l[e3]sb[i1][a@]ns?\b
+        - \bl[e3]sb[o0]s?\b
+        - \bb[u*]gg[e3]rs?\b
+        - \bs[o0]d[o0]m[i1]t[e3]s?\b
+        - \bb[u*]ssy\b
+        - \b(?:m[a@]n|b[o0]y)\s?p[u*]ssy\b
+        - \bb[i1]tch\s?b[o0]y\b
+        - \bs[u*]ck\s?d[i1]ck\b
+        - \bf[u*]ck[i1]ng\s?g[a@]y\b
+        - \btr[a@]p\s?sh[i1]t\b
+        - \bh[e3]rm[a@]phr[o0]d[i1]t[e3]s?\b
+        - \bg[e3]nd[e3]r\s?b[e3]nd[e3]rs?\b
+        - \bcr[o0]ss\s?dr[e3]ss[e3]rs?\b
+        - \btr[a@]n[s5]v[e3]st[i1]t[e3]s?\b
+        - \bt[o0]d[g9][e3]rs?\b
+        - \bsh[i1]rt\s?l[i1]ft[e3]rs?\b
+        - \bp[a@]ns(?:[y1i]es?|y\s?b[o0]y)\b
+        - \bm[i1]nc[e3]rs?\b
+        - \bfl[a@]m[i1]ng\s?(?:h[o0]m[o0]|f[a@]g|qu[e3][e3]r)\b
+        - \b(?:r[u*]g|c[a@]rp[e3]t)\s?m[u*]nch[e3]rs?\b
+        - \bp[i1]ll[o0]w\s?b[i1]t[e3]rs?\b
+        - \bc[o0]ck\s?s[u*]ck[e3]rs?\b
+        - \bg[a@]y[e3]rs?\b
+        - \bqu[e3][e3]rs?\b
+        - \bp[u*]ffs?\b
+        - \bh[a@]lf\s?[\w]*\s?c[a@]st\b
+        - \bg[a@]y\s?(?:w[a@]ds?|f[u*]ck|b[o0][y1i])\b
+        - \bf[a@]g\s?(?:h[a@]gs?|m[a@]c[a@]qu[e3])\b
+        - \bb[a@]tty\s?b[o0]ys?\b
+        - \bp[o0][o0]ft[e3]rs?\b
+        - \bf[a@][i1]r[y1i]es?\b
+        - \bsw[i1]sh[e3]rs?\b
+        - \bb[a@]t\s?t[e3]r\s?f[o0]r\s?b[o0]th\s?t[e3][a@]ms?\b
+        - \bb[u*]tt\s?p[i1]r[a@]t[e3]s?\b
+        - \bf[u*]d[g9][e3]p[a@]ck[e3]rs?\b
+        - \bf[a@4]gg[0o]try\b
+        - \bsh[e3]m[a@4]l[e3]s?\b
+        - \btr[a@4]nn(?:[y1i]|ie|y)s?\b
+        - \bh[o0]m[o0]s?\b
+        - \bd[y1i]k[e3]s?\b
+        - \bf[a@4]gg?(?:[o0]t|s)?s?\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Anti-LGBTQ+ Hate Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained hateful language about LGBTQ+ people.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Targeted hate speech and discrimination based on sexual orientation."
+        - type: run_escalation_check
+    - name: E-Dating
+      patterns:
+        - \*(?:kisses|cuddles|snuggles|nuzzles)(?:\s+you)?\*
+        - \bi\s+miss\s+you(?:\s+(?:so\s+much|babe|baby))?\b
+        - \bmy\s+(?:babe|baby|sweetheart|darling|princess|prince|king|queen)\b
+        - \b(?:you'?re|your)\s+(?:mine|my\s+world|my\s+everything|my\s+one\s+and\s+only)\b
+        - \b(?:good\s*morning|good\s*night|gn|gm)\s+(?:babe|baby|honey|sweetheart|darling|princess|prince)\b
+        - \b(?:love\s+you|luv\s+u)\s+(?:babe|baby|honey|sweetheart|darling)\b
+        - \bi\s+love\s+you(?:\s+(?:too|more|so\s+much|babe|baby|honey|sweetheart|darling))?\b
+        - \blooking\s+for\s+love\b
+        - \blf\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|gf|bf)\b
+        - \banyone\s+(?:wanna|want\s+to)\s+(?:e-?date|be\s+my\s+(?:gf|bf|e-?girl|e-?boy|kitten))\b
+        - \b(?:discord|e-?)(?:kitten|waifu|daddy|mommy)\b
+        - \be-?(?:dat(?:ing|e|es)|couples?)\b
+        - \bbe\s+my\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|discord\s*kitten)\b
+        - \b(?:looking\s+for|need|want|lf)\s+(?:a|an|some)\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|gf|bf)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: E-Dating Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because e-dating or relationship roleplay is not allowed in this server.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] E-Dating"
+        - type: run_escalation_check
+    - name: Raiding
+      patterns:
+        - (mass\s*)?(report|false\s+report)\s+(this|the|their)?\s*(server|user|account)
+        - (everyone\s+)?(join|raid|hit)\s+(the|this|their)?\s*(server|discord)\s*(now|asap|go|rn)
+        - \b(raid|nuke|mass\s*(join|dm|report|leave))\s+(this|the|their|a)?\s*(server|discord|guild)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Raid Coordination Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it coordinated raiding or mass-joining a server.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Raid Coordination"
+        - type: run_escalation_check
+    - name: Emergency Staff Pin
+      patterns:
+        - <@&1485003903891275977>
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Staff Alerted
+          description: |-
+            Hey {user}, this is an automated notice.
+
+            You used the emergency staff ping. A staff member has been alerted and will respond shortly.
+
+            Please wait for a staff member to respond.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: run_escalation_check
+    - name: Religious Slurs
+      patterns:
+        - \br[e3]l[i1]g[i1][o0]n\s+(?:is\s+)?(?:c[a@]nc[e3]r|p[o0][i1]s[o0]n|f[o0]r\s+r[e3]t[a@]rds|f[o0]r\s+i?d[i1][o0]ts)\b
+        - \b(?:f[u*]ck|k[i1]ll|b[u*]rn|h[a@]t[e3]|d[e3]m[o0]l[i1]sh)\s+(?:[i1]sl[a@]m|m[u*]sl[i1]ms?|j[e3]ws?|chr[i1]st[i1][a@]n[i1]ty|chr[i1]st[i1][a@]ns?|h[i1]nd[u*]s?|h[i1]nd[u*][i1]sm|s[i1]khs?|s[i1]kh[i1]sm|c[a@]th[o0]l[i1]cs?|j[u*]d[a@]ism)\b
+        - \bp[a@]g[a@]n\s+(?:sc[u*]m|f[i1]lth|tr[a@]sh)\b
+        - \bs[i1]kh\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|t[e3]rr[o0]r[i1]sts?|tr[a@]sh)\b
+        - \bh[i1]nd[u*]\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|r[a@]ts?|tr[a@]sh|c[o0]w\s*f[u*]ck[e3]rs?)\b
+        - \bc[o0]w\s?(?:p[i1]ss|d[u*]ng)\s?(?:dr[i1]nk[e3]r|w[o0]rsh[i1]p[e3]r|[e3][a@]t[e3]r)s?\b
+        - \bchr[i1]st[i1][a@]ns?\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|i?d[i1][o0]ts?|tr[a@]sh|h[e3]r[e3]t[i1]cs?)\b
+        - \bc[a@]th[o0]l[i1]c\s+(?:sc[u*]m|p[i1]gs?|p[e3]d[o0]s?|p[e3]d[o0]ph[i1]l[e3]s?|f[i1]lth|tr[a@]sh)\b
+        - \bb[i1]bl[e3]\s?th[u*]mp[e3]rs?\b
+        - \bchr[i1]stc[u*]cks?\b
+        - \b[i1]sl[a@]m[o0]p[i1]gs?\b
+        - \b[i1]sl[a@]m[o0]f[a@4]sc[i1]sts?\b
+        - \bm[u*]sl[i1][e3]m?\s*(?:f[i1]lth|sc[u*]m|v[e3]rm[i1]n|p[i1]gs?|r[a@]ts?|t[e3]rr[o0]r[i1]st|b[o0]mb[e3]r|d[o0]g|tr[a@]sh)\b
+        - \bm[u*]sl[i1!]nt\b
+        - \bg[o0]y[i1]m\s+(?:c[a@]ttl[e3]|sl[a@]v[e3]s|c[o0]ntr[o0]l|f[i1]lth)\b
+        - \bm[u*]z+[i1!]+[e3]s?\b
+        - \by[i1!]dd?(?:[i1!]sh)?s?\b
+        - \bh[e3]{2}bs?\b
+        - \bh[y1i]m[i1!][e3]s?\b
+        - \bk+[i1!]+k+[e3]+s?\b
+        - \bj[e3]w[i1]sh\s+(?:sc[u*]m|f[i1]lth|p[i1]g|v[e3]rm[i1]n|tr[a@]sh|c[o0]nsp[i1]r[a@]cy)\b
+        - \bj[e3]w(?:b[o0]y|b[i1]tch|b[a@]st[a@]rd|sc[u*]m|d[o0]g|p[i1]g|r[a@]t|f[u*]ck)\b
+        - \b(?:you(?:'?re|r| r| are)?\s+(?:a\s+)?|u\s+|ur\s+(?:a\s+)?|f[u*]ck[i1]ng\s+|d[i1]rty\s+|f[i1]lthy\s+|gr[e3]{2}dy\s+|st[u*]p[i1]d\s+|sh[u*]t\s+up\s+|d[a@]mn\s+|h[a@]t[e3]\s+|b[u*]rn\s+|k[i1]ll\s+|(?:(?:st[o0]p|q[u*][i1]t)\s+b[e3][i1]ng\s+(?:a\s+)?))j[e3]ws?\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Religious Hate Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained hateful language about a religion or religious group.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Targeted hate speech and discrimination based on religion."
+        - type: run_escalation_check
+    - name: Credential Leaking
+      patterns:
+        - -----BEGIN\s+(?:RSA|DSA|EC|PGP|OPENSSH)?\s*PRIVATE\s+KEY(?:\s+BLOCK)?-----
+        - \b(?:api[_-]?key|secret|token|private[_-]?key|access[_-]?key)\s*[:=]\s*['"]?[a-zA-Z0-9_=-]{16,}
+        - https?://hooks\.slack\.com/services/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+
+        - \b(?:(?:ghp|gho|ghu|ghs|ghr)_[a-zA-Z0-9]{36,255}|(?:sk|pk)_(?:test|live)_[0-9a-zA-Z]{24,}|xox[baprs]-[0-9]{10,13}-[0-9a-zA-Z]{24,})\b
+        - \b(?:(?:AKIA|ABIA|ACCA|ASIA)[0-9A-Z]{16}|AIza[0-9A-Za-z-_]{35}|sk-[a-zA-Z0-9_-]{32,})\b
+        - \b(?:(?:email|user\w*|log-?in|acc\w*)\s*[:=-]\s*\S+.{1,30}(?:pass\w*|pwd)|(?:pass\w*|pwd)\s*[:=-]\s*\S+.{1,30}(?:email|user\w*|log-?in|acc\w*))\s*[:=-]\s*\S+
+        - \b(?:here\s*(?:is|are)?|take|using?|shar\w+)\s+(?:my|this|the)\s+(?:acc\w*|log-?in)\s+(?:info|details?|cred\w*|email|pass\w*|pwd)\b
+        - \b(?:my\s+)?(?:password|passwd|pwd|(?:log-?in|acc\w*)\s+(?:pass|details?))\s*(?:is|[:=-])\s*\S+
+        - \b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
+        - \b(?:[a-zA-Z0-9_-]{24,26}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,40}|mfa\.[a-zA-Z0-9_-]{80,90})\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Private Credentials Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it may have exposed login credentials, API keys, or personal contact info.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Potential credential, email, or API key leak detected."
+        - type: run_escalation_check
+    - name: Ableism
+      patterns:
+        - \b(?:(?:u|you|y[o0]u)\s+(?:r|are|'r[e3])|u\s+r|ur|y[o0]ur|h[e3]s?|sh[e3]s?|th[a@]ts?|d[a@]ts?|[s$][o0]u+nd[s$]?|l[o0]{2}ks?|[a@]ct[i1]ng|[s$]t[o0]p\s+[a@]ct[i1]ng|h[e3]l+[a@]|f[u*][ck]+(?:[i1]ng|[e3]n|[e3]d|in)?|s[o0]|v[e3]ry|r[a@]g[i1]ng|m[u*]ch)\s+(?:[a@]\s+)?(?:h[e3]l+[a@]\s+|s[o0]\s+|v[e3]ry\s+|b[i1]t\s+|s[u*]ch\s+(?:[a@]\s+)?|m[u*]ch\s+|f[u*][ck]+[i1]ng\s+)*[a@4][u*v]t[i1!](?:[s$z]t[i1!]c|[s$]m[o0])\b
+        - \b[a@4][u*v]t[i1!][s$z]t[i1!]c?\s+(?:b[i1]tch|f[u*][ck]+|c[u*]nt|sh[i1]t|r[e3]t[a@]rd|s[ck][u*]m|m[o0]nst[e3]r|f[a@]g(?:g[o0]t)?|b[a@]st[a@]rd|wh[o0]r[e3]|[s$]l[u*]t|p[i1]g|fr[e3][a@]k|k[i1]d[s$z]?|m[o0]nk[e3][yi]|[a@]p[e3]|d[o0]g|d[i1]ck|l[o0]s[e3]r|tr[a@]n[s$](?:ny)?|scr[e3]{2}ch[i1]ng|[a@]t+[a@]cks?|r[a@]g[e3])\b
+        - \b(?:v[a@]cc[i1]n[e3][s$z]?\s*(?:c[a@][u*]s[e3]|g[i1]v[e3]|l[e3][a@]d\s+t[o0])\s+[a@]ut[i1][s$]m|w[e3][a@]p[o0]n[i1]z[e3]d\s+[a@]ut[i1][s$]m|c[u*]r[e3]\s+[a@]ut[i1][s$]m)\b
+        - \b[a@4][u*v]t[i1!][s$z]m\s+(?:(?:i[s$z]|'s|be)\s+)?(?:just\s+|basically\s+|nothing\s+but\s+|liter[a@]l+y\s+|[a@]\s+)*?(?:m[e3]nt[a@4]l\s*(?:i[l1]+n[e3][s$z]+|d[i1]s(?:[o0]rd[e3]r|[a@]b[i1]l[i1]t[yi])|d[e3]f[e3]ct)|d[i1][s$z][e3][a@]s[e3]|c[a@]nc[e3]r|d[e3]f[e3]ct|pl[a@]gu[e3]|f[a@]k[e3]|(?:n[o0]t|i[s$]n'?t)\s*r[e3][a@]l|u[s$][e3]l[e3][s$]{2}|b[u*]rd[e3]n|m[e3]nt[a@]l\s*r[e3]t[a@]rd)\b
+        - \b[a@4][u*v]t[i1!][s$z]t[s$z]?\b
+        - \bsm[o0]{2}th[\s_\-]*br[a@][i1]n(?:[s$z]|[e3]d)?\b|\b(?:[e3]xtr[a@]|m[i1][s$]{2}[i1]ng|m[o0]r[e3]|f[e3]w[e3]r|c[o0][u*]nt\s+(?:ur|y[o0]ur))\s+chr[o0]m[o0][s$][o0]m[e3][s$z]?\b
+        - \bsh[o0]rt[\s_\-]*b[u*]s\s+(?:r[e3]t[a@]rd|k[i1]d|b[i1]tch|b[o0]y|g[i1]rl|fr[e3][a@]k|p[o0]st[e3]r|m[o0]d[e3])\b
+        - \bsh[o0]rtb[u*]s(?:[e3]r[s$z]?|[s$z])?\b|\b(?:r[i1]d[e3]|r[o0]d[e3]|r[i1]d[e3]r|r[i1]d[i1]ng|b[e3]l[o0]ng[s$z]?|[o0]n|fr[o0]m|[o0]ff|u|ur|you|(?:f[u*][ck]|b[i1]tch|k[i1]d|r[e3]t[a@]r?d|f[a@]g)\s+[o0]n|[a@]ct[i1]ng\s+l[i1]k[e3])\s+(?:th[e3]|a|ur|our|y[o0]ur|[o0]n\s+th[e3]|t[o0]\s+th[e3]|f[o0]r\s+th[e3])?\s*sh[o0]rt[\s_\-]*b[u*]s\b
+        - \bsch[i1]z[o0](?:[i1]d|[s$z]|r[\s_\-]*)?\b
+        - \bsp[e3]rg(?:[e3]rs?|[s$z]|[yi3]|[i1]ng|[\s_\-]*[o0][u*]t)?\b
+        - \b(?:h[a@]s|h[a@]v[e3]|g[o0]t|l[o0]{2}ks?\s+l[i1]k[e3]|[a@]ct[i1]ng|u|ur|y[o0]u|you'?r[e3]|\b(?:he|she|they)\s+(?:is|are|'s))\s+(?:l[i1]k[e3]\s+)?(?:[a@]|\b[a@]n\b)?\s*d[o0]wn'?s?\s+syndrom[e3]\b
+        - \bd[o0]wn'?s?\s+(?:syndrom[e3]\s+)?(?:m[o0]n[s$z]t[e3]r|b[i1]tch|b[o0]y|g[i1]rl|[s$]l[u*]t|f[u*][ck]+|r[e3]t[a@]r?d|wh[o0]r[e3]|c[u*]nt|fr[e3][a@]k|k[i1]d[s$z]?)\b
+        - \bd[o0]wn(?:[i1][e3][sz]?|s[o0][i1]d[s$z]?|o[i1]d[s$z]?)\b
+        - \bcr[i1!*]pp(?:[l1][e3][s$z]?|[o0][s$z]?|[i1]ng\s+(?:f[u*][ck]|b[i1]tch|r[e3]t[a@]rd|[a@]ut[i1]st|f[a@]g))\b|\bcr[i1!*]pp[e3]d\b
+        - \b(?:m[o0*]ng[s$z]?|m[o0*]ng[yi])\b|(?<![\w])m[o0*]ng(?!\w|o|o?l)
+        - \b(?:m[o0*]ng[o0*]l[o0*][i1]d[s$z]?|m[o0*]ng[s$z]o[i1]d)\b
+        - \bsp[a@*]st[i1*][ckx]+[s$z]?\b
+        - \bsp[a@*]z+[o0e3a@i1y]*(?:[i1]ng|[i1][ck]|[sz]|d|[e3]rs?|[s5]h|f[a@4]g)?\b
+        - \b(?:f[u*]ck|sh[i1]t|l[i1]b|c[o0]ns[e3]rv[a@]|tr[a@]n(?:[s$]|ny)?|g[a@]y|c[u*]nt|b[i1]tch|a[s$]{2}|w[o0]ke)t[a@4*]rd(?:[e3]d|[s$z])?\b
+        - \bt[a@4*]rd(?:[s$z]|[e3]d|w[\s_\-]*r[a@]ngl[e3]r)?\b
+        - \br[.\-_*|\s]*[e3][.\-_*|\s]*t[.\-_*|\s]*[a@4][.\-_*|\s]*r[.\-_*|\s]*d(?:[e3]d|[s$z]|[a@]t[i1][o0]n|h[e3][a@]d|a[s$]{2})?\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      action_chain:
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Ableist Language Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it used ableist slurs or derogatory remarks about physical or mental disability.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Usage of ableist language, slurs, or derogatory remarks regarding physical or mental disab"
+        - type: run_escalation_check
+    - name: Punishment Begging
+      patterns:
+        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:[i1]|w[e3]|h[e3]|sh[e3]|th[e3]y|<@!?\d+>|[\w\d]+)\s+(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:g[e3]t|b[e3])\s+[u*]n(?:b[a@]nn?[e3]d|w[a@]rnn?[e3]d|m[u*]t[e3]d|t[i1]m[e3][o0][u*]t[e3]d)(?:\b|\s|$)
+        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+i|can\s+u|can\s+you|could\s+you|could\s+i|could\s+u|will\s+you)\s+)*(?:r[e3]m[o0]v[e3]|d[e3]l[e3]t[e3]|cl[e3][a@]r|r[e3]v[o0]k[e3]|t[a@]k[e3]\s+(?:[a@]w[a@]y|[o0]ff)|f[o0]rg[i1]v[e3]|p[a@]rd[o0]n|l[i1]ft)\s+(?:th[i1][s$]|th[a@]t|th[e3]|m[yi]|h[i1][s$]|h[e3]r|th[e3]i[r]|o[u*]r|(?:<@!?\d+>|[\w\d]+)(?:'?s)?)\s+(?:w[a@]rn(?:[i1]ng)?[s$z]?|b[a@]n[s$z]?|m[u*]t[e3][s$z]?|t[i1]m[e3][o0][u*]t[s$z]?|[s$]tr[i1]k[e3][s$z]?|[i1]nfr[a@]ct[i1][o0]n[s$z]?)(?:\b|\s|$)
+        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+u|can\s+you|could\s+you|could\s+u|will\s+you)\s+)*[u*]n(?:b[a@]n|w[a@]rn|m[u*]t[e3]|t[i1]m[e3][o0][u*]t)s?\s+(?:m[e3]|u[s$]|m[yi]|h[i1]m|h[e3]r|th[e3]m|th[i1][s$]|th[a@]t|ur|y[o0]ur|<@!?\d+>|[\w\d]+)(?:\b|\s|$)
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles:
+        - "1467103806561980528"
+        - "1490439698416402613"
+      action_chain:
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Punishment Begging
+          description: |-
+            Hey {user}, this is an automated notice.
+
+            Please do not beg for punishments to be removed. If you want to contest a punishment, use the proper appeal process instead.
+
+            If you need help, just message any staff member and we will happily take a look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: run_escalation_check
+    - name: Staff Begging
+      patterns:
+        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:(?:(?:g[i1]v[e3]|m[a@]k[e3]|pr[o0]m[o0]t[e3])\s+(?:m[e3]|u[s$])\s+(?:t[o0]\s+)?|g[i1]mm[e3]\s+)|(?:(?:i|w[e3])\s+(?:w[a@]nt|w[a@]nn[a@]|n[e3][e3]d|d[e3][s$][e3]rv[e3]|w[o0][u*]ld\s+l[i1]k[e3])\s+(?:(?:t[o0]\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3])\s+)?)|(?:(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:i|w[e3]|y[o0]u)\s+(?:(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3]|m[a@]k[e3]\s+m[e3]|g[i1]v[e3]\s+m[e3])\s+)))(?:[a@]\s+|[a@]n\s+|th[e3]\s+)?(?:st[a@]ff|m[o0]d[e3]r[a@]t[o0]r[s$z]?|m[o0]d[s$z]?|[a@]dm[i1]n[s$z]?|[o0]wn[e3]r[s$z]?|h[e3]lp[e3]r[s$z]?)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles:
+        - "1490439698416402613"
+        - "1467103806561980528"
+      action_chain:
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Staff Begging
+          description: |-
+            Hey {user}, this is an automated notice.
+
+            Please do not ask staff for roles or promotions. Roles are earned and assigned by staff on their own terms.
+
+            If you need help, just message any staff member and we will happily take a look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: run_escalation_check
+punishment_dms:
+  enabled: true
+  hide_moderator: false
+  order: after
+  types:
+    warn:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        You've received a warning on your account.
+
+        Reason: {reason}
+        Issued by: {moderator}
+        Case ID: {case_id}
+
+        A warning is a heads-up - no mute or ban was applied. Repeated warnings can lead to stronger action, so please take a moment to read the server rules.
+
+        If you believe this warning was a mistake, {appeal_instructions}.
+    mute:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        You've been muted and can no longer send messages.
+
+        Duration: {duration}
+        Reason: {reason}
+        Issued by: {moderator}
+        Case ID: {case_id}
+
+        Once the time is up you'll be able to chat again. Please use the time to review the server rules.
+
+        If you believe this mute was a mistake, {appeal_instructions}.
+    timeout:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        You've been timed out and can no longer send messages for a while.
+
+        Duration: {duration}
+        Reason: {reason}
+        Issued by: {moderator}
+        Case ID: {case_id}
+
+        Once the time is up you'll be able to chat again. Please use the time to review the server rules.
+
+        If you believe this was a mistake, {appeal_instructions}.
+    kick:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        You've been kicked from the server.
+
+        Reason: {reason}
+        Issued by: {moderator}
+        Case ID: {case_id}
+
+        A kick isn't a permanent ban - you're welcome to rejoin later. Please make sure to follow the rules when you return.
+
+        If you believe this kick was a mistake, {appeal_instructions}.
+    ban:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        You've been banned from the server.
+
+        Reason: {reason}
+        Issued by: {moderator}
+        Case ID: {case_id}
+        Duration: {duration}
+
+        A ban removes your access to the server. If you believe this was a mistake, {appeal_instructions}.
+    unban:
+      enabled: false
+      format: components_v2
+      content: |-
+        Hi {user}, good news from the {guild} moderation team.
+
+        Your ban has been lifted and you're welcome to rejoin the server.
+
+        Please make sure to follow the server rules this time. If you have any questions, reach out to a staff member.
+    unmute:
+      enabled: false
+      format: components_v2
+      content: |-
+        Hi {user}, good news from the {guild} moderation team.
+
+        Your mute has been lifted and you can send messages again.
+
+        Please remember to follow the server rules going forward.
+escalation:
+  enabled: true
+  window_seconds: 3600
+  rules:
+    - rule: "*"
+      count: 3
+      within_seconds: 3600
+      action:
+        type: timeout
+        duration: 1h
+  global:
+    - count: 5
+      within_seconds: 3600
+      action:
+        type: kick
+join_roles:
+  roles: []
+  bot_roles: []
+welcome:
+  enabled: true
+  channel_id: "1466990155922542723"
+  message: |-
+    Welcome to the Empire, <@{mention}>!
+    **Welcome to The SnowHaven Empire!**
+    We are incredibly excited to have you here, <@{mention}>. Step in from the cold, grab a warm drink, and make yourself at home! **Here is how to get started:**
+goodbye:
+  enabled: true
+  channel_id: "1466990156199362878"
+  message: |-
+    **A member has departed...**
+    **{user}** has packed their bags and left the empire. > We wish them the best on their future journeys out in the cold. > The empire currently stands strong with **{member_count}** members remaining.
+booster:
+  enabled: true
+  channel_id: "1467134579923095738"
+  message: |-
+    Thank you for boosting, <@{mention}>!
+    **Server Boosted!**
+    Thank you so much <@{mention}> for boosting **{guild}**! Your support means the world to us and helps keep the empire thriving. Enjoy your exclusive booster perks and your new shiny badge!
+role_connections:
+  - enabled: true
+    if_has_role: "1479852874635939880"
+    held_for_seconds: 0
+    then_add:
+      - "1491407923291619388"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1479912951694495845"
+    held_for_seconds: 0
+    then_add:
+      - "1491407923291619388"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534547067501023405"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534546666726756373"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534546302350659675"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534545792705237133"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534544871279558859"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1534544391811891321"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1479852874635939880"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1479912951694495845"
+    held_for_seconds: 0
+    then_add:
+      - "1467103806561980528"
+    then_remove: []
+  - enabled: true
+    if_has_role: "1467103806561980528"
+    held_for_seconds: 0
+    then_add:
+      - "1485003903891275977"
+    then_remove: []
+channel_locking:
+  presets:
+    - name: lockdown-all
+      channels:
+        - "1466990156199362883"
+        - "1466990156199362880"
+        - "1518992336263053455"
+        - "1518284336443424768"
+        - "1518284522909864156"
+        - "1526730345699999945"
+        - "1467128459913461912"
+        - "1527017514746515537"
+        - "1466990156690227314"
+        - "1532151854119649491"
+        - "1535379316014325790"
+        - "1534350105312886865"
+        - "1535372412105789531"
+        - "1535372374684336138"
+        - "1535372305381855232"
+      categories: []
+      all_channels: false
+      exclude_roles:
+        - "1520031216651210773"
+      deny_permissions:
+        - SendMessages
+        - AddReactions
+      schedule: []
+anti_raid:
+  enabled: false
+  join_rate_threshold: 10
+  window_seconds: 60
+  action: lock_joins
+sticky_messages:
+  enabled: false
+  re_post_after_messages: 5
+slowmode_scheduler:
+  enabled: false
+  threshold_messages_per_minute: 30
+  slowmode_seconds: 10
+  revert_after_minutes: 15
+sticky_roles:
+  enabled: false
+invite_tracking:
+  enabled: false
+tickets:
+  enabled: false
+  category_id: "000000000000000000"
+  support_roles: []
+  transcript_channel_id: "000000000000000000"
+modmail:
+  enabled: false
+  category_id: "000000000000000000"
+  support_roles: []
+  transcript_channel_id: "000000000000000000"
+verification_gate:
+  enabled: false
+  button_channel_id: "000000000000000000"
+  verified_role_id: "000000000000000000"
+  timeout_kick_seconds: 0
+quarantine:
+  enabled: true
+  restricted_role_id: "000000000000000000"
+blacklist:
+  enabled: true
+  action: flag
+  silently_flag: false
+alt_detection:
+  enabled: false
+  max_account_age_days: 7
+trust_levels:
+  enabled: false
+  levels:
+    - level: 1
+      after_days: 7
+      require_clean_history: true
+      roles:
+        - "000000000000000000"
+fuzzy:
+  enabled: true
+  max_distance: 2
+  cooldown_seconds: 15
+staff_permission_groups:
+  groups:
+    - name: junior_mod
+      roles: []
+      permissions:
+        - warn
+        - mute
+        - purge
+    - name: senior_mod
+      roles: []
+      permissions:
+        - warn
+        - mute
+        - kick
+        - ban
+        - timeout
+        - purge
+        - case
+        - appeal
+        - massban
+        - lock
+        - unlock
+community:
+  starboard:
+    enabled: false
+    channel_id: "000000000000000000"
+    threshold: 3
+  suggestions:
+    enabled: false
+    channel_id: "000000000000000000"
+  giveaways:
+    enabled: false
+  levels:
+    enabled: false
+    message_xp: 15
+    xp_cooldown_seconds: 60
+    level_up_roles: []
+  status_rotation:
+    enabled: false
+    interval_seconds: 300
+    statuses: []
+  birthdays:
+    enabled: false
+    channel_id: "000000000000000000"
+    timezone: UTC
+dashboard:
+  enabled: true
+  port: 4693
+  owner_user_id: "000000000000000000"
+  live_log_retention_hours: 24
+  timestamp_defaults:
+    timezone: UTC
+error_reporting:
+  enabled: true
+  channel_id: "000000000000000000"
+  verbosity: standard
+  webhook_url: ""
+rate_limit_reporting:
+  enabled: true
+  channel_id: "000000000000000000"
+  webhook_url: ""
+ops:
+  backups_enabled: true
+  backup_retention_count: 7
+  usage_analytics: true
+  snipe_retention_seconds: 600

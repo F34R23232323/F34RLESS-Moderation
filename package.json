@@ -1,0 +1,48 @@
+{
+  "name": "f34rless-moderation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade Discord moderation bot + React dashboard",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "gen-config": "tsx scripts/generate-config.ts",
+    "import:messages": "tsx scripts/sapphire-messages-import.ts",
+    "dev:bot": "tsx bot/src/index.ts",
+    "dev:dashboard": "tsx dashboard/server/src/index.ts",
+    "dev:web": "vite --config dashboard/web/vite.config.mjs",
+    "build": "tsc -p tsconfig.node.json && vite build --config dashboard/web/vite.config.mjs",
+    "build:bot": "tsc -p tsconfig.node.json",
+    "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p dashboard/web --noEmit",
+    "start:bot": "node dist-node/bot/src/index.js",
+    "start:dashboard": "node dist-node/dashboard/server/src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.22.2",
+    "lucide-react": "^0.451.0",
+    "mysql2": "^3.11.3",
+    "node-cron": "^3.0.3",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "ws": "^8.18.0",
+    "yaml": "^2.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.20.1",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "@types/ws": "^8.18.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "tsx": "^4.23.12",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.9"
+  }
+}
