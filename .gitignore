@@ -10,3 +10,4 @@ data/
 backups/
 .DS_Store
 *.tsbuildinfo
+dist-node/
