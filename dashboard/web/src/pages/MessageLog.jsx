@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Search, RefreshCw, X, Trash2, Trash, Eye, ExternalLink } from 'lucide-react';
+import { Search, RefreshCw, X, Trash2, Trash, Eye, ExternalLink, MessageSquareText } from 'lucide-react';
 import { api } from '../api';
 import SearchSelect from '../components/SearchSelect';
+import { TableSkeleton } from '../components/Skeleton';
+import { useToast } from '../components/Toast';
 
 const PAGE_SIZE = 50;
 
@@ -14,6 +16,7 @@ export default function MessageLog() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [filterData, setFilterData] = useState({ guilds: [], users: [], channels: [] });
+  const toast = useToast();
 
   useEffect(() => {
     api('/message-log/filters').then((d) => setFilterData(d || { guilds: [], users: [], channels: [] })).catch(() => {});
@@ -46,9 +49,12 @@ export default function MessageLog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  function notify(err) {
-    setError(err instanceof Error ? err.message : String(err));
-    setTimeout(() => setError(''), 4000);
+  function notify(err, isSuccess = false) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (isSuccess) toast.success(msg);
+    else toast.error(msg);
+    setError(isSuccess ? '' : msg);
+    if (!isSuccess) setTimeout(() => setError(''), 4000);
   }
 
   async function openDetail(id) {
@@ -75,7 +81,7 @@ export default function MessageLog() {
     try {
       const r = await api('/message-log/clear', { method: 'POST', body: JSON.stringify({ guild: filters.guild || undefined }) });
       await load();
-      notify(`Cleared ${r.removed} saved message(s).`);
+      notify(`Cleared ${r.removed} saved message(s).`, true);
     } catch (e) {
       notify(e);
     }
@@ -87,7 +93,7 @@ export default function MessageLog() {
     try {
       const r = await api('/message-log/purge', { method: 'POST', body: JSON.stringify({ days, guild: filters.guild || undefined }) });
       await load();
-      notify(`Purged ${r.removed} old message(s).`);
+      notify(`Purged ${r.removed} old message(s).`, true);
     } catch (e) {
       notify(e);
     }
@@ -118,8 +124,13 @@ export default function MessageLog() {
         </div>
 
         {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
-        {loading && <p style={{ color: 'var(--text-dim)' }}>Loading…</p>}
 
+        {loading ? (
+          <div className="table-scroll"><TableSkeleton rows={7} cols={7} /></div>
+        ) : rows.length === 0 ? (
+          <div className="center-state"><MessageSquareText size={26} /><span>No saved messages match.</span></div>
+        ) : (
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -159,6 +170,8 @@ export default function MessageLog() {
             ))}
           </tbody>
         </table>
+        </div>
+        )}
 
         <div className="pager">
           <span>{total} saved messages</span>

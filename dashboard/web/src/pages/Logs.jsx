@@ -182,7 +182,17 @@ export default function Logs() {
 
       <div className="log-list">
         {loading && rows.length === 0 && (
-          <div className="card center-state"><div className="spinner" /><span>Loading logs…</span></div>
+          <div className="card">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="log-row" style={{ animation: 'none', border: 'none', background: 'transparent' }}>
+                <div className="log-row-main" style={{ padding: '14px 6px' }}>
+                  <span className="skeleton" style={{ width: 120, height: 20, borderRadius: 999 }} />
+                  <span className="skeleton" style={{ width: 150, height: 13 }} />
+                  <span className="skeleton" style={{ width: '100%', height: 13 }} />
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {!loading && rows.length === 0 && (
           <div className="card center-state"><FileText size={28} /><span>No log entries match.</span></div>

@@ -1,18 +1,60 @@
 const BASE = '';
 
-export async function api(path, options = {}) {
-  const res = await fetch(`${BASE}/api${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...options,
+// --- Global error reporting ---------------------------------------------------
+// A tiny event bus so fetch failures anywhere in the app can surface as
+// friendly toasts without every page wiring its own handler.
+const errorListeners = new Set();
+
+export function onApiError(fn) {
+  errorListeners.add(fn);
+  return () => errorListeners.delete(fn);
+}
+
+function emitApiError(err, path) {
+  errorListeners.forEach((fn) => {
+    try {
+      fn(err, path);
+    } catch {
+      /* never let a listener break the app */
+    }
   });
+}
+
+// Turn unknown throwables into readable messages.
+export function messageOf(err) {
+  if (!err) return 'Something went wrong.';
+  if (err instanceof Error) return err.message || String(err);
+  if (typeof err === 'string') return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
+export async function api(path, options = {}) {
+  let res;
+  try {
+    res = await fetch(`${BASE}/api${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      ...options,
+    });
+  } catch (err) {
+    const wrapped = new Error('Network error — is the dashboard server reachable?');
+    wrapped.cause = err;
+    emitApiError(wrapped, path);
+    throw wrapped;
+  }
   if (res.status === 401) {
     window.location.href = '/login';
     throw new Error('unauthorized');
   }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || `HTTP ${res.status}`);
+    const err = new Error(body.error || `HTTP ${res.status}`);
+    emitApiError(err, path);
+    throw err;
   }
   return res.json();
 }

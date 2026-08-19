@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Search, RefreshCw, X, Plus, Pencil, Trash2, Link2, Check } from 'lucide-react';
+import { Search, RefreshCw, X, Plus, Pencil, Trash2, Link2, Check, Gavel } from 'lucide-react';
 import { api } from '../api';
 import SearchSelect from '../components/SearchSelect';
+import { TableSkeleton } from '../components/Skeleton';
 
 const PAGE_SIZE = 100;
 
@@ -14,13 +15,21 @@ export default function Cases() {
   const [bulkReason, setBulkReason] = useState('');
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function load() {
+    setLoading(true);
     const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
     Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
-    const data = await api(`/cases?${params}`);
-    setRows(data.rows);
-    setTotal(data.total);
+    try {
+      const data = await api(`/cases?${params}`);
+      setRows(data.rows);
+      setTotal(data.total);
+    } catch (e) {
+      notify(e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -141,6 +150,12 @@ export default function Cases() {
           </div>
         )}
 
+        {loading ? (
+          <div className="table-scroll"><TableSkeleton rows={8} cols={9} /></div>
+        ) : rows.length === 0 ? (
+          <div className="center-state"><Gavel size={26} /><span>No cases match.</span></div>
+        ) : (
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -180,6 +195,8 @@ export default function Cases() {
             ))}
           </tbody>
         </table>
+        </div>
+        )}
 
         <div className="pager">
           <span>{total} cases</span>

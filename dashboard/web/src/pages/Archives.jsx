@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Search, RefreshCw, X, Trash2, Pencil, Check, Copy, ExternalLink, Download, Image } from 'lucide-react';
+import { Search, RefreshCw, X, Trash2, Pencil, Check, Copy, ExternalLink, Download, Image, Archive as ArchiveIcon } from 'lucide-react';
 import { api } from '../api';
+import { TableSkeleton } from '../components/Skeleton';
 
 const PAGE_SIZE = 50;
 
@@ -28,13 +29,19 @@ export default function Archives() {
   const [detail, setDetail] = useState(null);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   async function load() {
+    setLoading(true);
     const params = new URLSearchParams({ limit: String(PAGE_SIZE), offset: String(page * PAGE_SIZE) });
     Object.entries(filters).forEach(([k, v]) => v && params.set(k, v));
-    const data = await api(`/archives?${params}`).catch(() => ({ rows: [], total: 0 }));
-    setRows(data.rows || []);
-    setTotal(data.total ?? 0);
+    try {
+      const data = await api(`/archives?${params}`).catch(() => ({ rows: [], total: 0 }));
+      setRows(data.rows || []);
+      setTotal(data.total ?? 0);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -103,6 +110,12 @@ export default function Archives() {
 
         {error && <p style={{ color: 'var(--danger)' }}>{error}</p>}
 
+        {loading ? (
+          <div className="table-scroll"><TableSkeleton rows={6} cols={9} /></div>
+        ) : rows.length === 0 ? (
+          <div className="center-state"><ArchiveIcon size={26} /><span>No archives match.</span></div>
+        ) : (
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -140,6 +153,8 @@ export default function Archives() {
             ))}
           </tbody>
         </table>
+        </div>
+        )}
 
         <div className="pager">
           <span>{total} archives</span>

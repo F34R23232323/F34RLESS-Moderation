@@ -159,8 +159,11 @@ export default function RoleConnections() {
 
   if (loading) {
     return (
-      <div className="center-state">
-        <div className="spinner" />
+      <div className="page-skeleton" aria-hidden="true">
+        <div className="page-head">
+          <div><div className="skeleton" style={{ width: 220, height: 30, display: 'block' }} /><div style={{ marginTop: 8 }}><div className="skeleton" style={{ width: 360, height: 14 }} /></div></div>
+        </div>
+        <div className="card"><div className="skeleton" style={{ width: '100%', height: 90, display: 'block' }} /></div>
       </div>
     );
   }

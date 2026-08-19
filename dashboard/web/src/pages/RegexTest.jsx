@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FlaskConical } from 'lucide-react';
+import { FlaskConical, Loader2, AlertTriangle } from 'lucide-react';
 import { api } from '../api';
+import { useToast } from '../components/Toast';
 
 function highlight(text, matches) {
   if (!matches || matches.length === 0) return text;
@@ -21,11 +22,22 @@ export default function RegexTest() {
   const [flags, setFlags] = useState('gi');
   const [text, setText] = useState('');
   const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const toast = useToast();
 
   async function test() {
-    const params = new URLSearchParams({ pattern, flags, text });
-    const res = await api(`/regex-test?${params}`);
-    setResult(res);
+    if (busy) return;
+    setBusy(true);
+    try {
+      const params = new URLSearchParams({ pattern, flags, text });
+      const res = await api(`/regex-test?${params}`);
+      setResult(res);
+      if (!res.valid) toast.error(res.error || 'Invalid pattern');
+    } catch (e) {
+      toast.error(e.message || 'Test failed');
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -35,15 +47,19 @@ export default function RegexTest() {
 
       <div className="card">
         <div className="filters">
-          <input placeholder="Pattern, e.g. \b(slur1|slur2)\b" value={pattern} onChange={(e) => setPattern(e.target.value)} style={{ flex: 1 }} />
+          <input placeholder="Pattern, e.g. \b(slur1|slur2)\b" value={pattern} onChange={(e) => setPattern(e.target.value)} style={{ flex: 1 }} onKeyDown={(e) => e.key === 'Enter' && test()} />
           <input placeholder="flags" value={flags} onChange={(e) => setFlags(e.target.value)} style={{ width: 70 }} />
-          <button className="btn sm" onClick={test}><FlaskConical size={14} /> Test</button>
+          <button className="btn sm" onClick={test} disabled={busy}>{busy ? <Loader2 size={14} className="spin-soft" /> : <FlaskConical size={14} />} Test</button>
         </div>
         <textarea placeholder="Sample text" value={text} onChange={(e) => setText(e.target.value)} />
 
         {result && (
           <div style={{ marginTop: 12 }}>
-            {!result.valid && <p><span className="badge red">invalid pattern</span> {result.error}</p>}
+            {!result.valid && (
+              <div className="inline-error" style={{ marginBottom: 0 }}>
+                <AlertTriangle size={16} /><span>Invalid pattern: {result.error}</span>
+              </div>
+            )}
             {result.valid && (
               <>
                 <p><span className="badge green">{result.matches.length} match(es)</span></p>
