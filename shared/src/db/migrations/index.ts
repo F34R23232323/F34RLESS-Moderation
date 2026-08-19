@@ -10,5 +10,7 @@ import { migration008 } from './008_reports_detail';
 import { migration009 } from './009_archives';
 import { migration010 } from './010_message_snapshots';
 import { migration011 } from './011_archive_components';
+import { migration012 } from './012_perf_indexes';
+import { migration013 } from './013_archive_message_status';
 
-export const migrations: Migration[] = [migration001, migration002, migration003, migration004, migration005, migration006, migration007, migration008, migration009, migration010, migration011];
+export const migrations: Migration[] = [migration001, migration002, migration003, migration004, migration005, migration006, migration007, migration008, migration009, migration010, migration011, migration012, migration013];

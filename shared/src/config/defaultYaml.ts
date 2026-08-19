@@ -729,8 +729,9 @@ archives:
   allowed_users: []             # user IDs allowed to use !archives
   snapshot_messages: true       # save messages (bulk-batched) for deleted/edited evidence
   message_retention_days: 90    # auto-purge saved messages after this many days
-  archive_on_delete: true       # batch-archive deleted messages (one archive per batch)
-  archive_on_edit: true         # batch-archive edited messages (before & after, one archive per batch)
+  archive_on_delete: true       # accumulate deleted messages into auto-archives
+  archive_on_edit: true         # accumulate edited messages (before & after) into auto-archives
+  archive_interval_hours: 2     # build one big auto-archive every N hours (deleted + edited)
 
 # -----------------------------------------------------------------------------
 # Web dashboard. owner_user_id may also come from .env (OWNER_USER_ID).

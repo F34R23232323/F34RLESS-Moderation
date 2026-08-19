@@ -299,6 +299,7 @@ export const configSchema = z
         message_retention_days: z.number().int().min(1).max(365).default(90),
         archive_on_delete: z.boolean().default(true),
         archive_on_edit: z.boolean().default(true),
+        archive_interval_hours: z.number().int().min(1).max(24).default(2),
       })
       .strict()
       .default({}),
