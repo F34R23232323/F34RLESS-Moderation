@@ -33,11 +33,24 @@ export const commandSchema = z
   })
   .strict();
 
+export const logIgnoreSchema = z
+  .object({
+    channels: snowflakeArray,
+    categories: snowflakeArray,
+    users: snowflakeArray,
+    roles: snowflakeArray,
+  })
+  .strict()
+  .default({ channels: [], categories: [], users: [], roles: [] });
+
+export type LogIgnore = z.infer<typeof logIgnoreSchema>;
+
 export const loggingEntrySchema = z
   .object({
     enabled: boolean.default(true),
     channel_id: snowflake.optional(),
     thread_id: snowflake.optional(),
+    ignore: logIgnoreSchema,
   })
   .strict();
 
@@ -291,6 +304,10 @@ export const configSchema = z
       .default({ cooldown_seconds: 3 }),
 
     logging: z.record(z.string().min(1), loggingEntrySchema).default({}),
+
+    // Global logging exclusions — applied to every event, in addition to each
+    // event's own `ignore` block under `logging`.
+    logging_ignore: logIgnoreSchema,
 
     warnings: z
       .object({

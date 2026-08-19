@@ -1,7 +1,9 @@
 import { EventEmitter } from 'events';
 import { AttachmentBuilder } from 'discord.js';
+import type { Guild } from 'discord.js';
 import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
+import { isLogIgnored, type LogIgnoreContext } from '../../../shared/src/index';
 import { v2Send } from '../utils/v2';
 import { buildRichV2 } from '../utils/v2';
 import { friendlyEventName, formatDetails, logAccent } from './logFormatter';
@@ -27,8 +29,55 @@ export class LogManager extends EventEmitter {
     this.db = db;
   }
 
+  /**
+   * Decide whether an event should be suppressed by the global logging_ignore
+   * or the event's own ignore block. Roles are only resolved when some ignore
+   * list actually references roles (saves API lookups on every log line).
+   */
+  private async shouldIgnore(
+    event: string,
+    guildId: string,
+    input: { channelId?: string | null; actorId?: string | null; targetId?: string | null },
+  ): Promise<boolean> {
+    const app = this.app;
+    if (!app) return false;
+    const global = app.config.logging_ignore;
+    const perEvent = app.config.logging[event]?.ignore;
+    if (!global && !perEvent) return false;
+
+    const guild = app.client.guilds.cache.get(guildId);
+    const ctx: LogIgnoreContext = {
+      channelId: input.channelId ?? null,
+      actorId: input.actorId ?? null,
+      targetId: input.targetId ?? null,
+      categoryId: null,
+      actorRoleIds: null,
+      targetRoleIds: null,
+    };
+    if (guild && input.channelId) {
+      ctx.categoryId = guild.channels.cache.get(input.channelId)?.parentId ?? null;
+    }
+    const needRoles = [global, perEvent].some((s) => s && s.roles.length > 0);
+    if (needRoles && guild) {
+      if (input.actorId) ctx.actorRoleIds = await this.memberRoleIds(guild, input.actorId);
+      if (input.targetId) ctx.targetRoleIds = await this.memberRoleIds(guild, input.targetId);
+    }
+    return isLogIgnored(global, ctx) || isLogIgnored(perEvent, ctx);
+  }
+
+  private async memberRoleIds(guild: Guild, userId: string): Promise<Set<string> | null> {
+    try {
+      const member = guild.members.cache.get(userId) ?? (await guild.members.fetch(userId).catch(() => null));
+      if (!member) return null;
+      return new Set(member.roles.cache.keys());
+    } catch {
+      return null;
+    }
+  }
+
   public async log(input: LogInput): Promise<number | null> {
     try {
+      if (await this.shouldIgnore(input.event, input.guildId, input)) return null;
       const [result] = await this.db.execute(
         `INSERT INTO logs (event, guild_id, channel_id, actor_id, target_id, message, details)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,

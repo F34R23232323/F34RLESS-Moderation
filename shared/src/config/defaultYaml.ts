@@ -132,6 +132,20 @@ command_defaults:
 # rate_limit_event, report_created, report_resolved, case_edit,
 # appeal_created, appeal_resolved
 # -----------------------------------------------------------------------------
+# Global logging exclusions. Entries here suppress events across EVERY log type:
+#   channels:   events that happen in this channel are not logged
+#   categories: events in any channel under this category are not logged
+#   users:      events where this user is the actor or the target are not logged
+#   roles:      events where the actor or the target holds this role are not logged
+# Per-event exclusions go inside each logging.<event>.ignore block (same four
+# lists) and apply to that event only. Global + per-event are both applied.
+# -----------------------------------------------------------------------------
+logging_ignore:
+  channels: []
+  categories: []
+  users: []
+  roles: []
+
 logging:
   member_join: { enabled: true, channel_id: "000000000000000000" }
   member_leave: { enabled: true, channel_id: "000000000000000000" }
@@ -140,6 +154,15 @@ logging:
   message_edit: { enabled: true, channel_id: "000000000000000000" }
   moderation_action: { enabled: true, channel_id: "000000000000000000" }
   command_usage: { enabled: false, channel_id: "000000000000000000" }
+  # Per-event example — don't log kicks in the staff lounge category:
+  # member_kick:
+  #   enabled: true
+  #   channel_id: "000000000000000000"
+  #   ignore:
+  #     channels: []
+  #     categories: ["000000000000000000"]
+  #     users: []
+  #     roles: []
   # ... add any of the other event names the same way.
 
 # -----------------------------------------------------------------------------

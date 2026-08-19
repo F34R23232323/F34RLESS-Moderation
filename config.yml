@@ -270,6 +270,13 @@ commands:
     enabled: true
 command_defaults:
   cooldown_seconds: 3
+# Global logging exclusions: suppress events by channel, category, user, or role
+# across every log type. Per-event exclusions go inside logging.<event>.ignore.
+logging_ignore:
+  channels: ["1534529824670875688"]
+  categories: ["1467104423669927993"]
+  users: []
+  roles: []
 logging:
   channel_create:
     enabled: true
@@ -508,12 +515,13 @@ archives:
   automod_context_amount: 15
   max_attachment_bytes: 10485760
   max_archive_bytes: 209715200
-  allowed_roles: []                 # roles allowed to use !archives (staff list)
-  allowed_users: []                 # user IDs allowed to use !archives
-  snapshot_messages: true           # save messages (bulk-batched) for deleted/edited evidence
-  message_retention_days: 90        # auto-purge saved messages after this many days
-  archive_on_delete: true           # batch-archive deleted messages (one archive per batch)
-  archive_on_edit: true             # batch-archive edited messages (before & after, one archive per batch)
+  allowed_roles: []
+  allowed_users: []
+  snapshot_messages: true
+  message_retention_days: 90
+  archive_on_delete: true
+  archive_on_edit: true
+  archive_interval_hours: 2
 automod:
   enabled: true
   global_immune_roles:
@@ -2276,72 +2284,46 @@ booster:
     **Server Boosted!**
     Thank you so much {mention} for boosting **{guild}**! Your support means the world to us and helps keep the empire thriving. Enjoy your exclusive booster perks and your new shiny badge!
 role_connections:
-  - enabled: true
-    if_has_role: "1479852874635939880"
-    held_for_seconds: 0
-    then_add:
-      - "1491407923291619388"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1479912951694495845"
-    held_for_seconds: 0
-    then_add:
-      - "1491407923291619388"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534547067501023405"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534546666726756373"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534546302350659675"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534545792705237133"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534544871279558859"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1534544391811891321"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1479852874635939880"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1479912951694495845"
-    held_for_seconds: 0
-    then_add:
-      - "1467103806561980528"
-    then_remove: []
-  - enabled: true
-    if_has_role: "1467103806561980528"
-    held_for_seconds: 0
-    then_add:
-      - "1485003903891275977"
-    then_remove: []
+  enabled: true
+  sync_interval_minutes: 5
+  connections:
+    - enabled: true
+      main_role: "1491407923291619388"
+      logic: any
+      held_for_seconds: 0
+      conditions:
+        - has_role: true
+          role_id: "1479852874635939880"
+        - has_role: true
+          role_id: "1479912951694495845"
+    - enabled: true
+      main_role: "1467103806561980528"
+      logic: any
+      held_for_seconds: 0
+      conditions:
+        - has_role: true
+          role_id: "1534547067501023405"
+        - has_role: true
+          role_id: "1534546666726756373"
+        - has_role: true
+          role_id: "1534546302350659675"
+        - has_role: true
+          role_id: "1534545792705237133"
+        - has_role: true
+          role_id: "1534544871279558859"
+        - has_role: true
+          role_id: "1534544391811891321"
+        - has_role: true
+          role_id: "1479852874635939880"
+        - has_role: true
+          role_id: "1479912951694495845"
+    - enabled: true
+      main_role: "1485003903891275977"
+      logic: any
+      held_for_seconds: 0
+      conditions:
+        - has_role: true
+          role_id: "1467103806561980528"
 channel_locking:
   presets:
     - name: lockdown-all
