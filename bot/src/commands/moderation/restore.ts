@@ -6,6 +6,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('restore')
@@ -45,7 +46,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const guild = message.guild;
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!restore <user>`' });
+    await v2MessageReply(message, { content: 'Usage: `!restore <user>`' });
     return;
   }
   const [rows] = await app.db.query<RowDataPacket[]>(
@@ -54,17 +55,18 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   );
   const row = rows[0] as { roles?: string; nickname?: string } | undefined;
   if (!row) {
-    await message.reply({ content: 'No snapshot found.' });
+    await v2MessageReply(message, { content: 'No snapshot found.' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not in server.' });
+    await v2MessageReply(message, { content: 'User not in server.' });
     return;
   }
   const roles = parseJson(row.roles, []) as string[];
   await member.roles.set([...roles, guild.id], 'Snapshot restore');
-  await message.reply({ content: `Restored <@${targetId}> from snapshot.` });
+  if (row.nickname) await member.setNickname(row.nickname, 'Snapshot restore').catch(() => undefined);
+  await v2MessageReply(message, { content: `Restored <@${targetId}> from snapshot (${roles.length} roles).` });
 }
 
 const command: BotCommand = {

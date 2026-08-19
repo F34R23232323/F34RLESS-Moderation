@@ -7,6 +7,8 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
     const guild = member.guild;
     const isBot = member.user.bot;
 
+    await app.messageLogs.upsertUser(guild.id, member.user, member);
+
     if (isBot) {
       for (const roleId of app.config.join_roles.bot_roles) {
         await member.roles.add(roleId, 'Bot join role').catch(() => undefined);

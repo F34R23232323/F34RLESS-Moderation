@@ -165,6 +165,26 @@ export class AutomodManager {
       return;
     }
 
+    let archiveCode: string | null = null;
+    let archiveLink: string | null = null;
+    if (this.app.config.archives.enabled && message && channel) {
+      try {
+        const archive = await this.app.archives.archiveContext({
+          guild,
+          channel,
+          messageId: message.id,
+          amount: this.app.config.archives.automod_context_amount,
+          kind: 'automod_evidence',
+          createdBy: this.app.client.user?.id ?? null,
+          reason: hit.reason,
+        });
+        archiveCode = archive?.code ?? null;
+        archiveLink = archive?.link ?? null;
+      } catch (err) {
+        this.app.logger.warn(`Automod archive failed (${hit.module}/${hit.rule}):`, err);
+      }
+    }
+
     if (this.app.config.automod.risk_scoring.enabled) {
       await this.app.riskScoring.add(member.id, this.app.config.automod.risk_scoring.automod_hit_weight, guild.id);
     }
@@ -207,6 +227,8 @@ export class AutomodManager {
       actionsFailed: result.actionsFailed,
       responseSuppressed: result.responseSuppressed,
       caseIds: result.caseIds,
+      archiveCode,
+      archiveLink,
     });
 
     if (result.responseSuppressed && cfg.suppressed_response_mode === 'batched_summary' && channel) {

@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('snapshot')
@@ -35,12 +36,12 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || null;
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!snapshot <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!snapshot <user> <reason>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
   const roles = member.roles.cache.filter((r: any) => r.id !== guild.id && !r.managed).map((r: any) => r.id);
@@ -48,7 +49,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     'INSERT INTO member_snapshots (guild_id, user_id, roles, nickname, reason, taken_by) VALUES (?, ?, ?, ?, ?, ?)',
     [guild.id, targetId, JSON.stringify(roles), member.nickname, reason, message.author.id],
   );
-  await message.reply({ content: `Snapshot saved for <@${targetId}>.` });
+  await v2MessageReply(message, { content: `Snapshot saved for <@${targetId}> (${roles.length} roles).` });
 }
 
 const command: BotCommand = {

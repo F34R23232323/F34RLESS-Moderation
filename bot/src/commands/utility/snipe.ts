@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { getDeleted, getEdited } from '../../utils/snipe';
+import { v2MessageReply } from '../../utils/v2';
 
 function snipeCommand(name: string, description: string, kind: 'deleted' | 'edited'): BotCommand {
   const data = new SlashCommandBuilder().setName(name).setDescription(description);
@@ -28,10 +29,10 @@ function snipeCommand(name: string, description: string, kind: 'deleted' | 'edit
       const retentionMs = app.config.ops.snipe_retention_seconds * 1000;
       const entry = kind === 'deleted' ? getDeleted(message.channelId, retentionMs) : getEdited(message.channelId, retentionMs);
       if (!entry) {
-        await message.reply({ content: 'Nothing to snipe here.' });
+        await v2MessageReply(message, { content: 'Nothing to snipe here.' });
         return;
       }
-      await message.reply({ content: `**${entry.authorName}**\n${entry.content.slice(0, 1500)}` });
+      await v2MessageReply(message, { content: `**${entry.authorName}**\n${entry.content.slice(0, 1500)}` });
     },
   };
 }

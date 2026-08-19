@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 function voiceCommand(name: string, description: string, aliases: string[], action: (m: any) => Promise<void>): BotCommand {
   const data = new SlashCommandBuilder()
@@ -37,15 +38,15 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
       const guild = message.guild;
       const targetId = args[0]?.replace(/[<@!>]/g, '');
       if (!guild || !targetId) {
-        await message.reply({ content: `Usage: !${name} <user>` });
+        await v2MessageReply(message, { content: `Usage: !${name} <user>` });
         return;
       }
       const member = await guild.members.fetch(targetId).catch(() => null);
       if (!member) {
-        await message.reply({ content: 'User not found.' });
+        await v2MessageReply(message, { content: 'User not found.' });
         return;
       }
-      await action(member).then(() => message.reply({ content: `Done for <@${targetId}>.` })).catch((err) => message.reply({ content: `Failed: ${err.message}` }));
+      await action(member).then(() => v2MessageReply(message, { content: `Done for <@${targetId}>.` })).catch((err) => v2MessageReply(message, { content: `Failed: ${err.message}` }));
     },
   };
 }

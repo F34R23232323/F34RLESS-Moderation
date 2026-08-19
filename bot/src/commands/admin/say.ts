@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 function sayCommand(name: string, description: string, staff: boolean): BotCommand {
   const data = new SlashCommandBuilder()
@@ -32,11 +33,16 @@ function sayCommand(name: string, description: string, staff: boolean): BotComma
     async prefixExecute(message, args, app) {
       const text = args.join(' ');
       if (!text) {
-        await message.reply({ content: `Usage: !${name} <text>` });
+        await v2MessageReply(message, { content: `Usage: !${name} <text>` });
         return;
       }
-      await message.delete().catch(() => undefined);
-      await (message.channel as any).send({ content: text });
+      const target: any = message.channel;
+      if (!target || !('send' in target)) {
+        await v2MessageReply(message, { content: 'Invalid target channel.' });
+        return;
+      }
+      await target.send({ content: text });
+      await v2MessageReply(message, { content: 'Sent.' });
     },
   };
 }

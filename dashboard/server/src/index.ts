@@ -10,6 +10,9 @@ import { createCasesRouter } from './routes/cases';
 import { createConfigRouter } from './routes/config';
 import { createMiscRouter } from './routes/misc';
 import { createMessagesRouter } from './routes/messages';
+import { createArchivesRouter } from './routes/archives';
+import { createArchivePublicRouter } from './routes/archivePublic';
+import { createMessageLogRouter } from './routes/messageLog';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -55,12 +58,17 @@ async function main(): Promise<void> {
   });
   app.use('/oauth', createAuthRouter(ctx));
 
+  // Public archive share links + media (no auth required — the code is the key).
+  app.use('/api/archive', createArchivePublicRouter(ctx));
+
   const protectedApi = express.Router();
   protectedApi.use(requireAuth(ctx));
   protectedApi.use('/logs', createApiRouter(ctx));
   protectedApi.use('/cases', createCasesRouter(ctx));
   protectedApi.use('/config', createConfigRouter(ctx));
   protectedApi.use('/messages', createMessagesRouter(ctx));
+  protectedApi.use('/archives', createArchivesRouter(ctx));
+  protectedApi.use('/message-log', createMessageLogRouter(ctx));
   protectedApi.use('/', createMiscRouter(ctx));
   app.use('/api', protectedApi);
 

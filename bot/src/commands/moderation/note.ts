@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('note')
@@ -32,14 +33,14 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const note = args.slice(1).join(' ');
   if (!guild || !targetId || !note) {
-    await message.reply({ content: 'Usage: `!note <user> <note>`' });
+    await v2MessageReply(message, { content: 'Usage: `!note <user> <note>`' });
     return;
   }
   await app.db.execute(
     'INSERT INTO notes (guild_id, user_id, moderator_id, note) VALUES (?, ?, ?, ?)',
     [guild.id, targetId, message.author.id, note],
   );
-  await message.reply({ content: 'Note added.' });
+  await v2MessageReply(message, { content: `Note added to <@${targetId}>.` });
 }
 
 const command: BotCommand = {

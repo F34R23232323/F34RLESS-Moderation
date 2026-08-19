@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('cases')
@@ -32,11 +33,16 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const guild = message.guild;
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!cases <user>`' });
+    await v2MessageReply(message, { content: 'Usage: `!cases <user>`' });
     return;
   }
   const cases = await app.caseService.listCasesForUser(guild.id, targetId);
-  await message.reply({ content: cases.length === 0 ? 'No cases.' : `**Cases for <@${targetId}>**\n${cases.slice(0, 20).map((c) => `${c.case_code} ${c.type} — ${c.reason}`).join('\n')}` });
+  if (cases.length === 0) {
+    await v2MessageReply(message, { content: `No cases for <@${targetId}>.` });
+    return;
+  }
+  const lines = cases.map((c) => `${c.case_code} [${c.status}] ${c.type} — ${c.reason} (${new Date(c.created_at).toLocaleDateString()})`);
+  await v2MessageReply(message, { content: `**Cases for <@${targetId}>** (${cases.length})\n${lines.slice(0, 25).join('\n')}` });
 }
 
 const command: BotCommand = {

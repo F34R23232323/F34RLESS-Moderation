@@ -1,5 +1,6 @@
 export * from './config';
 export * from './types/logEvents';
+export * from './types/customCommands';
 export * from './types/ws';
 export * from './utils/duration';
 export * from './utils/snowflake';

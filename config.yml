@@ -49,6 +49,17 @@ commands:
     aliases:
       - w
       - warning
+  caseclose:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions:
+      - ModerateMembers
+    immune_roles: []
+    aliases:
+      - closecase
+      - close
   mute:
     enabled: true
     slash: true
@@ -371,13 +382,22 @@ logging:
   automod_trigger:
     enabled: true
     channel_id: "1467185464124510319"
+  member_join:
+    enabled: true
+    channel_id: "1467576784877912126"
+  member_leave:
+    enabled: true
+    channel_id: "1467576828318318694"
   member_ban:
     enabled: true
     channel_id: "1467185509876105399"
   member_unban:
     enabled: true
-    channel_id: "1467185535411028229"
+    channel_id: "1467185509876105399"
   case_edit:
+    enabled: true
+    channel_id: "1497609708540924058"
+  case_closed:
     enabled: true
     channel_id: "1497609708540924058"
   case_voided:
@@ -392,10 +412,10 @@ logging:
   member_kick:
     enabled: true
     channel_id: "1467185535411028229"
-  member_leave:
-    enabled: true
-    channel_id: "1467185535411028229"
   member_timeout:
+    enabled: true
+    channel_id: "1467185558928228463"
+  member_mute:
     enabled: true
     channel_id: "1467185558928228463"
   member_unmute:
@@ -407,6 +427,15 @@ logging:
   member_unwarn:
     enabled: true
     channel_id: "1467185584647831858"
+  archive_created:
+    enabled: true
+    channel_id: "1539700871036928071"
+  archive_edit:
+    enabled: true
+    channel_id: "1539700871036928071"
+  archive_delete:
+    enabled: true
+    channel_id: "1539700871036928071"
   note_add:
     enabled: true
     channel_id: "1467187814977372423"
@@ -438,23 +467,53 @@ warnings:
   escalation_ladder:
     - count: 2
       action: mute
-      duration: 14d
+      duration: 1h
+    - count: 3
+      action: mute
+      duration: 6h
     - count: 4
+      action: mute
+      duration: 24h
+    - count: 5
+      action: mute
+      duration: 3d
+    - count: 6
+      action: mute
+      duration: 7d
+    - count: 7
+      action: ban
+      duration: 14d
+    - count: 8
       action: ban
   decay:
-    enabled: false
-    after_days: 30
+    enabled: true
+    after_days: 180
 reports:
   enabled: true
   cooldown_seconds: 30
   channel_id: "1467100532278558752"
   action_roles:
     - "1468007718907547778"
+  ping_role_id: "1468007718907547778"
   archive:
-    enabled: false
-    channel_id: "000000000000000000"
+    enabled: true
+    channel_id: "1467100822176530453"
   merge_window_seconds: 300
   false_report_warning_enabled: false
+archives:
+  enabled: true
+  default_amount: 50
+  max_amount: 2000
+  case_evidence_amount: 40
+  automod_context_amount: 15
+  max_attachment_bytes: 10485760
+  max_archive_bytes: 209715200
+  allowed_roles: []                 # roles allowed to use !archives (staff list)
+  allowed_users: []                 # user IDs allowed to use !archives
+  snapshot_messages: true           # save messages (bulk-batched) for deleted/edited evidence
+  message_retention_days: 90        # auto-purge saved messages after this many days
+  archive_on_delete: true           # batch-archive deleted messages (one archive per batch)
+  archive_on_edit: true             # batch-archive edited messages (before & after, one archive per batch)
 automod:
   enabled: true
   global_immune_roles:
@@ -472,6 +531,7 @@ automod:
       suppressed_response_mode: batched_summary
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -500,6 +560,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -548,6 +609,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -572,6 +634,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: image spam ({rule})"
@@ -596,6 +659,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: executable file ({rule})"
@@ -610,6 +674,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: mass image dump ({rule})"
@@ -629,6 +694,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -655,6 +721,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: emoji spam ({rule})"
@@ -670,6 +737,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: line spam ({rule})"
@@ -684,9 +752,40 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: poll spam ({rule})"
+        - type: run_escalation_check
+    duplicate_spam:
+      enabled: true
+      threshold: 3
+      window_seconds: 60
+      similarity_threshold: 0.75
+      immune_roles:
+        - "1520031216651210773"
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Repeated Message Detected
+          description: |-
+            Hey {user}, your messages were removed.
+
+            Your messages were removed because you sent the same or a very similar message multiple times.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Repeated Message Spam"
         - type: run_escalation_check
   risk_scoring:
     enabled: false
@@ -706,6 +805,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: warn
           reason: "Automod: typing-speed anomaly ({rule})"
@@ -720,6 +820,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: warn
           reason: "Automod: mass identical joins ({rule})"
         - type: run_escalation_check
@@ -734,6 +835,7 @@ automod:
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: create_report
         - type: warn
           reason: "Automod: new account velocity ({rule})"
         - type: run_escalation_check
@@ -756,6 +858,7 @@ regex_engine:
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -775,16 +878,23 @@ regex_engine:
         - type: run_escalation_check
     - name: Tokens & Malware
       patterns:
-        - (discord|account)\s*(nuke(r|ing)?|raid(er|ing)?|spam(mer|ming)?)\s*(bot|tool)
-        - (cookie|session|browser)\s*(steal(er|ing)?|grab(ber|bing)?|hijack(er|ing)?)
+        - (discord|account)\s*(nuke(r|ing)?|raid(er|ing)?|spam(mer|ming)?)\s*(bot|tool|service|script)
+        - (cookie|session|browser)\s*(steal(er|ing)?|grab(ber|bing)?|hijack(er|ing)?|logger)
         - (rat|keylogger|ransom\s*ware|malware|spyware|adware)\s*(link|download|free|tool)
         - (d{1,2}o[s5]|boot(er)?|stress(er)?)\s*(service|tool|attack)
         - token\s*(grab|log|steal)|stealer\s*tool
+        - (grab|steal|log|sell(ing)?|buy(ing)?)\s*(discord\s+)?tokens?\b
+        - (token|account)\s*(logger|grabber|stealer|gen(erator)?|checker)\b
+        - (nitro|discord)\s*gen(erator)?\s*(for\s+)?(discord|nitro)?\b
+        - (dd[o0][s5]|boot(er)?|stress(er)?)[\s._\-]*(kit|service|tool|site|attack)\b
+        - \b(ip\s+grabber|ip\s+logger|grabber\s+link)\b
+        - (spam(mer|ming)?|raid(er|ing)?|nuke(r|ing)?)\s*(bot|tool|service|script|kit)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -805,23 +915,31 @@ regex_engine:
         - type: run_escalation_check
     - name: Threats
       patterns:
-        - (i'?ll|i\s+will|im{1,2}[a]?|gonna|gon)\s+(k[i1]ll|h[u]rt|sh[o0]{1,2}t|st[a@]b)\s+(u|you|yu|yhu|yew)\b
+        - (i'?ll|i\s+will|im{1,2}[a]?|gonna|gon|i'?m\s+gonna)\s+(k[i1]ll(?:s|ed|ing|in')?|h[u*]rt(?:s|ed|ing)?|sh[o0]{1,2}t(?:s|ing|in')?|st[a@]b(?:s|bed|bing|in')?)\s+(u|you|yu|yhu|yew|your\s+(?:whole\s+)?(family|friends|mom|dad|parents))\b
         - i\s+will\s+end\s+you\b
         - i'?ll\s+find\s+you\s+(and|when|if|then)
         - watch\s+your\s+back\s+(or|when|if|because)
         - i\s+know\s+(where|who)\s+you\s+(live|are|work)
-        - (sending|calling)\s+(the\s+)?(feds|police|cops)\s+(to|on)\s+you
+        - (sending|calling)\s+(the\s+)?(feds|police|cops|swat)\s+(to|on)\s+you
         - you(?:'re|\s+are)\s+(dead|finished|done)\s+(when|if|once|already)(?:.{0,20}(i|we|gonna|will|find|get|kill|beat))
         - (i\s+)?(will|gonna|going\s+to)\s+(come|find)\s+(to\s+)?your\s+(house|school|address|location)
-        - (i'?ll|gonna|will)\s+(k[i1]ll|sn[i1]pe|hunt)\s+(u|yu|yhu|yew|uu)\b
-        - sl[i1]t\s+(ur|y[o0]ur)\s+(wr[i1]st|thr[o0][a@]t|arm|vein)
-        - (shoot|bomb|attack)\s+(ur|y[o0]ur)\s+(school|house|home|loc)
-        - \bon\s+s[i1]ght\b(?:.{0,30}\b(i|we|gonna|will|they|he|she)\b.{0,30}\b(kill|shoot|drop|mess|hurt|beat|get|stab|end|knock|take|fuck|fck|destroy|hit)\b)|\boss\b(?:.{0,10}(kill|shoot|drop))
+        - (i'?ll|gonna|will|i'?m\s+gonna)\s+(k[i1]ll(?:s|ed|ing|in')?|sn[i1]pe(?:s|d|ing)?|hunt(?:s|ed|ing)?)\s+(u|yu|yhu|yew|uu|you)\b
+        - sl[i1]t\s*(ur|y[o0]ur)\s*(wr[i1]st|thr[o0][a@]t|arm|vein)
+        - (shoot|bomb|attack|firebomb|blow\s+up)\s*(ur|y[o0]ur)\s*(school|house|home|loc|workplace|office)
+        - \bon\s+s[i1]ght\b(?:.{0,30}\b(i|we|gonna|will|they|he|she)\b.{0,30}\b(kill(?:s|ed|ing)?|shoot(?:s|ing)?|drop|mess|hurt|beat|get|stab|end|knock|take|fuck|fck|destroy|hit)\b)|\boss\b(?:.{0,10}(kill|shoot|drop))
+        - (i'?m|im|i\s+am)\s+(gonna|going\s+to|about\s+to)\s+(beat|kill|hurt|end|destroy|wreck)\s+(u|you|yu|yew|your\s+(ass|face|family))\b
+        - \b(beat|smack|punch|stab|shoot|kill)\s+(ur|your)\s+(ass|face|head|throat|teeth)\s+(in|up|off|out)\b
+        - i'?ll\s+(knife|stab|shank|slice)\s+(u|you|yu)\b
+        - (gun\s+you|fill\s+you\s+with\s+(lead|bullets)|put\s+a\s+bullet\s+in\s+(ur|your)\s+head)
+        - (?:you'?re|you\s+are)\s+(gonna|going\s+to|about\s+to)\s+(get\s+|be\s+)?(killed|hurt|beaten|jumped)\b
+        - (im|i'?m|i\s+am)\s+(coming|going)\s+(for\s+)?(you|your\s+(head|family|friends))\b
+        - (rip\s+you|tear\s+you|smash\s+you|break\s+you)\s+(apart|open|in\s+half)
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -850,25 +968,42 @@ regex_engine:
         - (k[i1]ll\s*ur\s*self|end\s*ur\s*self|h[a@]ng\s*ur\s*self|n[e3]ck\s*ur\s*self)
         - do\s+it\s+already\b(?:.*?(rope|noose|blade|pills))
         - go\s+die\s+(already|please|now|in)
-        - end\s+it\s+all\s+(now|already|please|tonight)
+        - end\s+it\s+(all\s+)?(now|already|please|tonight)
         - off\s+yourself\b
         - nobody\s+wants\s+you\s+(here|alive|around)
         - (jump|leap)\s+off\s+(a\s+)?(bridge|roof|building|cliff|ledge)
         - you\s+should\s+(just\s+)?(kill|end|hurt)\s+yourself
         - (slit|cut|slash)\s+(your|my|his|her|their)\s+(wrist|arm|throat|vein)
-        - no\s*one\s+(will\s+)?(miss|care(d|s)?\s*(about)?)\s+you\b
-        - \b(you|u|they|he|she|that\s+person)\s+(just\s+)?die\s+(already|please|now)\b
-        - no\s*one\s+(will\s+)?(miss|care(d|s)?\s*(about)?)\s+you\b
-        - rope\s+yourself
+        - \b(you|u|they|he|she|that\s+person)\s+(just|should\s*(just)?)\s*die\s+(already|please|now)\b
         - (go\s+)?(hang|neck)\s+yourself
         - end\s+(your\s+(own\s+)?life|yourself)\b
         - \bkys\b|k\.y\.s\b|k\s+y\s+s\b
         - k[i1]ll\s*y[o0]urs[e3]lf
+        - (just|go|pl[sz]|please|why\s+don'?t\s+you)\s+k[i1]ll\s+(urself|yourself|your\s+self|u|you)\b
+        - (go|just|pl[sz]|please)\s+(unalive|kms|kys|self\s*delet(?:e|ing)?)\b
+        - \bself\s*delet(?:e|ing)?\b
+        - (end|k[i1]ll|take)\s+(your|ur)\s+(own\s+)?life\b
+        - nob[o0]dy\s*(?:want[sd]?|love[sd]?|need[sd]?|care[sd]?\s*(?:about)?|miss(?:es)?)\s*you\b
+        - no\s*one\s*(will\s+)?(?:love[sd]?|want[sd]?|miss(?:es)?|need[sd]?|care[sd]?\s*(?:about)?)\s*you\b
+        - (everyone|people|society|the\s+world)\s+(hates|would\s+be\s+(happier|better\s+off)\s+without)\s+you\b
+        - (you|ur|u)\s+should\s+(just\s+)?(off|unalive|end)\s+(yourself|urself|ur\s+self)\b
+        - (do\s+the\s+world\s+a\s+favor|world\s+would\s+be\s+better\s+without)\b
+        - (why\s+are\s+you\s+still\s+(alive|here|breathing)|you\s+should\s+have\s+been\s+(aborted|a\s+miscarriage)|your\s+parents\s+should\s+have\s+(aborted|killed)\s+you)\b
+        - (go\s+)?(walk|throw|step)\s+(into|in\s+front\s+of)\s+traffic\b
+        - (go\s+)?(swallow|eat)\s+(a\s+)?(bottle\s+of\s+)?pills\b
+        - (you|u|ur)\s*(?:'?re|r|are)?\s*(?:so\s+)?better\s+off\s+dead\b
+        - no\s*one\s+(would|c[o0]ul?d)\s+(care|c[o0]re)\s+(if|when)\s+(you|u|ur)\s+(die|died|kill\s+yourself)\b
+        - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*y[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*s\b
+        - (un[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*)?[a@][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*l[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*v[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\s+(yourself|urself|u|you)\b
+        - \bk[i1!|][l1!|]+[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*(?:ur|y[o0]u?r?|you)[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*self\b
+        - (hang|neck|slit|slash|cut)\s*(yourself|urself|ur\s*self|your\s*own)\b
+        - (kms|k\.m\.s|k\s+m\s+s)\s*(already|now|please|then)?\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -900,12 +1035,35 @@ regex_engine:
         - \bw+[e3]+t+b+[a@4]+ck+\b|\bw+[o0]+g+b+[o0]+y+\b|\bw+[o0]+g+b+[o0]+[yi]+\b
         - \bsp+[i1]+[ck]+\b
         - \bch+[i1!]+nk+\b
-        - \bn+[i1l!|]+[g9q]+[e3a@]*r+[a-z]*\b|\bn+[i1l!|]+[g9q]{2,}[a-z]*\b|\bn+[i1!]+[g9]*g+[a@4]+[a-z]*\b
+        - \bn[i1l!|і]+[g9q]+[e3еa@]*[rяр]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|і]+[g9q]{2,}(?:a|4|@|а)(?:s|z)?\b
+        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3еa@][\.\-_*\s]*[rяр](?:s|z|er|ers)?(?![\w])
+        - \bp[i1]c[a@]n[i1]?nn[yi]\b|\bp[\.\-_*\s]+[i1]c[\.\-_*\s]+[a@4]n[\.\-_*\s]+[i1]?n[\.\-_*\s]+[yi]\b
+        - \bw[o0][g9]\b|\bw[o0][g9]{2}[o0][yi]?\b
+        - \bn[i1][b8]{2}[e3a@](?:r|s)?\b|\bn[i1][b8]{2}e?r[s5]?\b
+        - \bch[i1]ng[\s-]*ch[o0](?:[a@]ng|ng)\b
+        - \bb[e3][a@]n[e3]r[s5]?\b
+        - \bg[o0]?r[o0][i1]?d[s5]?\b
+        - \bn[e3][g9]r[o0](?:[i1]d)?[s5]?\b
+        - \b(?:s[a@]nd|p[o0]rch|tree)\s*m[o0]nk[e3][yi]\b
+        - \bm[o0]nk[e3][yi]\s*(?:b[o0][yi]|girl|man|woman|face|poster|b[o0]y)\b
+        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3еa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rяр](?:s|z|er|ers)?(?![\w])
+        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4]\b
+        - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n\b
+        - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[uo0*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
+        - \bf[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9](?:[o0]t)?s?\b
+        - \bs[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*p[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*c(?:k)?s?\b
+        - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\b
+        - \bch[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k\b
+        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3еa@]*[rяр]?(?![\w])
+        - \bgr[e3][a@]se[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*b[a@4]ll\b|\bg[\.\-_*\s]*r[\.\-_*\s]*[e3][\.\-_*\s]*[a@4][\.\-_*\s]*[s5][\.\-_*\s]*[yi]\b
+        - \bp[\.\-_*\s]+[i1][\.\-_*\s]+[ck][\.\-_*\s]+[a@4][\.\-_*\s]+n[\.\-_*\s]+n[\.\-_*\s]+[yi]\b
+        - \bs[\.\-_*\s]+[a@4][\.\-_*\s]+m[\.\-_*\s]+b[\.\-_*\s]+[o0]\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -941,13 +1099,24 @@ regex_engine:
         - skank
         - slag
         - \bwh[o0]r[e3]\b
-        - \bm[o0]th[e3]rf[u*]+ck[e3]r\b
-        - \bc[u*]+n[t*]+\b
+        - \bm[o0]th[e3]rf[u*]+ck(?:[e3]r|a|u|in'?|ing)?\b
+        - \bc[u*]+n+[t*]+\b
+        - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[u*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
+        - \bc[u*]nt[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*f[a@]ce?\b
+        - \b(?:motherf|m[o0]th[e3]rf)[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[u*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*ck[e3]r?\b
+        - \bs[o0]n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0]f[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*b[i1]tch\b
+        - \btw[a@]t[s5]?\b
+        - \bb[i1]tch\s*(?:ass|cunt|face|fuck)\b
+        - \bc[u*]nt\s*(?:ass|face|nose|bitch)\b
+        - \bm[o0]th[e3]r[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*f[u*][ck]+(?:[e3]r|a)?\b
+        - \bwh[o0]r[e3]s?\b
+        - \bsk[a@]nk\b|\bsl[a@]g\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -979,11 +1148,19 @@ regex_engine:
         - (jump|step|leap)\s+(in\s+front\s+of|off|onto)\s+(a\s+)?(train|subway|bus|car|bridge|roof|building|cliff|ledge)
         - how\s+to\s+(commit\s+suicide|kill\s+(myself|yourself|urself)|end\s+(my|your|ur)\s+life)
         - (best|easiest|quickest|fastest|painless|surest)\s+way\s+to\s+(die|kill\s+(myself|yourself|urself))
+        - (i|im|i'?m)\s+(want\s+to|wanna|should|might)\s+(just\s+)?(die|kill\s+(myself|m[e3]self)|end\s+(it|my\s+life))\b
+        - (i'?m|im|i\s+am)\s+(?:so\s+)?(tired|done|over)\s+(?:of|with)\s+(living|life|everything|it\s+all)\b
+        - (i\s+)?(wish|wished|want)\s+(i\s+)?(was|were|would\s+be)\s+(dead|gone|never\s+born)\b
+        - (i'?m|im|i\s+am)\s+(done|over|through)\s+(with\s+)?(life|living|everything|it\s+all)\b
+        - (what'?s|whats|what\s+is)\s+the\s+point\s+of\s+(living|life|going\s+on)\b
+        - i\s+want\s+to\s+(hurt|cut|harm)\s+(myself|my\s+self)\b
+        - (slit|cut|slash)\s+(open\s+)?(my|your|ur|our|his|her)\s+(wrists?|arms?|thr[o0]a?ts?|veins?|necks?)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1003,9 +1180,9 @@ regex_engine:
         - type: run_escalation_check
     - name: Scam Links
       patterns:
-        - https?://[^\s]*(discord-?nitro|nitro-?claim|nitrogift|nitrodrop)[^\s]*
+        - https?://[^\s]*(discord-?nitro|nitro-?claim|nitrogift|nitrodrop|nitro-\s*gift)[^\s]*
         - https?://[^\s]*(n[i1]tr[o0][-_]?(gen|gift|claim|boost|free|drop|x)|d[i1]sc[o0]rd[-\s]?n[i1]tr[o0])[^\s]*
-        - (click|open|tap)\s+(this|the|my)\s+(link|url|site)\s+(for\s+)?(free|nitro|robux|giveaway)
+        - (click|open|tap)\s+(this|the|my)\s+(link|url|site)\s+(?:for\s+)?(?:a\s+|an\s+)?(free|nitro|robux|giveaway)
         - https?://[^\s]*(discord-gift\.com|discordfree\.com|dlscordnitro\.com|appnitro\.com|nitrodrop|nitroupgrade\.info|verifydiscord\.com|discordhuman\.com|discordverif\.com|discordcheck\.com|steamnitro\.com)[^\s]*
         - https?://[^\s]*(qr\.codes|qrco\.de|me\.qr|qr\.page)[^\s]+
         - https?://[^\s]*(adf\.ly|ouo\.io|bc\.vc|za\.gl|ay\.gy|coinhive)[^\s]*
@@ -1013,17 +1190,28 @@ regex_engine:
         - https?://[^\s]*(123movies|putlocker|fmovies|solarmovie|soap2day|yesmovies|watchseries)[^\s]*
         - disc[o0]rd\s*[\.\-]?\s*gift\s*[\.\-]?\s*(gg|com|net|io|app)
         - https?://[^\s]*(free|get|claim)\s*[-_]?\s*(nitro|rob[u]x|vbucks|steam\s*key|gift\s*card)[^\s]*
-        - https?://[^\s]*(n[i1]tr[o0]gen[i1]um|d[i1]sc0rd|d1scord|discordl|dlscord|discrod|dicsord|dlscrod)[^\s]*
+        - https?://[^\s]*(n[i1]tr[o0]gen[i1]um|d[i1]sc0rd|d1scord|discordl|dlscord|discrod|dicsord|dlscrod|dlsc0rd|discordn|discrd|disccord|dlcord)[^\s]*
         - https?://(www\.)?(grabify\.|iplogger\.|2no\.co|blasze\.|bit\.do|ps3cfw\.com|ipgrabber\.|yip\.su|ezstat\.ru|iplis\.ru|ip2geolocation\.com|iplogger\.org|grabify\.link|grabify\.party|webresolver\.(nl|net)|checkip\.(xyz|su|ru)|octosniff\.com|lancaster\.pm|lanc\.pm|resolve\.rip|sketch\.rip|sketch\.ink|viralweb\.net|blasze\.net|briskgram|joinhoney\.pro|cybergateway\.(xyz|pw)|stormhe\.ru|ps3\.cfw|privazer\.net|pmresolver\.com|check-host\.by)
         - https?://[^\s]*(steamc[o0]m[^\s]*|free\s*[-_]?\s*(nitro|robux|vbucks|steam[^c])|free-?\s*(nitro|robux|vbucks))[^\s]*
         - https?://[^\s]*discord[^\s]*(gift|n[i1]tr[o0])[^\s]*\.(ru|xyz|tk|ml|ga|cf|gg|pw|cc|to|me|net)
         - https?://(bit\.ly|tinyurl\.com|is\.gd|cutt\.ly|ow\.ly|short\.io|rb\.gy|t\.ly|v\.gd|clck\.ru)/[^\s]+
         - https?://[^\s]*(free-robux|free-vbucks|free-nitro|claim.*nitro|discord.*airdrop|free-nitro-claim|nitro-boost|boost-nitro)[^\s]*
+        - (free|get\s+free|claim)\s+(nitro|vbucks?|robux|steam\s*keys?|gift\s*cards?)\s*(for\s+(free|claiming))?\b
+        - \bnitro\s*(giveaway|drop|claim|gift|give)\b
+        - \b(robux|vbucks?|rp|steam\s*keys?)\s*(generator|giveaway|hack|claim|free)\b
+        - \b(steam|epic|riot|valorant|fortnite|csgo|roblox)\s*(key|code|card|gift\s*card)\s*(generator|giveaway|free|claim)\b
+        - \b(free|win|won)\s+(nitro|robux|vbucks?|steam\s*key)\s*(for\s+)?(entering|clicking|sharing|dm|following)?\b
+        - (dm|pm|message)\s+(me|us)\s+for\s+(free\s+)?(nitro|robux|vbucks?)\b
+        - (nitro|robux|vbucks?)\s*(dm|hmu|pm)\s*(me)?\b
+        - \b(discord|steam)\s*(nitro|gift)\s*(card|code)\s*(giveaway|free|claim)?\b
+        - \b(?:claim|get\s+free)\s+(?:a\s+|your\s+|free\s+)?(nitro|robux|vbucks?)\b
+        - (i\s+)?(won|win)\s+(a\s+|free\s+)?(nitro|robux|vbucks?)\s*(giveaway)?\s*(click|dm|here|link|claim)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1044,13 +1232,21 @@ regex_engine:
     - name: Phishing
       patterns:
         - (click|tap|go\s+to)\s+(this|the)?\s*(link|url|site).{0,30}(free|nitro|gift|reward|claim)
-        - (your\s+)?(discord\s+)?(account|token|password)\s+(has\s+been\s+)?(compromised|hacked|stolen|suspended|banned)
+        - (your\s+)?(discord\s+)?(account|token|password)\s+(has\s+been|was|is|got|get)\s+(compromised|hacked|stolen|suspended|banned|flagged|deleted)
         - (verify\s+(your\s+)?(discord|account|email|password|credentials?)).{0,50}(link|click|here|now)
+        - (?!.*inactiv)(account|profile|server|identity)\s+(will\s+be|is\s+being|getting|about\s+to\s+be)\s+(deleted|banned|suspended|terminated)\s+(in|within|after)\s+(\d+\s*)?(hours?|days?|minutes?|24h|48h)\b
+        - (you\s+)?(won|win)\s+(a|the|first)\s+(prize|reward|giveaway)\s*(click|link|claim|here|join)?\b
+        - (claim|collect|redeem)\s+(your|the|a)\s+(prize|reward|gift|nitro|item|skin|code)\b
+        - (click|join|visit|open|press|verify)\s+(here|this|the|that)?\s*(link|site|url|page|server|button)?\s*(to|and|for)?\s*(claim|verify|confirm|unlock|get|receive)\b
+        - (your|the)\s+(discord|steam|account)\s+(is|are|was)\s+(under\s+investigation|flagged|restricted|limited)\b
+        - (server|channel|guild)\s+(is|will\s+be)\s+(deleted|taken\s+down|removed)\s+(unless|if)\s+(you\s+)?(verify|click|send|join)\b
+        - (verify|confirm|validate)\s+your\s+(account|identity|server)\s+(to\s+)?(avoid|prevent|stop)\s+(deletion|suspension|termination|ban)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1071,22 +1267,29 @@ regex_engine:
     - name: Doxxing
       patterns:
         - \b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b
-        - \b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d)\b
-        - (your|ur)\s+(ip|address|location)\s+(is|=|:)\s*[\d\w]
-        - (pull|grab|trace|find)\s+(ur|your|their|his|her)\s+(ip|location|address|info)
+        - \b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\b
+        - (your|ur|his|her|their)\s+(ip|address|location|position)\s*(?:is\s*[:=]?|[:=])\s*[\d\w]
+        - (pull|grab|trace|find|hunt)\s+(ur|your|their|his|her)\s+(ip|location|address|info)
         - (i\s+)?(have|got|found|know)\s+(ur|your|his|her|their)\s+(add?ress|loc(ation)?|ip|info)
         - (dropping|leaking|posting)\s+(your\s+)?(personal\s+)?(info|dox|details|address)
         - i\s+(have|got|found)\s+(your|his|her|their)\s+(address|location|ip|info|details)
         - (leak(ing|ed)?|expos(ing|ed)?)\s+(your|his|her|their)\s+(info|address|location|details|ip)
         - \bsw[a@]t{1,2}(ing|ted|ter)\b
-        - \b(dropping|leaking|posting|going\s+to|will|gonna|gon)\s+(dox|doxx)\b|\bdox{1,2}(?:ed|ing|er|ers)\b(?:.{0,20}(you|your|him|her|them|their|address|ip|info|location|details))
+        - \b(dropping|leaking|posting|going\s+to|will|gonna|gon)\s+(dox|doxx)\b|\bdox{1,2}(?:ed|ing|er|ers)\b
         - \b\d{3}[-\s]\d{2}[-\s]\d{4}\b
         - \b(?:\d[ -]?){15,16}\b
+        - (send|give|dm|pm|post|share)\s+(me|us|them|him|her)\s+(ur|your|their|his|her)\s+(ip|address|location|real\s+name|phone)\b
+        - (their|his|her|your|ur)\s+(full\s+)?(name|address|phone\s*number|social\s+security)\s+(is|[:=])\b
+        - (doxx?|swat)\s*(me|you|him|her|them|us|someone|anyone)\b
+        - (give\s+me|send\s+me|pm\s+me)\s+(ur|your)\s+(dox|ip|address|location)\b
+        - \b(?:give|post|share|send|pm|dm|leak|drop|doxx?)\s+(?:my|your|his|her|their|ur|the)\s+(?:home|real|actual|full)\s*(?:address|location|name)\b
+        - (share|post|leak|expose|publish)\s+(my|your|his|her|their|our)\s+(personal\s+)?(info|dox|address|location|phone|number|ip)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1107,16 +1310,28 @@ regex_engine:
     - name: Grooming
       patterns:
         - age\?\s*(dm|pm)\s*(me|you|ur)?\s*(baby|babe|hot|sexy|cute)?
-        - (send|dm|slide)\s+(me\s+|ur|your\s+)(age)\b
+        - (send|dm|slide|pm)\s+(me\s+|us\s+)?(your\s+|ur\s+)?(age|digits|insta|snap)\b
         - \b(how\s+old|what\s+age|your\s+age)\b.{0,15}(nude|pic|selfie|photo|show|snap|send\s+(me|it)|dm|pm)
-        - what.s\s+(your\s+)?age\b(?:.{0,20}(dm|pm|nude|pic|selfie|photo|send|show|snap))
+        - what's\s+(your\s+)?age\b(?:.{0,20}(dm|pm|nude|pic|selfie|photo|send|show|snap))
         - how\s+old\s+are\s+you\b(?:.{0,30}(snap|insta|nude|sexy|hot|cute|babe|pic|selfie|photo|send|show|dm|pm))
         - (dm|pm|slide)\s+(me\s+)?(your\s+)?age\b(?:.{0,20}(baby|babe|hot|sexy|cute|baddie|pic|selfie|photo|snap|send|nude|show))
+        - (how\s+old|what\s+age)\s+(are\s+you|is\s+it|r\s+u)\b(?:.{0,30}(snap|dm|pm|pic|selfie|nude|sex|sexy|hot|cute|babe|send|show|chat))
+        - \b(you|ur|u)\s+(seem|c[o0]ul?d\s+be|look)\s+(young|underage|minor)\b(?:.{0,30}(dm|snap|pic|selfie|send|nude|chat))?
+        - \b(s[o0]|how)\s+(young|old)\s+(is\s+)?(she|he|it)\b(?:.{0,30}(dm|snap|pic|send|nude|sex|sexy))?
+        - (send|dm|show|share)\s+(me\s+)?(pics?|nudes?|selfies?)\s+(of|from)\s+(kids?|children|minors?|anyone\s+underage|ur\s+young\s+(sister|brother|friends))\b
+        - (looking\s+for|wanna\s+meet|wanna\s+date)\s+(young|underage|minor)\s*(kids?|girls?|boys?)?\b
+        - \b(?:u\s+r|u\s+are|you\s+are|you'?re|ur|you|u)\s*(?:only\s+)?(?:12|13|14|15|16|17|underage|a\s+minor)\s*\?(?:.{0,25}(dm|pm|snap|pic|nude|sex|send|show))
+        - \b(?:she|he|it|they|u|you|ur)\s*(?:is|are|r|'s)\s*(?:only\s+)?(?:12|13|14|15|16|17)\b.{0,25}(nudes?|pics?|dm|pm|snap|send|sex|date)\b
+        - (how\s+old)\s+(r|are)\s+(u|you)\s*(.{0,25})?(nudes?|pics?|dm|pm|snap|sex)\b
+        - \b(12|13|14|15|16|17)[-\s]?yo(?:year)?\s*old\s*(girl|boy|kid|child)\b(?:.{0,30}(nudes?|pics?|dm|pm|snap|sex|date|send))?
+        - (underage|minor|young)\s*(girl|boy|kid|child)\s*(nudes?|pics?|porn|sex)\b
+        - \b(?:age|asl)\s*[/?]?\s*(?:\d{1,2}\s*[/?.]?\s*)*(?:m|f|nb)?\s*(dm|pm|snap)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1140,11 +1355,17 @@ regex_engine:
         - live\s*leak\s*(video|clip|link)?
         - (snuff|torture|execution)\s+(film|video|clip|footage)
         - (best|watch|real)\s*(gore|rekt|deaths?)(\.com|\.net|\.org)?
+        - \bgore\s*(video|pic|pics|content|link|site|channel|thread|chat|dm|compilation|discord|server)\b
+        - \bgore(?:\.|\s*dot\s*)(com|net|org|cc|me|xyz|ru)\b
+        - (watch|looking\s+for|wanna\s+see|want\s+to\s+see|link\s+to|send\s+me)\s+(gore|deaths?|dead\s+bodies?)\b
+        - (send|dm|post|share)\s+(me\s+|the\s+)?(gore|deaths?|dead\s+bodies?|corpses?)\b
+        - \b(gore|snuff|torture)\s*(site|website|forum|community|server|group)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1167,7 +1388,7 @@ regex_engine:
         - 卐|卍|卐卐
         - \b(great\s+replacement|white\s+replacement)\b
         - \b(blood\s+and\s+soil|sieg\s+heil)\b
-        - \b14\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our|truths))\b|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))
+        - \b14\s*words\b(?!\s+(?:is|are|was|were|means|being))\b(?:\s*(of\s+)?(truth|wisdom|the|our))?|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))?
         - \bRace\s*war\s*(now|soon|coming|inevitable)\b
         - (n[a@]z[i1]\s*)(germany|party|regime|salute|ideology|scum)
         - \b(wh[i1]t[e3]\s+)(g[e3]n[o0]c[i1]de|nati[o0]nali[s5]m)\b
@@ -1178,11 +1399,21 @@ regex_engine:
         - 1\s*4\s*8\s*8\b(?:.{0,40}(hitler|nazi|white|race|aryan|jew|supremac|reich|germany|holocaust))
         - (wh[i1]t[e3]\s+)(p[o0]w[e3]r|supr[e3]m(acy|ist)?)
         - (glorif[yi]|gl[o0]r[iy]|supp[o0]rt|pr[a@]is[e3]|h[a@]il)\s+(isis|isil|terror(ist|ism)?|hitler|nazis?)
+        - \b14\s*(?:\/\s*)?88\b
+        - (hitler|nazi|nazis?)\s*(did\s+)?nothing\s+wrong\b
+        - (gas\s+the\s+jews|g[a@]s\s+th[e3]m|jews\s+(should|deserve)\s+(to\s+)?(burn|die|be\s+gassed)|h[o0]l[o0]h[o0]a?x)\b
+        - \b(?:white|aryan)\s+(?:supremac(?:ist|y)|nationali[s5]m|power|pride)\b|\bblack\s+supremac(?:ist|y)\b
+        - (deport|kill|exterminate|bomb)\s+(?:all\s+|the\s+)*(jews|muslims|immigrants|refugees)\b
+        - \b(nazi|fascist|fascism|national\s*sociali[s5]m)\s*(was|is|were)\s*(right|good|correct|justified|based|chad)\b
+        - \b(n[e3][g9]r[o0]id|mongr[e3]l|pure\s+race|master\s+race|racial\s+purity|race\s+realism)\b
+        - \b(heil|sieg)\s+hitler\b|\bh[i1]tl[e3]r\s*(was|is)\s*(right|good)\b
+        - (adolf|hitler)\s*(did\s+)?(nothing\s+wrong|was\s+right|is\s+right)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1202,17 +1433,28 @@ regex_engine:
         - type: run_escalation_check
     - name: Drugs
       patterns:
-        - \b(m[o0]ll[i1]|x[a4]ns?|p[e3]rcs?|l[e3]an|m3th)\b
-        - (trap\s+house|trap\s+phone|re-?up)\b
+        - (sell(ing)?|buy(ing)?|looking\s+for|need(ing|ed|s)?|want(ing)?|source\s+for)\s+(weed|coc[aai]+ne|coke|heroin|meth|mdma|ecstasy|ket(amine)?|xans?|percs?|lean|dmt|lsd|shrooms|fent(anyl)?|crack|molly|acid|shards?|ice|dabs?|wax|edibles?|gummies?|blunts?|buds?|flower|oil|vape\s*carts?)\b
+        - \b(dm|hmu|hit\s+me\s+up|message|text|pm)\s+(me\s+)?(for|about|on)?\s*(weed|pills?|xans?|percs?|molly|lean|drugs?|acid|shrooms|m3th|meth|cocaine|coke|edibles?|bud|wax|dabs?)\b
+        - \b(weed|pills?|xans?|percs?|molly|lean|drugs?|acid|shrooms|m3th|meth|coke|cocaine)\s*(dm|hmu|pm)\s*(me)?\b
+        - \b(plug|dealer|connect|source|guy|supplier)\b.{0,30}\b(dm|hmu|hit\s+me\s+up|available|selling|for\s+sale|need|price)\b
+        - \b(dm|hmu|hit\s+me\s+up)\b.{0,30}\b(plug|dealer|source|guy)\b
+        - (?!.{0,25}\b(?:flour|sugar|salt|butter|meat|cheese|eggs|milk|oil|water)\b)(price|prices?|rates?|cost|how\s+much)\s+(for\s+|per\s+)?(an?\s+)?(ounce|oz|q\b|zip|half|gram|g\b|eighth|quad)?\s*(of\s+)?(weed|bud|flower|dabs?|wax|shrooms|acid|pills?|lean|molly|coke|cocaine)?\b
+        - (ship(ping)?|mail(ing)?|deliver(ing|y)?|dispatch(ing)?)\s+(drugs?|weed|coke|pills?|molly|xans?|percs?|lean)\b
         - (420|plug|dealer)\s+(needed|available|selling|for\s+sale)
-        - (ship(ping)?|mail(ing)?)\s+(drugs?|weed|coke|pills?)\b
-        - \bplug\b.{0,20}(dm|hmu|hit\s+me\s+up)
-        - (sell(ing)?|buy(ing)?|looking\s+for)\s+(weed|coc[aai]ne|heroin|meth|mdma|ecstasy|ket(amine)?|xans|percs|lean|dmt|lsd|shrooms|fent(anyl)?|crack|molly)\b
+        - \b420[\s-]?plug\b
+        - \b(?:need|looking\s+for|want|hmu|dm)\b(?!.{0,30}\b(?:pc|computer|phone|charger|cable|socket|laptop|router|adapter)\b).{0,30}\b(?:plug|dealer|source|guy|connect|supplier)\b
+        - (trap\s+house|trap\s+phone|re-?up)\b
+        - \b(c[o0]ke|d[o0]pe|h[e3]r[o0][i1]n|m[e3]th)\s*(lines?|shots?|hit)\b
+        - \b(x[a4]n[a@]x|p[e3]rc[o0]c[e3]t|adderall|vyv[a@]ns[e3]|sub[o0]x[o0]ne)\s*(for\s+sale|dm|hmu|need|buy|sell|price|pills?)\b
+        - \b(mushr[o0][o0]ms?|lsd|acid|dmt|shrooms?)\s*(for\s+sale|dm|hmu|need|buy|sell|tabs?|price)\b
+        - \b(edibles?|gummies?|dabs?|wax|shards?|blunts?|joints?|bowls?)\s*(for\s+sale|dm|hmu|need|buy|sell|price|plugs?)\b
+        - \b(molly|lean|xans?|percs?|weed|coke|cocaine|pills?|m3th|meth|acid|shrooms|edibles?|dabs?|wax|bud)\s+(for\s+sale|available|cheap|in\s+stock|needed|wanted)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1232,22 +1474,33 @@ regex_engine:
         - type: run_escalation_check
     - name: CSAM
       patterns:
-        - \bl[o0][l1][i1]\b|\bsh[o0]t[a@]\b|\bp[e3]d[o0]\b
-        - \b(irl\s+)?loli\b|\b(irl\s+)?shota\b
+        - \bp[e3]d[o0]\b|\bp[e3]d[o0]ph[i1]l[e3]s?\b|\bp[a@]ed[o0]\b
         - how\s+(old|young).{0,15}\b(to\s+)?(fuck|date|sleep\s+with|send|meet|marry|hook\s*up)\b
         - (send\s+(me\s+)?a?\s*(pic|photo|selfie|nude).{0,30}(young|minor|kid|underage|child))|((young|minor|kid|underage|child).{0,30}send\s+(me\s+)?a?\s*(pic|photo|selfie|nude))
         - (c[s5][a@]m|child\s+exploit|minor\s+exploit)
         - (child|kid|minor|underage)\s*(porn|sex|nude|nudes|nsfw|lewd|pic)
         - p[e3]d[o0]ph[i1]l
-        - \bsh[o0]t[a@](c[o0]n)?\b|sh[o0]t@
-        - \bl[o0][l1][i1](c[o0]n)?\b
+        - \bsh[o0]t[a@]c[o0]n\b|sh[o0]t@
+        - \bl[o0][l1][i1]c[o0]n\b
         - \bjailb[a@4][i1]t\b
         - \b(nomap|nambla|childlove|cl0ver)\b
+        - (loli|shota)\s*(pic|pics|porn|hentai|nude|nudes|nsfw|lewd|content|art|edit|r34|waifu|character|rule34)\b
+        - \b(send|want|need|dm|post|share|find|watch|link|buy|sell|have|making|drawing)\s+(me|us)?\s*(some\s+|a\s+)?(loli|shota)\b
+        - \bhentai\s+(loli|shota)\b
+        - \b(?:irl|real|actual)\s+(?:loli|shota)\b
+        - (young|minor|underage|child|kid)\s*(girls?|boys?|kids?|children)\s*(nudes?|pics?|porn|sex|nsfw|lewd|content)\b
+        - \b(loli|shota|minor|underage)\s*(r\s*p|rp|roleplay|dating|dating\s*sim)\b
+        - (trading|selling|buying|asking\s+for|looking\s+for)\s*(cp|child\s+porn|underage\s+content)\b
+        - \b(underage|minor|child|kid)\s*(porn|pornography|sexual\s+content|nudes?|lewd\s*content|nsfw)\b
+        - \b(nudes?|porn|sex|nsfw|lewd\s*content)\s+(of|from|in)\s+(minors?|children|kids?|underage)\b
+        - (how\s+old|what\s+age)\s*(is|are|r)\s*(she|he|it|they)\b.{0,15}(nudes?|pics?|porn|sex|nsfw|lewd|dm|send|date)
+        - \b(13|14|15|16|17)\s*[- ]?year\s*[- ]?old\b.{0,40}(nudes?|pics?|porn|sex|nsfw|lewd|dm|send|date|sex)
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1268,15 +1521,26 @@ regex_engine:
         - type: run_escalation_check
     - name: Bombs
       patterns:
-        - how\s+to\s+(make|build|create|buy|get)\s+(a\s+)?(gun|bomb|explosive|weapon|firearm|rifle|pistol|grenade|landmine)
-        - (i\s+will\s+bomb|planning\s+(a\s+)?attack|bomb\s+(the\s+)?(school|church|mosque|building|mall|station))
+        - how\s+to\s+(make|build|create|buy|get)\s+(a\s+)?(gun|bomb|explosive|weapon|firearm|rifle|pistol|grenade|landmine|ied|pipe\s+bomb|pressure\s+cooker)
+        - (i\s+will\s+bomb|planning\s+(an?|a)?\s*(attack|shooting|bombing)|bomb\s+(the\s+)?(school|church|mosque|building|mall|station|airport|government))
         - (illegal(ly)?|black\s+market)\s+(gun|firearm|weapon|ammo|explosive)
         - convert\s+(a\s+)?(semi|gun|rifle|pistol)\s+to\s+full\s+auto
+        - (mak(e|ing)|build(ing)?|craft(ing)?|assembl(ing|e))\s+(?:a\s+|an\s+)?(pipe\s+bomb|ied|pressure\s+cooker\s+bomb|nail\s+bomb|explosive\s+device)\s*(instructions|guide|tutorial|steps?|recipe)?\b
+        - (how\s+to|guide|tutorial)\s+(make|build|craft)\s+(pipe\s+bomb|ied|explosive|bomb)\b
+        - (plant(ing)?|set(ting)?\s+up|placing)\s+(a\s+)?(bomb|ied|explosive)\s+(in|at|under|inside)\b
+        - (bomb\s+threat|bombing|shooting\s+up|gun\s+down)\s*(?:the\s+|at\s+|in\s+|against\s+|a\s+)?(school|church|mosque|synagogue|mall|airport|station|building|office|government|elementary)\b
+        - (buy|sell|order|purchase)\s+(a\s+|an\s+)?(illegal\s+)?(gun|firearm|rifle|pistol|shotgun|machine\s+gun|ammo|magazine|suppressor|silencer)\b
+        - (i\s+)?(wanna|want\s+to|going\s+to|planning\s+to)\s+(do|commit|carry\s+out)\s+(a\s+)?(school\s+shooting|mass\s+shooting|terrorist\s+attack|bombing)\b
+        - \b(?:planning|plan(?:s|ning)?\s*(?:for|a|an)?)\s*(?:a|an)?\s*(school\s+shooting|mass\s+shooting|terrorist\s+attack|bombing)\b
+        - \b(pipe\s*bomb|ied|bomb)\s*(making|recipe|materials|supplies|how\s+to|guide|instructions|steps?|tutorial)\b
+        - (gun|rifle|pistol|shotgun|firearm)\s*(for\s+sale|selling|wts|wtb|buying|looking\s+to\s+buy)\b
+        - (selling|buying|purchasing|ordering)\s*(illegal\s+)?(guns?|rifles?|pistols?|shotguns?|firearms?|ammo|weapons?)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1296,12 +1560,14 @@ regex_engine:
         - type: run_escalation_check
     - name: Text Markdown
       patterns:
-        - ^.*#{1,3}\s+\S
-      flags: gi
+        - ^#{1,3}\s+\S
+      flags: gim
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
+        - type: delete_message
         - type: send_channel_message
           format: components_v2
           content: Your message was removed in {channel}.
@@ -1318,13 +1584,20 @@ regex_engine:
         - type: run_escalation_check
     - name: Account Trading
       patterns:
-        - (aimbot|wallhack|esp|cheat|hack)\s+(for\s+sale|free|download|link)
-        - (sell(ing)?|buy(ing)?|for\s+sale)\s+(discord\s+)?(account|acc)\b
+        - (aimbot|wallhack|esp|softaim|triggerbot|spinbot|silent\s+aim)\s+(for\s+sale|free|download|link|key|cheat|hack)
+        - (sell(ing)?|buy(ing)?|for\s+sale|wtb|wts)\s+(?:my|your|the|their|his|her|our)?\s*(discord\s+|steam\s+|epic\s+|netflix\s+|roblox\s+)?(acc(?:ount)?s?)\b
+        - (discord|steam|epic|netflix|roblox|spotify|crunchyroll)\s*(acc(?:ount)?s?)\s*(for\s+sale|selling|free|cheap|dm|hmu|buy|sell)\b
+        - (buy(?:ing)?|sell(?:ing)?|trade|giving\s+away|free)\s*(discord\s+)?(nitro|boosts?|tokens?|acc(?:ount)?s?|alts?)\b
+        - (hack|cheat|aimbot|wallhack|esp)\s*(for\s+sale|download|free|buy|sell|key|tool|software|link)\b
+        - \b(cheats?|hacks?|aimbots?|wallhacks?|esp)\s*(for\s+sale|dm|hmu|price|buy|sell|cheap)\b
+        - (buy|sell|want|need|looking\s+for|selling)\s+(a\s+|an\s+)?(cheats?|hacks?|aimbots?|wallhacks?|esp)\b
+        - (selling|buying|looking\s+for|want)\s+(a\s+|an\s+)?(cheat|hack|aimbot|script|exploit)\s*(for\s+)?(csgo|valorant|fortnite|apex|cod|rust|roblox|minecraft)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1344,17 +1617,17 @@ regex_engine:
         - type: run_escalation_check
     - name: NSFW
       patterns:
-        - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]+[e3]+pth?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
+        - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
         - \bg[o0*][o0*]n(?:ing|ed|er[s]?|ette|s|session|\s+(?:session|cave|mode|squad|club|brain))?\b
         - \bhook\s*up\b
-        - \b(ur|u)\s+(so\s+)?(sexy|hot|fine|cute|gorgeous|pretty)\b
+        - \b(ur|u|you|ya)\s+(so\s+|very\s+|really\s+)?(sexy|hot|fine|cute|gorgeous|pretty)\b
         - (suck|swallow|choke|ride|fuck|eat|lick|kiss|touch|spank|finger|fist|peg|edge|step\s+on|worship|breed|impregnate|raw\s*dog)\s+(my|me|your|his|her)\b
         - my\s+(body|ass|tits|dick|pussy|boobs|cock)\s+(is\s+for|for\s+you)\b
-        - (you\s+are|ur|u\s+r)\s+(gorgeous|sexy|hot|cute|fine)\b
+        - (you\s+are|ur|u\s+r|you'?re)\s+(so\s+|very\s+|really\s+)?(gorgeous|sexy|hot|cute|fine)\b
         - slide\s+into\s+(my|your|the)\s+dms?\b
         - (whats|what'?s|wassup|sup)\s+your\s+snap\s*(baby|babe|hot)?\s*$
         - snap\s+me\s+(baby|babe|beaut|hottie|gorgeous|cutie)\b
-        - (send|dm|slide)\s+(me\s+|ur|your\s+)+(age|insta|digits)\b
+        - (send|dm|slide|pm)\s+(me\s+|us\s+)?(your\s+|ur\s+)?(age|digits|insta|snap)\b
         - (snap|insta|kik|tele|discord)\s*(name|tag|handle|user|id)\s*[?:]
         - (your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|balls|legs)\s+(is|looks?|are|be)\s+(hot|cute|good|nice|sexy|fine|amazing|pretty)
         - (snap|insta|kik|tele|discord)\s*(me|you|us)\s*(your|the)?\s*(nude|nudes|pic|pics|body|ass|tits|dick|pussy|boobs|cock|lewd)
@@ -1369,28 +1642,35 @@ regex_engine:
         - \br[o0]l[e3]\s*pla[yi]\s+(as|me|my|your|with)\s+(my|your|his|her|a|some|the)?\s*(slave|pet|sub|dom|daddy|mommy|master|owner|baby|boy|girl|waifu|senpai)\b
         - \bcyber\s+(with\s+me|me|with\s+you|you)\b
         - \b(wanna|want\s+to|lets?|gonna|down\s+to)\s+hook\s*up\b
-        - \b(wanna|want\s+to|lets?|let'?s|d[o0]wn\s+t[o0])\s+([s$][e3]xt|f[u*][ck*]+|ph[u*]ck|h[o0][o0]k\s*up|h[a@]v[e3]\s*[s$][e3]x|cyb[e3]r|r[o0]l[e3]?\s*pl[a@][yi])\b
+        - \b(wanna|want\s+to|lets?|let'?s|d[o0]wn\s+t[o0])\s+([s$][e3]xt|f[u*]?[ck*]+|ph[u*]ck|h[o0][o0]k\s*up|h[a@]v[e3]\s*[s$][e3]x|cyb[e3]r|r[o0]l[e3]?\s*pl[a@][yi])\b
         - \b(tits?\s+or\s+gtfo|boob\s+reveal|cock\s+pic\s+trade)\b
-        - \b(ass|dick|pussy|tits|boobs|cock)\s*(pic|pics|shot|pics?|reveal|pic\s+trade)\b
+        - \b(ass|dick|pussy|tits|boobs|cock)\s*(pic|pics|shot|shots?|reveal|pic\s+trade)\b
         - \b(send|dm|pm|share|snap|slide)\s+(me\s+)?(your\s+)?(nudes?|lewds?|feet\s*pics?|body|ass|tits|dick|pussy|boobs|cock|nude)\b
         - \b(bl[o0]w\s+me|[s$]uck\s+(my|me|your|his|her)\s+(d[i1]ck|c[o0]ck|p[u*][s$][s$]y|t[i1]ts|b[o0]obs)|ch[o0]k[e3]\s+me|f[u*][ck*]+\s+me|ph[u*]ck\s+me|r[i1]d[e3]\s+me|[s$][i1]t\s+on\s+my\s+f[a@]c[e3]|[e3][a@]t\s+me\s+[o0]ut|f[i1]ng[e3]r\s+me|[s$]p[a@]nk\s+me|p[e3]g\s+me|f[i1][s$]t\s+me|[e3]dg[e3]\s+me|d[o0]m\s+me|[s$]t[e3]p\s+[o0]n\s+me|kn[e3][e3]l\s+(b[e3]f[o0]r[e3]|t[o0])\s+me|w[o0]r[s$]h[i1]p\s+my\s+f[e3][e3]t|br[e3][e3]d\s+me|[i1]mpr[e3]gn[a@]t[e3]\s+me|r[a@]w\s*d[o0]g\s+me|g[e3]t\s+n[a@]k[e3]d|[s$]tr[i1]p\s+f[o0]r\s+me|t[a@]k[e3]\s+[i1]t\s+[o0]ff|[s$]pr[e3][a@]d\s+f[o0]r\s+me|[o0]p[e3]n\s+y[o0]ur\s+l[e3]g[s$]?|t[o0]uch\s+y[o0]ur[s$][e3]lf|m[o0][a@]n\s+f[o0]r\s+me|[s$]cr[e3][a@]m\s+my\s+n[a@]m[e3]|[i1]'?m\s+w[e3]t|l[e3]t\s+me\s+c[u*]m|c[u*]m\s+[o0]n\s+me|j[e3]rk\s+[o0]ff|g[i1]v[e3]\s+me\s+h[e3][a@]d|bl[o0]wj[o0]b|t[i1]tty\s*f[u*][ck*]+|[a@][s$]{2}\s*t[o0]\s*m[o0]uth|cr[e3][a@]mp[i1][e3]|l[e3]t[s$]?\s*69|[a@]n[a@]l)\b
-        - \b(w[a@]nk(?:er|ing|ed)?|fapp(?:ing|ed)?)\b
+        - \b(w[a@]nk(?:er|ing|ed)?|fapp(?:ing|ed)?|j[e3]rk(?:ing|ed|er)?)\b
         - \b(h[o0*]rn[yi3]|h[o0]rni)\b
         - \b(your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|legs)\s+(is|are|looks?|look|be)\b
-        - \b(you(?:'?re|r)?|u(?:'?re)?)\s+(so|really|lowkey|hella|very|so\s+damn)\s+(sexy|hot|fine|fit|cute)\b
+        - \b((?:you(?:'?re|r)|u(?:'?re)?|ya)\s+|(?:you|u)\s+(?:are|r)\s+)(?:so|really|lowkey|hella|very|so\s+damn|f[u*]ck[i1]ng)\s*(?:f[u*]ck[i1]ng\s+)?(sexy|hot|fine|fit|cute|gorgeous|pretty|beautiful)\b
         - \b(my|your|his|her|their|suck|eat|choke|ride|f[u*][ck*]+|big|huge|small|tiny|fat|little)\s+c[o0*]c?k\b|\bc[o0*]c?k\s*(pic|pics|shot|size|ring|suck)\b|\bsuck\s+(my|your|his|her)\s+c[o0*]c?k\b
         - \b(s[e3]+x+(?![yi]|u[a@]+l|ist|ism)|s3x|sex\s+(with|tape|video|chat|toy|doll|scene|act|worker|bot|cam|party|friend|me|her|him|them|us|pics?|nude|send|dm)|sext(?:ing|me|her|him|them|us|ed)?|have\s+sex|sex\s+(me|her|him|them|us)|sex\s+with)\b
         - r[34]l?[\s_-]?p[o0]rn
         - \bp[.\s\-_*|]+o[.\s\-_*|]+r[.\s\-_*|]+n\b
-        - \b(n[s$]+[f*]+[w*]+|l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]+[e3]+pth?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
+        - \b(n[s$]+[f*]+[w*]+|l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
         - \b(p+[o0*]+r+n+[o0]*|ph[o0]*rn[o0]*|pr[o0]+n|p[o0]*rn[o0]*gr[a@]+ph[yi]*)\b
         - (?<!\w)([h][e3]+nt[a@]+[i1]+|l[o0]+l[i1]+c?[o0]?n?|[e3]+cch[i1]+|[a@]?h[e3]+g[a@]+[o0]+|f[u*]+t[a@]+n[a@]+r[i1]+|[o0]+pp[a@]+[i1]+|p[a@]+[i1]+z[u*]+r[i1]+|tr[a@]p\s*h[e3]+nt[a@]+[i1]+|[e3]+r[o0]+\s*m[a@]+ng[a@]+|g[u*]+r[o0]+)(?!\w)
-        - \b(p[u*v][s$][s$][yi3]|d[i1!][c*]k|c[o0*]c?k|titt[yi]|titties|t[i1!][t*]s|b[o0][o0]b(?:ies?|s)?|v[a@]g[i1]n[a@]|p[e3]n[i1][s$]|cl[i1][t*]|c[u*][m*]|j[i1]zz|sp[u*]nk|sq[u*][i1]rt|s[e3]m[e3]n|b[o0]n[e3]r|[e3]r[e3]ct[i1][o0]n|[o0]rg[a@][s$]m|cr[e3][a@]mp[i1][e3]|p[u*]b[i1]c)\b
+        - \b(p[u*v][s$][s$][yi3]|c[o0*]c?k|titt[yi]|titties|t[i1!][t*]s|b[o0][o0]b(?:ies?|s)?|v[a@]g[i1]n[a@]|p[e3]n[i1][s$]|cl[i1][t*]|p[u*]b[i1]c)\b
+        - \br\s*3\s*4\b(?!\s*(?:skyline|gtr))|\brule\s*34\b
+        - \b(onlyfans|fansly)\s*(link|dm|hmu|free|for\s+sale|promo)\b
+        - \b(nudes?|n[o0][o0]ds?)\s*(for\s+sale|dm|hmu|trade|swap)\b
+        - \b(m[o0]sturb[a@]t(?:ing|i[o0]n|e)?|fap\s*session)\b
+        - \b(creampie|spl[i1]t\s+roast|a[n@][a@]l\s*(?:sex|play)?|sexting|send\s+sexts?)\b
+        - \b(b[o0][o0]bs?\s*out|t[i1]ts?\s*out|sh[i1]rtl[e3]ss?)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1411,17 +1691,20 @@ regex_engine:
     - name: "NSFW Links "
       patterns:
         - https?://[^\s]*(xvideos2|xhamsterlive|bravotube|thumbzilla|letdoit)\.(com|net)
-        - https?://[^\s]*[-.](porn|nude|nsfw|hentai|blowjob|fetish|bdsm|milf|shemale|cum|creampie|orgasm)[-.]?[a-zA-Z0-9-]*\.(com|net|org|co|tv|xyz|info|biz|site|me|cc)([/\s]|$)
+        - https?://[^\s]*(porn|nude|nsfw|hentai|blowjob|fetish|bdsm|milf|shemale|cum|creampie|orgasm|sextape|threesome)[-._]?[a-zA-Z0-9-]*\.(com|net|org|co|tv|xyz|info|biz|site|me|cc)([/\s]|$)
         - https?://[^\s]*\.(xxx|adult|porn|sex|cams|tube)([/\s]|$)
-        - https?://[^\s]*(nhentai|hentaihaven|hanime|hentai-foundry|fakku|tsumino|hentaifox|rule34video|rule34|r34|gelbooru|sankakucomplex|e621)\.(net|com|tv|us|xxx|donmai\.us)
+        - https?://[^\s]*(nhentai|hentaihaven|hanime|hentai-foundry|fakku|tsumino|hentaifox|rule34video|rule34|r34|gelbooru|sankakucomplex|e621|f95zone|kemono|coomer|e-hentai|hentaimama|hentaigasm|allporncomic)\.(net|com|tv|us|xxx|donmai\.us|party|sx)
+        - https?://[^\s]*(?:[/\-_.])(?:porn|nude|nsfw|hentai|sexy|adult|sex)[^\s]*
         - https?://[^\s]*(camsoda|stripchat|cam4|myfreecams|livejasmin|jerkmate|camwhores|bongacams|flirt4free)\.(com|net|tv)
         - https?://[^\s]*(onlyfans|fansly|manyvids|clips4sale|loyalfans|justforfans|modelhub|pocketstars)\.(com|net|tv)
         - https?://[^\s]*(pornhub|xvideos|xnxx|xhamster|redtube|youporn|youjizz|chaturbate|eporner|spankbang|tubegalore|motherless|hqporner|beeg|nudevista|empflix|tnaflix|drtuber|porntrex|sunporno|porndig|pornhat|slutload|vporn)\.(com|net|org|tv|xxx)
+        - \b(onlyfans|fansly)\s*(\.com|link|dm|hmu|free|for\s+sale)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1441,13 +1724,14 @@ regex_engine:
         - type: run_escalation_check
     - name: Executables
       patterns:
-        - \.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command)(?:\?.*)?(?:$|\s|/|"|')
-        - \b[\w.-]+\.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command)\b
+        - \.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command|jse|msix|appx|sct|dll|sys|ocx)(?:\?.*)?(?:$|\s|/|"|')
+        - \b[\w.-]+\.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command|jse|msix|appx|sct|dll|sys|ocx)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1468,12 +1752,8 @@ regex_engine:
         - \btr[o0][o0]n\b
         - \b41\s?p[e3]rc[e3]nt\b
         - \bf[a@]k[e3]\s?(?:w[o0]m[a@]n|g[i1]rl|m[a@]n|b[o0]y)\b
-        - \btr[a@]ns\s?(?:b[i1]tch|f[u*]ck|fr[e3][a@]k|g[a@]rb[a@]g[e3]|tr[a@]sh)\b
+        - \btr[a@]ns\s?(?:b[i1]tch|f[u*]ck|fr[e3][a@]k|g[a@]rb[a@]g[e3]|tr[a@]sh|d[e3]g[e3]n[e3]r[a@]te|sc[u*]m)\b
         - \bf[e3]m[a@]l[e3]\s?g[a@]y\b
-        - \bb[u*]tch\s?l[e3]sb[i1][a@]ns?\b
-        - \bl[e3]sb[o0]s?\b
-        - \bb[u*]gg[e3]rs?\b
-        - \bs[o0]d[o0]m[i1]t[e3]s?\b
         - \bb[u*]ssy\b
         - \b(?:m[a@]n|b[o0]y)\s?p[u*]ssy\b
         - \bb[i1]tch\s?b[o0]y\b
@@ -1486,36 +1766,43 @@ regex_engine:
         - \btr[a@]n[s5]v[e3]st[i1]t[e3]s?\b
         - \bt[o0]d[g9][e3]rs?\b
         - \bsh[i1]rt\s?l[i1]ft[e3]rs?\b
-        - \bp[a@]ns(?:[y1i]es?|y\s?b[o0]y)\b
+        - \bp[a@]nsy\s?b[o0]y\b|\b(?:you|ur|u|he'?s|she'?s|th[a@]t|little|silly|stupid|what\s+a)\s+p[a@]ns(?:[y1i](?:es)?)\b
         - \bm[i1]nc[e3]rs?\b
         - \bfl[a@]m[i1]ng\s?(?:h[o0]m[o0]|f[a@]g|qu[e3][e3]r)\b
         - \b(?:r[u*]g|c[a@]rp[e3]t)\s?m[u*]nch[e3]rs?\b
         - \bp[i1]ll[o0]w\s?b[i1]t[e3]rs?\b
         - \bc[o0]ck\s?s[u*]ck[e3]rs?\b
         - \bg[a@]y[e3]rs?\b
-        - \bqu[e3][e3]rs?\b
-        - \bp[u*]ffs?\b
+        - \bqu[e3][e3]rs\b|\b(?:you|ur|u|f[u*]ck[i1]ng|stupid|d[a@]mn|d[i1]rty|n[a@]sty|ugly|f[a@]t|r[e3]t[a@]rd)\s+qu[e3][e3]r\b|\bqu[e3][e3]r\s+(?:b[i1]tch|f[u*]ck|tr[a@]sh|ass)\b
         - \bh[a@]lf\s?[\w]*\s?c[a@]st\b
         - \bg[a@]y\s?(?:w[a@]ds?|f[u*]ck|b[o0][y1i])\b
         - \bf[a@]g\s?(?:h[a@]gs?|m[a@]c[a@]qu[e3])\b
         - \bb[a@]tty\s?b[o0]ys?\b
         - \bp[o0][o0]ft[e3]rs?\b
-        - \bf[a@][i1]r[y1i]es?\b
-        - \bsw[i1]sh[e3]rs?\b
         - \bb[a@]t\s?t[e3]r\s?f[o0]r\s?b[o0]th\s?t[e3][a@]ms?\b
         - \bb[u*]tt\s?p[i1]r[a@]t[e3]s?\b
-        - \bf[u*]d[g9][e3]p[a@]ck[e3]rs?\b
+        - \bf[u*]d[g9][e3]\s*p[a@]ck[e3]rs?\b
         - \bf[a@4]gg[0o]try\b
-        - \bsh[e3]m[a@4]l[e3]s?\b
-        - \btr[a@4]nn(?:[y1i]|ie|y)s?\b
-        - \bh[o0]m[o0]s?\b
-        - \bd[y1i]k[e3]s?\b
+        - \bsh[e3][- ]?m[a@4]l[e3]s?\b
+        - \btr[a@4]nn?(?:[y1i]|ie)s?\b|\btr[a@]n(?:[yi]|i[e3])s?\b
+        - \bdyk[e3]s?\b
         - \bf[a@4]gg?(?:[o0]t|s)?s?\b
+        - \bf[a@4][g9][g9](?:[o0]t)?[s5]?\b
+        - \bf[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
+        - \b(?:tr[o0][o0]n|tr[a@]ns)\s*(?:sc[u*]m|tr[a@]sh|d[e3]g[e3]n[e3]r[a@]te|fr[e3][a@]k|f[u*]ck)\b
+        - \b(?:g[a@]y|qu[e3][e3]r|h[o0]m[o0]|lgbt|lgbtq|trans)\s*(?:is|are|s|r)\s*(?:c[a@]nc[e3]r|d[i1]s[e3][a@]s[e3]|s[i1]ck|w[o0]rng|e[3v]il|unn[a@]t[o0]r[a@]l|d[i1]sg[u*]st[i1]ng|a\s+d[i1]s[e3][a@]s[e3])\b
+        - \b(?:f[a@]g|qu[e3][e3]r|d[y1i]ke|tr[a@]nn[yi])\s*(?:ass|b[i1]tch|sh[i1]t|tr[a@]sh|f[u*]ck)\b
+        - \bno\s+h[o0]m[o0]\s*(?:fr[e3][a@]k|tr[a@]sh|sc[u*]m|b[i1]tch)\b
+        - \b(?:you|ur|u)\s+(?:look|act|dress|talk)\s+(?:like\s+)?(?:a\s+)?(?:g[a@]y|qu[e3][e3]r)\b
+        - \b(?:you|ur|u|that|f[u*]ck[i1]ng|stupid|d[a@]mn)\s+h[o0]m[o0]\b|\bh[o0]m[o0]s\b
+        - \b(?:you|ur|u|he'?s|she'?s|th[a@]t)\s+(?:silly|stupid|little|dumb|d[a@]mn|f[u*]ck[i1]ng)?\s*f[a@][i1]r[yi]\b|\b(?:act|look|dress|behave)\s+(?:like\s+)?(?:a\s+)?f[a@][i1]r[yi]\b
+        - \bl[e3]sb[o0]\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1535,25 +1822,24 @@ regex_engine:
         - type: run_escalation_check
     - name: E-Dating
       patterns:
-        - \*(?:kisses|cuddles|snuggles|nuzzles)(?:\s+you)?\*
-        - \bi\s+miss\s+you(?:\s+(?:so\s+much|babe|baby))?\b
-        - \bmy\s+(?:babe|baby|sweetheart|darling|princess|prince|king|queen)\b
-        - \b(?:you'?re|your)\s+(?:mine|my\s+world|my\s+everything|my\s+one\s+and\s+only)\b
-        - \b(?:good\s*morning|good\s*night|gn|gm)\s+(?:babe|baby|honey|sweetheart|darling|princess|prince)\b
-        - \b(?:love\s+you|luv\s+u)\s+(?:babe|baby|honey|sweetheart|darling)\b
-        - \bi\s+love\s+you(?:\s+(?:too|more|so\s+much|babe|baby|honey|sweetheart|darling))?\b
-        - \blooking\s+for\s+love\b
-        - \blf\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|gf|bf)\b
-        - \banyone\s+(?:wanna|want\s+to)\s+(?:e-?date|be\s+my\s+(?:gf|bf|e-?girl|e-?boy|kitten))\b
-        - \b(?:discord|e-?)(?:kitten|waifu|daddy|mommy)\b
+        - \b(?:lf|looking\s+for|need|want(?:ing)?|anyone|someone|who|wanna|any)\b[^.\n!?]{0,40}\b(e-?girl|e-?boy|e-?date|e-?dating|discord\s*(?:gf|bf|girlfriend|boyfriend|kitten|waifu)|e-?kitten)\b
+        - \b(?:be|become|make|get)\s+(?:my|me\s+(?:your\s+)?|your)\s+(?:e-?girl|e-?boy|discord\s*(?:gf|bf|kitten|waifu)|gf|bf|kitten|waifu)\b
+        - \b(?:anyone|someone)\s+(?:wanna|want\s+to|down\s+to)\s+(?:be\s+my|e-?date|date)\b
         - \be-?(?:dat(?:ing|e|es)|couples?)\b
-        - \bbe\s+my\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|discord\s*kitten)\b
-        - \b(?:looking\s+for|need|want|lf)\s+(?:a|an|some)\s+(?:e-?girl|e-?boy|discord\s*gf|discord\s*bf|gf|bf)\b
+        - \b(?:discord|e-?)\s*(?:kitten|waifu|daddy|mommy)\b
+        - \b(?:wanna|want\s+to|down\s+to)\s+(?:e-?date|be\s+(?:your|my|their)\s+(?:e-?girl|e-?boy|gf|bf|kitten))\b
+        - \b(?:looking\s+for|lf|want|need)\s+(?:a|an|some|my)?\s*(?:e-?girl|e-?boy|discord\s*(?:gf|bf|girlfriend|boyfriend)|gf|bf)\b
+        - \bdiscord\s*(?:gf|bf|girlfriend|boyfriend|kitten|waifu)\b
+        - \b(?:who|someone|anyone)\s+(?:wanna|want\s+to|wants\s+to)\s+(?:be|become)\s+(?:my|your)\s+(?:e-?girl|e-?boy|gf|bf|kitten)\b
+        - \b(?:i|we)\s+(?:am|are|will|would|wanna|want\s+to)\s+(?:e-?date|date)\b[^.\n!?]{0,30}\b(?:u|you|anyone|someone|me|us)\b
+        - \b(?:online|virtual|discord|e-?)\s*(?:relationship|girlfriend|boyfriend|dating|marriage)\s*(?:rp|roleplay|sim)?\b
+        - \b(?:any|anyone)\s+(?:wanna|want\s+to|down\s+to)\s+(?:be\s+)?(?:my\s+)?(?:e-?girl|e-?boy|gf|bf)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1573,14 +1859,23 @@ regex_engine:
         - type: run_escalation_check
     - name: Raiding
       patterns:
-        - (mass\s*)?(report|false\s+report)\s+(this|the|their)?\s*(server|user|account)
-        - (everyone\s+)?(join|raid|hit)\s+(the|this|their)?\s*(server|discord)\s*(now|asap|go|rn)
-        - \b(raid|nuke|mass\s*(join|dm|report|leave))\s+(this|the|their|a)?\s*(server|discord|guild)\b
+        - (mass\s*)?(report|false\s+report)\s+(this|the|that|their)?\s*(server|user|account)
+        - (everyone\s+)?(join|raid|hit|invade|flood)\s+(the|this|that|their)?\s*(server|discord|guild)\s*(now|asap|go|rn|tonight|today)
+        - \b(raid|nuke|mass\s*(join|dm|report|leave)|invade|flood)\s+(this|the|that|their|a)?\s*(server|discord|guild)\b
+        - (report|flag|mass\s*report)\s+(this|that|the)\s+(server|user|account)\s*(for\s+)?(raiding|hacking|scamming|spamming)?\b
+        - \b(lets|let'?s|everyone|guys)\s+(all\s+)?(join|raid|invade|hit|flood)\b
+        - (bring|send|get|make)\s+(the\s+|your\s+)?(raiders?|alts?|bots?|accounts?)\s*(to|into|on)\b
+        - \b(?:organiz(?:e|ing)|coordinating|planning|plan|starting)\s+(?:a\s+)?(raid|nuke|invasion|mass\s+join|mass\s+report)\b
+        - (join|invade|raid|hit)\s+this\s+(server|discord|guild)\s+(and|to|then)\s+(nuke|raid|report|destroy|dox|ddos)\b
+        - \b(raid|nuke|mass\s*(dm|report|join|leave))\s*(?:on|in|for)?\s*(?:this|that|the|their)?\s*(?:server|discord|guild)\s*(?:now|tonight|asap|rn|t[o0]d[a@][yi])?\b
+        - (bring|send)\s+(all\s+|everyone\s+)?(your\s+)?(alts?|bots?|accounts?|raiders?|members)\s+(to|into|on)\s+(the\s+)?(server|guild|discord)\b
+        - \b(?:send|bring|get)\s+(?:all\s+|your\s+|the\s+)*(?:friends|members|people)\s+to\s+(?:raid|nuke|invade|flood|hit)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1606,6 +1901,7 @@ regex_engine:
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: send_channel_message
           format: components_v2
           content: Your message was removed in {channel}.
@@ -1623,19 +1919,19 @@ regex_engine:
     - name: Religious Slurs
       patterns:
         - \br[e3]l[i1]g[i1][o0]n\s+(?:is\s+)?(?:c[a@]nc[e3]r|p[o0][i1]s[o0]n|f[o0]r\s+r[e3]t[a@]rds|f[o0]r\s+i?d[i1][o0]ts)\b
-        - \b(?:f[u*]ck|k[i1]ll|b[u*]rn|h[a@]t[e3]|d[e3]m[o0]l[i1]sh)\s+(?:[i1]sl[a@]m|m[u*]sl[i1]ms?|j[e3]ws?|chr[i1]st[i1][a@]n[i1]ty|chr[i1]st[i1][a@]ns?|h[i1]nd[u*]s?|h[i1]nd[u*][i1]sm|s[i1]khs?|s[i1]kh[i1]sm|c[a@]th[o0]l[i1]cs?|j[u*]d[a@]ism)\b
+        - \b(?:f[u*]ck|k[i1]ll|b[u*]rn|h[a@]t[e3]|d[e3]m[o0]l[i1]sh|d[e3]st[o0]r[o0][yi]|f[u*]ck[i1]ng\s+h[a@]t[e3])\s+(?:[i1]sl[a@]m|m[u*]sl[i1]ms?|j[e3]ws?|chr[i1]st[i1][a@]n[i1]ty|chr[i1]st[i1][a@]ns?|h[i1]nd[u*]s?|h[i1]nd[u*][i1]sm|s[i1]khs?|s[i1]kh[i1]sm|c[a@]th[o0]l[i1]cs?|j[u*]d[a@]ism)\b
         - \bp[a@]g[a@]n\s+(?:sc[u*]m|f[i1]lth|tr[a@]sh)\b
         - \bs[i1]kh\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|t[e3]rr[o0]r[i1]sts?|tr[a@]sh)\b
         - \bh[i1]nd[u*]\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|r[a@]ts?|tr[a@]sh|c[o0]w\s*f[u*]ck[e3]rs?)\b
-        - \bc[o0]w\s?(?:p[i1]ss|d[u*]ng)\s?(?:dr[i1]nk[e3]r|w[o0]rsh[i1]p[e3]r|[e3][a@]t[e3]r)s?\b
+        - \bc[o0]w\s?(?:p[i1]ss(?:[e3]r)?|d[u*]ng\s*(?:dr[i1]nk[e3]r|w[o0]rsh[i1]p+[e3]?r|[e3][a@]t[e3]r)s?)\b
         - \bchr[i1]st[i1][a@]ns?\s+(?:sc[u*]m|p[i1]gs?|f[i1]lth|i?d[i1][o0]ts?|tr[a@]sh|h[e3]r[e3]t[i1]cs?)\b
         - \bc[a@]th[o0]l[i1]c\s+(?:sc[u*]m|p[i1]gs?|p[e3]d[o0]s?|p[e3]d[o0]ph[i1]l[e3]s?|f[i1]lth|tr[a@]sh)\b
         - \bb[i1]bl[e3]\s?th[u*]mp[e3]rs?\b
         - \bchr[i1]stc[u*]cks?\b
         - \b[i1]sl[a@]m[o0]p[i1]gs?\b
         - \b[i1]sl[a@]m[o0]f[a@4]sc[i1]sts?\b
-        - \bm[u*]sl[i1][e3]m?\s*(?:f[i1]lth|sc[u*]m|v[e3]rm[i1]n|p[i1]gs?|r[a@]ts?|t[e3]rr[o0]r[i1]st|b[o0]mb[e3]r|d[o0]g|tr[a@]sh)\b
-        - \bm[u*]sl[i1!]nt\b
+        - \bm[u*]sl[i1]m?\s*(?:f[i1]lth|sc[u*]m|v[e3]rm[i1]n|p[i1]gs?|r[a@]ts?|t[e3]rr[o0]r[i1]st|b[o0]mb[e3]r|d[o0]g|tr[a@]sh|d[e3]g[e3]n[e3]r[a@]te)\b
+        - \bm[u*]sl[i1]m?t\b
         - \bg[o0]y[i1]m\s+(?:c[a@]ttl[e3]|sl[a@]v[e3]s|c[o0]ntr[o0]l|f[i1]lth)\b
         - \bm[u*]z+[i1!]+[e3]s?\b
         - \by[i1!]dd?(?:[i1!]sh)?s?\b
@@ -1643,13 +1939,19 @@ regex_engine:
         - \bh[y1i]m[i1!][e3]s?\b
         - \bk+[i1!]+k+[e3]+s?\b
         - \bj[e3]w[i1]sh\s+(?:sc[u*]m|f[i1]lth|p[i1]g|v[e3]rm[i1]n|tr[a@]sh|c[o0]nsp[i1]r[a@]cy)\b
-        - \bj[e3]w(?:b[o0]y|b[i1]tch|b[a@]st[a@]rd|sc[u*]m|d[o0]g|p[i1]g|r[a@]t|f[u*]ck)\b
-        - \b(?:you(?:'?re|r| r| are)?\s+(?:a\s+)?|u\s+|ur\s+(?:a\s+)?|f[u*]ck[i1]ng\s+|d[i1]rty\s+|f[i1]lthy\s+|gr[e3]{2}dy\s+|st[u*]p[i1]d\s+|sh[u*]t\s+up\s+|d[a@]mn\s+|h[a@]t[e3]\s+|b[u*]rn\s+|k[i1]ll\s+|(?:(?:st[o0]p|q[u*][i1]t)\s+b[e3][i1]ng\s+(?:a\s+)?))j[e3]ws?\b
+        - \bj[e3]w(?:b[o0]y|b[i1]tch|b[a@]st[a@]rd|sc[u*]m|d[o0]g|p[i1]g|r[a@]t|f[u*]ck|f[a@]g|tr[a@]sh)\b
+        - \b(?:you(?:'?re|r| r| are)?\s+(?:a\s+)?|u\s+|ur\s+(?:a\s+)?|f[u*]ck[i1]ng\s+|d[i1]rty\s+|f[i1]lthy\s+|gr[e3]{2}dy\s+|st[u*]p[i1]d\s+|sh[u*]t\s+up\s+|d[a@]mn\s+|h[a@]t[e3]\s+|b[u*]rn\s+|k[i1]ll\s+|st[i1]nk[yi]\s+|d[e3]s?p[i1]c[a@]bl[e3]\s+|(?:(?:st[o0]p|q[u*][i1]t)\s+b[e3][i1]ng\s+(?:a\s+)?))j[e3]ws?\b
+        - \b(?:j[e3]w|muslim|chr[i1]st[i1][a@]n|h[i1]nd[u*]|s[i1]kh|buddh[i1]st|ath[e3][i1]st)\s*(?:sc[u*]m|tr[a@]sh|f[i1]lth|d[e3]g[e3]n[e3]r[a@]te|p[i1]gs?|d[o0]gs?|r[a@]ts?|f[u*]ck(?:[e3]r|[i1]ng)?)\b
+        - \b(?:[i1]sl[a@]m|j[u*]d[a@][i1]sm|chr[i1]st[i1][a@]n[i1]ty|h[i1]nd[u*][i1]sm|buddh[i1]sm|s[i1]kh[i1]sm)\s+(?:is|s)\s+(?:f[a@]k[e3]|m[a@]d[e3]\s+up|a\s+(?:sc[a@]m|j[o0]k[e3]|myth)|c[a@]nc[e3]r|w[o0]rsh[i1]p\s+[o0]f\s+(?:a|the)\s+(?:f[a@]k[e3]|m[a@]d[e3]\s+up))\b
+        - \b(?:muhammad|j[e3]sus|all[a@]h)\s+(?:is|was)\s+(?:f[a@]k[e3]|m[a@]d[e3]\s+up|i?m[a@]g[i1]n[a@]r[yi])\b
+        - \b(?:kill|exterminate|erase|delete)\s+(?:all\s+|the\s+)*(?:j[e3]ws|muslims|chr[i1]st[i1][a@]ns?|h[i1]nd[u*]s?|s[i1]khs?|atheists)\b
+        - \b(?:j[e3]ws?|muslims?)\s+(?:will\s+)?(?:r[u*]l[e3]|c[o0]ntr[o0]l|run|o[u*]n)\s+(?:the\s+)?(?:w[o0]rld|g[o0]v[e3]rnment|m[e3]d[i1][a@]|b[a@]nks?|c[o0]untries)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1679,11 +1981,14 @@ regex_engine:
         - \b(?:my\s+)?(?:password|passwd|pwd|(?:log-?in|acc\w*)\s+(?:pass|details?))\s*(?:is|[:=-])\s*\S+
         - \b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b
         - \b(?:[a-zA-Z0-9_-]{24,26}\.[a-zA-Z0-9_-]{6}\.[a-zA-Z0-9_-]{27,40}|mfa\.[a-zA-Z0-9_-]{80,90})\b
+        - \b(?:here\s*(?:is|are|go|'s|'re)?|my|the|this|these)\s+(?:creds?|credentials?|logins?|login\s+info)\b
+        - \b(?:my\s+)?(?:discord|roblox|steam|epic|netflix|spotify)\s+(?:acc(?:ount)?|login|email|password|pass|pwd)\s*(?:[:=-]|is)\s*\S+
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1708,7 +2013,7 @@ regex_engine:
         - \b(?:v[a@]cc[i1]n[e3][s$z]?\s*(?:c[a@][u*]s[e3]|g[i1]v[e3]|l[e3][a@]d\s+t[o0])\s+[a@]ut[i1][s$]m|w[e3][a@]p[o0]n[i1]z[e3]d\s+[a@]ut[i1][s$]m|c[u*]r[e3]\s+[a@]ut[i1][s$]m)\b
         - \b[a@4][u*v]t[i1!][s$z]m\s+(?:(?:i[s$z]|'s|be)\s+)?(?:just\s+|basically\s+|nothing\s+but\s+|liter[a@]l+y\s+|[a@]\s+)*?(?:m[e3]nt[a@4]l\s*(?:i[l1]+n[e3][s$z]+|d[i1]s(?:[o0]rd[e3]r|[a@]b[i1]l[i1]t[yi])|d[e3]f[e3]ct)|d[i1][s$z][e3][a@]s[e3]|c[a@]nc[e3]r|d[e3]f[e3]ct|pl[a@]gu[e3]|f[a@]k[e3]|(?:n[o0]t|i[s$]n'?t)\s*r[e3][a@]l|u[s$][e3]l[e3][s$]{2}|b[u*]rd[e3]n|m[e3]nt[a@]l\s*r[e3]t[a@]rd)\b
         - \b[a@4][u*v]t[i1!][s$z]t[s$z]?\b
-        - \bsm[o0]{2}th[\s_\-]*br[a@][i1]n(?:[s$z]|[e3]d)?\b|\b(?:[e3]xtr[a@]|m[i1][s$]{2}[i1]ng|m[o0]r[e3]|f[e3]w[e3]r|c[o0][u*]nt\s+(?:ur|y[o0]ur))\s+chr[o0]m[o0][s$][o0]m[e3][s$z]?\b
+        - \bsm[o0]{2}th[\s_\-]*br[a@][i1]n(?:[s$z]|[e3]d)?\b
         - \bsh[o0]rt[\s_\-]*b[u*]s\s+(?:r[e3]t[a@]rd|k[i1]d|b[i1]tch|b[o0]y|g[i1]rl|fr[e3][a@]k|p[o0]st[e3]r|m[o0]d[e3])\b
         - \bsh[o0]rtb[u*]s(?:[e3]r[s$z]?|[s$z])?\b|\b(?:r[i1]d[e3]|r[o0]d[e3]|r[i1]d[e3]r|r[i1]d[i1]ng|b[e3]l[o0]ng[s$z]?|[o0]n|fr[o0]m|[o0]ff|u|ur|you|(?:f[u*][ck]|b[i1]tch|k[i1]d|r[e3]t[a@]r?d|f[a@]g)\s+[o0]n|[a@]ct[i1]ng\s+l[i1]k[e3])\s+(?:th[e3]|a|ur|our|y[o0]ur|[o0]n\s+th[e3]|t[o0]\s+th[e3]|f[o0]r\s+th[e3])?\s*sh[o0]rt[\s_\-]*b[u*]s\b
         - \bsch[i1]z[o0](?:[i1]d|[s$z]|r[\s_\-]*)?\b
@@ -1724,11 +2029,26 @@ regex_engine:
         - \b(?:f[u*]ck|sh[i1]t|l[i1]b|c[o0]ns[e3]rv[a@]|tr[a@]n(?:[s$]|ny)?|g[a@]y|c[u*]nt|b[i1]tch|a[s$]{2}|w[o0]ke)t[a@4*]rd(?:[e3]d|[s$z])?\b
         - \bt[a@4*]rd(?:[s$z]|[e3]d|w[\s_\-]*r[a@]ngl[e3]r)?\b
         - \br[.\-_*|\s]*[e3][.\-_*|\s]*t[.\-_*|\s]*[a@4][.\-_*|\s]*r[.\-_*|\s]*d(?:[e3]d|[s$z]|[a@]t[i1][o0]n|h[e3][a@]d|a[s$]{2})?\b
+        - \br[e3]t[a@]r?d(?:[e3]d|[s$z]|ation)?\b
+        - \b(?:you|ur|u|he|she|they|that)\s+(?:are|is|r|'?re|'s|s)\s+(?:a\s+|an\s+)?(?:f[u*]ck[i1]ng\s+|l[i1]ttl[e3]\s+|stupid\s+|d[a@]mn\s+)?(?:r[e3]t[a@]r?d|autist(?:ic|o)?|m[o0]ng|l[a@]m[o0])\b
+        - \b(?:ur|u\s+r|you'?re|you\s+are|he'?s|she'?s|they'?re|that'?s)\s+(?:so\s+|really\s+|very\s+|f[u*]ck[i1]ng\s+)?(?:r[e3]t[a@]r?d[e3]d|autistic|sp[a@]z?z?[yi]|cr[i1]ppl[e3]d|m[o0]ng[o0]l[o0][i1]d)\b
+        - \b(?:what\s+a|such\s+a|total|f[u*]ck[i1]ng)\s+(?:r[e3]t[a@]r?d|autist|m[o0]ng|l[a@]m[o0]|cr[i1]ppl[e3])\b
+        - \bd[o0]wn(?:syndrom[e3]|'?s\s+syndrom[e3]|i[e3])?\s+(?:kid|child|baby|m[o0]nst[e3]r|f[u*]ck|r[e3]t[a@]r?d|b[i1]tch)\b
+        - \bsh[o0]rt[\s_\-]*b[u*]s\b
+        - \bsm[o0]{2}th(?:[e3]d)?[\s_\-]*br[a@][i1]n\b|\b(?:you|ur|u|he'?s|she'?s|they'?re|that'?s)\s+(?:have|has|got|r|are|is)?\s*(?:extra|missing)\s+chr[o0]m[o0][s$][o0]m[e3][s$z]?\b|\b(?:extra|missing)\s+chr[o0]m[o0][s$][o0]m[e3][s$z]?\b(?!\s+(?:count|in|pair|number|during|cause|causes|of))
+        - (?:has|h[a@]s|h[a@]v[e3]|g[o0]t|with|having|sh[o0]ws|suff[e3]rs\s+fr[o0]m)\s+d[o0]wn'?s?\s+syndrom[e3]\b
+        - \bsch[i1]z[o0](?:phr[e3]n[i1]a|typi?c[a@]l)?\b
+        - (?:u|you|ur|he|she|they)\s+(?:have|has|got|r|are|is)\s+(?:a\s+)?(?:case\s+of\s+)?(?:the\s+)?(?:stupid|dumb|r[e3]t[a@]r?d[a@]tion|m[o0]ng[o0]l[o0][i1]sm)\b
+        - \b(?:autistic|r[e3]t[a@]r?d[e3]d|cr[i1]ppl[e3]d|m[o0]ng)\s+(?:ass|f[u*]ck|b[i1]tch|sh[i1]t|c[u*]nt)\b
+        - \b(?:sp[a@]z|sp[a@]z?z?[yi]|sp[a@]st[i1]c)\s+(?:ass|f[u*]ck|b[i1]tch|sh[i1]t|k[i1]d)\b
+        - \bw[h]?e[e3]lch[a@][i1]r\s+(?:b[o0]und|riding|j[o0]k[e3])\b
+        - \bw[i1]nd[o0]w\s*l[i1]ck[e3]rs?\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
       action_chain:
+        - type: create_report
         - type: delete_message
         - type: send_channel_message
           format: components_v2
@@ -1748,16 +2068,20 @@ regex_engine:
         - type: run_escalation_check
     - name: Punishment Begging
       patterns:
-        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:[i1]|w[e3]|h[e3]|sh[e3]|th[e3]y|<@!?\d+>|[\w\d]+)\s+(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:g[e3]t|b[e3])\s+[u*]n(?:b[a@]nn?[e3]d|w[a@]rnn?[e3]d|m[u*]t[e3]d|t[i1]m[e3][o0][u*]t[e3]d)(?:\b|\s|$)
-        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+i|can\s+u|can\s+you|could\s+you|could\s+i|could\s+u|will\s+you)\s+)*(?:r[e3]m[o0]v[e3]|d[e3]l[e3]t[e3]|cl[e3][a@]r|r[e3]v[o0]k[e3]|t[a@]k[e3]\s+(?:[a@]w[a@]y|[o0]ff)|f[o0]rg[i1]v[e3]|p[a@]rd[o0]n|l[i1]ft)\s+(?:th[i1][s$]|th[a@]t|th[e3]|m[yi]|h[i1][s$]|h[e3]r|th[e3]i[r]|o[u*]r|(?:<@!?\d+>|[\w\d]+)(?:'?s)?)\s+(?:w[a@]rn(?:[i1]ng)?[s$z]?|b[a@]n[s$z]?|m[u*]t[e3][s$z]?|t[i1]m[e3][o0][u*]t[s$z]?|[s$]tr[i1]k[e3][s$z]?|[i1]nfr[a@]ct[i1][o0]n[s$z]?)(?:\b|\s|$)
-        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+u|can\s+you|could\s+you|could\s+u|will\s+you)\s+)*[u*]n(?:b[a@]n|w[a@]rn|m[u*]t[e3]|t[i1]m[e3][o0][u*]t)s?\s+(?:m[e3]|u[s$]|m[yi]|h[i1]m|h[e3]r|th[e3]m|th[i1][s$]|th[a@]t|ur|y[o0]ur|<@!?\d+>|[\w\d]+)(?:\b|\s|$)
-      flags: gi
+        - (?:^|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:[i1]|w[e3]|h[e3]|sh[e3]|th[e3]y|<@!?\d+>|[\w\d]+)\s+(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:g[e3]t|b[e3])\s+[u*]n(?:b[a@]nn?[e3]d|w[a@]rnn?[e3]d|m[u*]t[e3]d|t[i1]m[e3](?:d?[o0][u*]t|[o0][u*]t[e3]d))(?:\b|\s|$)
+        - (?:^|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+i|can\s+u|can\s+you|could\s+you|could\s+i|could\s+u|will\s+you)\s+)*(?:r[e3]m[o0]v[e3]|d[e3]l[e3]t[e3]|cl[e3][a@]r|r[e3]v[o0]k[e3]|t[a@]k[e3]\s+(?:[a@]w[a@]y|[o0]ff)|f[o0]rg[i1]v[e3]|p[a@]rd[o0]n|l[i1]ft)\s+(?:th[i1][s$]|th[a@]t|th[e3]|m[e3]?[yi]|h[i1][s$]|h[e3]r|th[e3]i[r]|o[u*]r|(?:<@!?\d+>|[\w\d]+)(?:'?s)?)\s+(?:w[a@]rn(?:[i1]ng)?[s$z]?|b[a@]n[s$z]?|m[u*]t[e3][s$z]?|t[i1]m[e3][o0][u*]t[s$z]?|[s$]tr[i1]k[e3][s$z]?|[i1]nfr[a@]ct[i1][o0]n[s$z]?)(?:\b|\s|$)
+        - (?:^|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg|can\s+u|can\s+you|could\s+you|could\s+u|will\s+you)\s+)*[u*]n(?:b[a@]n|w[a@]rn|m[u*]t[e3]|t[i1]m[e3][o0][u*]t)s?\s+(?:m[e3]|u[s$]|m[yi]|h[i1]m|h[e3]r|th[e3]m|th[i1][s$]|th[a@]t|ur|y[o0]ur|<@!?\d+>)(?:\b|\s|$)
+        - \b(?:pls|please|plz|pwease|can\s+u|could\s+u|can\s+you|could\s+you|will\s+you)\s+(?:unban|unmute|unwarn|untimeout)\b(?!\s*h[a@]mmer)\s*(?:me|us|<@!?\d+>)?\b
+        - \b(?:forgive|pardon)\s+me\s+(?:for\s+)?(?:my|the|this|that)\s+(?:ban|warn(?:ing)?|mute|kick|timeout)\b
+        - \b(?:can|could|may)\s+(?:i|we|he|she|they)\s+(?:have|get)\s+(?:my|our|his|her|their|the)\s+(?:ban|mute|warn(?:ing)?|timeout|kick)\s+(?:lifted|removed|cleared|overturned|appealed|voided)\b
+      flags: gim
       scope: message
       enabled: true
       immune_roles:
         - "1467103806561980528"
         - "1490439698416402613"
       action_chain:
+        - type: create_report
         - type: send_channel_message
           format: components_v2
           content: Your message was removed in {channel}.
@@ -1774,14 +2098,21 @@ regex_engine:
         - type: run_escalation_check
     - name: Staff Begging
       patterns:
-        - (?:\A|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:(?:(?:g[i1]v[e3]|m[a@]k[e3]|pr[o0]m[o0]t[e3])\s+(?:m[e3]|u[s$])\s+(?:t[o0]\s+)?|g[i1]mm[e3]\s+)|(?:(?:i|w[e3])\s+(?:w[a@]nt|w[a@]nn[a@]|n[e3][e3]d|d[e3][s$][e3]rv[e3]|w[o0][u*]ld\s+l[i1]k[e3])\s+(?:(?:t[o0]\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3])\s+)?)|(?:(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:i|w[e3]|y[o0]u)\s+(?:(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3]|m[a@]k[e3]\s+m[e3]|g[i1]v[e3]\s+m[e3])\s+)))(?:[a@]\s+|[a@]n\s+|th[e3]\s+)?(?:st[a@]ff|m[o0]d[e3]r[a@]t[o0]r[s$z]?|m[o0]d[s$z]?|[a@]dm[i1]n[s$z]?|[o0]wn[e3]r[s$z]?|h[e3]lp[e3]r[s$z]?)\b
-      flags: gi
+        - (?:^|[\r\n.?!,;:]\s*|\b(?:and|but|so|because|cuz)\s+)(?:(?:pls|please|plz|bro|hey|hi|yo|omg)\s+)*(?:(?:(?:g[i1]v[e3]|m[a@]k[e3]|pr[o0]m[o0]t[e3])\s+(?:m[e3]|u[s$])\s+(?:t[o0]\s+)?|g[i1]mm[e3]\s+)|(?:(?:i|w[e3])\s+(?:w[a@]nt|w[a@]nn[a@]|n[e3][e3]d|d[e3][s$][e3]rv[e3]|w[o0][u*]ld\s+l[i1]k[e3])\s+(?:(?:t[o0]\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3])\s+)?)|(?:(?:c[a@]n|m[a@]y|c[o0][u*]ld)\s+(?:i|w[e3]|y[o0]u)\s+(?:(?:pl(?:[e3][a@]s[e3]|z|s)\s+)?(?:b[e3]|b[e3]c[o0]m[e3]|g[e3]t|h[a@]v[e3]|m[a@]k[e3]\s+m[e3]|g[i1]v[e3]\s+m[e3])\s+)))(?:[a@]\s+|[a@]n\s+|th[e3]\s+)?(?:st[a@]ff|m[o0]d[e3]r[a@]t[o0]r[s$z]?|m[o0]d[s$z]?|[a@]dm[i1]n[s$z]?|[o0]wn[e3]r[s$z]?|h[e3]lp[e3]r[s$z]?)\b
+        - \b(?:can|could|may|will|wanna|want\s+to|gimme|give\s+me|please|pl[sz]|bro|hey|yo)\s*(?:i|we|you|u|me)?\s*(?:be|become|get|have|make\s+me)\s*(?:a\s+|an\s+)?(?:st[a@]ff\s*m[e3]mb[e3]r|m[o0]d(?:er[a@]t[o0]r)?s?|[a@]dm[i1]n(?:istr[a@]t[o0]r)?s?|h[e3]lp[e3]rs?|v[i1]p|b[o0][o0]ster)\b
+        - \b(?:please|pl[sz]|bro|hey|yo|can\s+you|can\s+u|could\s+you|could\s+u|will\s+you)?\s*(?:make|give|add|promote)\s+me\s+(?:a\s+|to\s+)?(?:st[a@]ff\s*m[e3]mb[e3]r|m[o0]d(?:er[a@]t[o0]r)?|[a@]dm[i1]n(?:istr[a@]t[o0]r)?|h[e3]lp[e3]r)\b
+        - \bpromote\s+me\b
+        - \b(?:i\s+)?(?:want|wanna|need|d[e3]s[e3]rv[e3]|w[o0][u*]ld\s+l[i1]k[e3])\s+(?:t[o0]\s+)?(?:b[e3]c[o0]m[e3]|b[e3]|g[e3]t)\s+(?:a\s+|an\s+)?(?:st[a@]ff\s*m[e3]mb[e3]r|m[o0]d(?:er[a@]t[o0]r)?|[a@]dm[i1]n(?:istr[a@]t[o0]r)?|h[e3]lp[e3]r)\b
+        - \b(?:can|could)\s+(?:you|u|y[o0]u)\s+(?:m[a@]k[e3]|g[i1]v[e3])\s+me\s+(?:a\s+|the\s+)?(?:m[o0]d|[a@]dm[i1]n|st[a@]ff|h[e3]lp[e3]r)\s*(?:r[o0]l[e3])?\b
+        - \b(?:i'?m|im|i\s+am)\s+(?:appl[yi][i1]ng|r[e3]qu[e3]st[i1]ng|asking)\s+(?:f[o0]r|t[o0]\s+b[e3])\s+(?:st[a@]ff|m[o0]d(?:er[a@]t[o0]r)?|[a@]dm[i1]n(?:istr[a@]t[o0]r)?|h[e3]lp[e3]r)\b
+      flags: gim
       scope: message
       enabled: true
       immune_roles:
         - "1490439698416402613"
         - "1467103806561980528"
       action_chain:
+        - type: create_report
         - type: send_channel_message
           format: components_v2
           content: Your message was removed in {channel}.
@@ -1895,6 +2226,17 @@ punishment_dms:
         Your mute has been lifted and you can send messages again.
 
         Please remember to follow the server rules going forward.
+    case_closed:
+      enabled: true
+      format: components_v2
+      content: |-
+        Hi {user}, this is a message from the {guild} moderation team.
+
+        A punishment on your account was removed (case {case_id}) by {moderator}.
+
+        Reason: {reason}
+
+        If you have any questions, {appeal_instructions}.
 escalation:
   enabled: true
   window_seconds: 3600
@@ -1917,9 +2259,9 @@ welcome:
   enabled: true
   channel_id: "1466990155922542723"
   message: |-
-    Welcome to the Empire, <@{mention}>!
+    Welcome to the Empire, {mention}!
     **Welcome to The SnowHaven Empire!**
-    We are incredibly excited to have you here, <@{mention}>. Step in from the cold, grab a warm drink, and make yourself at home! **Here is how to get started:**
+    We are incredibly excited to have you here, {mention}. Step in from the cold, grab a warm drink, and make yourself at home! **Here is how to get started:**
 goodbye:
   enabled: true
   channel_id: "1466990156199362878"
@@ -1930,9 +2272,9 @@ booster:
   enabled: true
   channel_id: "1467134579923095738"
   message: |-
-    Thank you for boosting, <@{mention}>!
+    Thank you for boosting, {mention}!
     **Server Boosted!**
-    Thank you so much <@{mention}> for boosting **{guild}**! Your support means the world to us and helps keep the empire thriving. Enjoy your exclusive booster perks and your new shiny badge!
+    Thank you so much {mention} for boosting **{guild}**! Your support means the world to us and helps keep the empire thriving. Enjoy your exclusive booster perks and your new shiny badge!
 role_connections:
   - enabled: true
     if_has_role: "1479852874635939880"
@@ -2147,3 +2489,853 @@ ops:
   backup_retention_count: 7
   usage_analytics: true
   snipe_retention_seconds: 600
+custom_commands:
+  ticket:
+    enabled: true
+    slash: false
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - ticket
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        embeds:
+          - title: ℹ️ Information
+            description: |-
+              For support, go to <#1467119424455704760>
+              For staff applications, go to <#1467133723148419103>
+            color: "#3498db"
+            footer:
+              text: Recommended By {username}
+              icon_url: "{useravatarurl}"
+  reporthelp:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - reporthelp
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> What if I see someone breaking the rules?
+            description: If you notice a user **breaking server rules**, **harassing others**, or **doing something suspicious**, please report it instead of engaging.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> How to Report
+                value: |-
+                  Use the </report:1532041403742425280> command with <@1531976584276480070> to submit a report.
+
+                  You can also **right-click a message or user → Apps → Report message/user**.
+              - name: <:link:908747871136919622> What to Include
+                value: |-
+                  • A clear reason for the report
+                  • Message links or screenshots (if possible)
+                  • Any relevant context that helps staff understand the situation
+              - name: <:shield:865895492047470604> What Happens Next?
+                value: Our staff team will **review the report privately** and take appropriate action if needed. False reports or abuse of the system may result in punishment.
+            footer:
+              text: Recommended By {username}
+              icon_url: "{useravatarurl}"
+  reason-aliases:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - reason-aliases
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:shield:865895492047470604> Moderation Aliases & Quick Codes
+            description: Use these shortcodes when warning, muting, kicking, or banning users. Select a category from the dropdown below for detailed definitions.
+            color: "#5865f2"
+            timestamp: true
+            fields:
+              - name: <:bell:865895492327702539> Advertising & Spam
+                value: |-
+                  `ADV` - General Ad
+                  `DM4` - DM Ad
+                  `SPM` - Text Spam
+                  `LNK` - Link Spam
+                  `PNG` - Ping Spam
+                  `GST` - Ghost Ping
+                inline: true
+              - name: <:sapphAngry:909084942573662248> Behavior & Harassment
+                value: |-
+                  `TOX` - Toxicity
+                  `HAR` - Harassment
+                  `HAT` - Hate Speech
+                  `TRL` - Trolling
+                  `TWC` - Threats
+                  `SUB` - Filter Bypass
+                inline: true
+              - name: <:18plus:1493505512812187819> Content Violations
+                value: |-
+                  `SFW` - SFW Bypass
+                  `NSFW` - NSFW Media
+                  `GORE` - Gore/Violence
+                  `SCM` - Scams/Phishing
+                  `PIR` - Piracy
+                inline: true
+              - name: <:mute:865894188360269834> Voice Chat
+                value: |-
+                  `VC1` - Mic Spam
+                  `VC2` - Soundboard
+                  `VC3` - Illegal Recording
+                inline: true
+              - name: <:shield:865895492047470604> Server Integrity
+                value: |-
+                  `TOS` - Platform TOS
+                  `U13` - Underage
+                  `B-EV` - Ban Evasion
+                  `M-EV` - Mute Evasion
+                  `IMP` - Impersonation
+                  `RAD` - Raiding
+                inline: true
+              - name: <:blue_hexagon:993968389133451335> Profile & Identity
+                value: |-
+                  `NICK` - Bad Nickname
+                  `AVT` - Bad Avatar
+                  `STAT` - Bad Status
+                  `BLN` - Blank Name
+                inline: true
+              - name: <:book:865895492583555082> Ticket & Reporting Abuse
+                value: |-
+                  `TKT1` - Ticket Spam
+                  `TKT2` - Troll Tickets
+                  `TKT3` - Staff Harassment
+                  `RPT-S` - Report Spam
+                  `RPT-F` - False Report
+                inline: true
+              - name: <:sapphCelebrate:998232786643210250> Trading & Economy
+                value: |-
+                  `RWT` - Real World Trade
+                  `SCA` - Scamming
+                  `FARM` - Economy Farming
+                  `ALT-F` - Alt Farming
+                inline: true
+              - name: <:key:865895492612128778> Privacy & Cyber Security
+                value: |-
+                  `DOX` - Doxxing
+                  `DDOS` - Network Threats
+                  `MAL` - Malware
+                  `EXT` - Extortion
+                inline: true
+            footer:
+              text: Internal Staff Documentation • Select a category below
+        components:
+          - components:
+              - type: select
+                id: s0
+                placeholder: Select a category to view detailed rules...
+                min_values: 1
+                max_values: 1
+                options:
+                  - label: Advertising & Spam
+                    value: cat_spam
+                    description: View detailed reasons for ADV, DM4, SPM, LNK, etc.
+                  - label: Behavior & Harassment
+                    value: cat_behavior
+                    description: View detailed reasons for TOX, HAR, HAT, TRL, etc.
+                  - label: Content Violations
+                    value: cat_content
+                    description: View detailed reasons for SFW, NSFW, GORE, etc.
+                  - label: Voice Chat
+                    value: cat_voice
+                    description: View detailed reasons for VC1, VC2, VC3.
+                  - label: Server Integrity
+                    value: cat_integrity
+                    description: View detailed reasons for TOS, U13, B-EV, etc.
+                  - label: Profile & Identity
+                    value: cat_profile
+                    description: View detailed reasons for NICK, AVT, STAT, BLN.
+                  - label: Ticket & Reporting Abuse
+                    value: cat_tickets
+                    description: View detailed reasons for TKT1, TKT2, RPT-S, RPT-F, etc.
+                  - label: Trading & Economy
+                    value: cat_economy
+                    description: View detailed reasons for RWT, SCA, FARM, ALT-F.
+                  - label: Privacy & Cyber Security
+                    value: cat_security
+                    description: View detailed reasons for DOX, DDOS, MAL, EXT.
+  about-bot:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - about-bot
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> About Our Bot
+            description: If you were wondering about <@1531976584276480070>, it is actually a **custom branded Sapphire bot** used to help manage and moderate our server.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:shield:865895492047470604> Ownership & Operation
+                value: "**f34rless.dev** (the server owner) **does not own** the bot or its core code. We simply utilize the custom branding feature provided by Sapphire to give the bot our own unique identity in this server."
+              - name: ⭐ Infinite Limits Subscription
+                value: Our server is powered by Sapphire's **Infinite Limits subscription**! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
+              - name: <:link:908747871136919622> Get Your Own Custom Bot
+                value: |-
+                  Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
+
+                  • **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
+                  • **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  use-support:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - use-support
+      - u-s
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:blue_pin:1216132453098459336> Support Ticket Required
+            description: We do not provide support in this channel. If you need help, you must open a dedicated support ticket.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:link:908747871136919622> Where to get help
+                value: Please head over to <#1467119424455704760> and open a ticket.
+              - name: <:shield:865895492047470604> Moderation Warning
+                value: Continuing to ask for support outside of the proper ticket system disrupts the chat. In line with our strict punishment escalation tiers, ignoring this warning will result in moderation actions against your account.
+            footer:
+              text: Actioned By {username}
+              icon_url: "{useravatarurl}"
+  english-only:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - english-only
+      - e-o
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:shield:865895492047470604> English Only Policy
+            description: To ensure effective moderation and keep the community inclusive for everyone, we enforce a strict **English-only** rule in all public channels.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: Why is this a rule?
+                value: Our automated filters and staff team need to be able to read and understand all messages to enforce the rules correctly.
+              - name: What you need to do
+                value: Please translate your messages to English before sending them. Continued use of other languages will trigger our automated moderation and result in a mute.
+            footer:
+              text: Actioned By {username}
+              icon_url: "{useravatarurl}"
+  ticket-reminder:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - ticket-reminder
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:blue_pin:1216132453098459336> Ticket Inactivity Reminder
+            description: It looks like it has been a little quiet in here recently. We want to make sure your inquiry gets fully resolved!
+            color: "#9812ff"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: Action Required
+                value: Please reply to this ticket with an update so our staff team can continue assisting you. If your issue has already been resolved, you can safely close this ticket.
+              - name: <:shield:865895492047470604> Auto-Close Warning
+                value: If there is no response soon, this ticket may be automatically closed to keep our support system organized.
+            footer:
+              text: Ticket System | f34rless.dev
+              icon_url: "{guildiconurl}"
+  staff-application:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - staff-application
+      - s-a
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:shield:865895492047470604> Staff Applications & Inquiries
+            description: Please do not ask current staff members for roles, promotions, or to become a staff member. Asking or begging for a staff position will automatically disqualify you.
+            color: "#9812ff"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> How to Apply
+                value: When we are looking to expand our team, all official recruitments and forms are handled through <#1467133723148419103>. Please check that channel for any open positions instead of asking in chat.
+              - name: <:exclamation_mark_orange:892823499205406760> Moderation Warning
+                value: Continuing to ask for staff roles after receiving this warning violates our server rules. Ignoring this will trigger our punishment escalation tiers and result in further moderation action.
+            footer:
+              text: Actioned By {username}
+              icon_url: "{useravatarurl}"
+  computa:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - computa
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        content: computa is ?rules
+  read-rules:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - read-rules
+      - r-r
+      - rules
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Server Rules & Guidelines
+            description: To ensure a safe and welcoming environment for everyone, please make sure you are fully caught up on our server rules.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> Where to Read the Rules
+                value: |-
+                  All of our server rules, policies, and moderation guidelines are strictly detailed in <#1466990155922542722>.
+
+                  Please head over there and read through them carefully.
+              - name: <:shield:865895492047470604> Why it Matters
+                value: |-
+                  • You are responsible for knowing and following these rules.
+                  • **Ignorance is never a valid defence** if you break a rule.
+                  • By participating in this server, you agree to abide by everything listed.
+              - name: <:link:908747871136919622> Need Clarification?
+                value: If you are confused about a specific rule or policy, don't guess! Feel free to ask a staff member for clarification to avoid future infractions.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  appeal:
+    enabled: true
+    slash: false
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - appeal
+      - app
+      - ap
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> How to Appeal a Punishment
+            description: If you have received a moderation action (such as a mute, warning, or ban) and believe it was unjust, you can submit a formal appeal for staff review.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> The Appeals Portal
+                value: |-
+                  All appeals must be submitted through our official platform. We do not accept appeals through any other channel.
+
+                  **🔗 [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
+              - name: <:shield:865895492047470604> Important Guidelines
+                value: |-
+                  • **Do not** DM staff members about your punishment or appeal.
+                  • **Do not** have friends or third parties submit an appeal on your behalf.
+                  • Be patient. Staff will review your submission and provide a final, binding decision.
+              - name: <:link:908747871136919622> Zero Appeal Rights
+                value: Please note that certain severe infractions—such as hate speech, CSAM, doxxing, and threats—carry **zero appeal rights** under any circumstances.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  alts:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - alts
+      - alt
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Alt Account Policy
+            description: To maintain server security and prevent rule evasion, **alternate accounts (alts) are strictly prohibited** in this server.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:shield:865895492047470604> Detection & Verification
+                value: Our verification system actively blocks alt accounts from joining by checking IP addresses and analyzing various other backend security factors.
+              - name: <:blue_pin:1216132453098459336> Strict Consequences
+                value: There is zero tolerance for alt accounts. If you are discovered using one, **both the alt account AND your main account will be permanently banned**.
+              - name: <:link:908747871136919622> Approved Exceptions
+                value: The *only* permitted exception to this policy is for the server owner, `f34rless.dev`, who uses authorized alt accounts exclusively for testing bots, AutoMod, and server functionality.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  authority:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - authority
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Staff Authority & Discretion
+            description: To effectively maintain a safe and orderly environment, the moderation team operates with full discretion over server enforcement.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:shield:865895492047470604> Right to Action
+                value: Staff members reserve the right to warn, mute, kick, or ban any user at any time, without prior warning or notice, if they deem it necessary to protect the server.
+              - name: <:blue_pin:1216132453098459336> Evidence Provision
+                value: Moderators are **not obligated** to provide users with screenshots, logs, or any other form of evidence regarding their infractions. Internal evidence standards are for staff use only.
+              - name: <:link:908747871136919622> Further Information
+                value: |-
+                  For a comprehensive breakdown of our moderation principles and staff jurisdiction, please read the full policy here:
+                  **🔗 [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  secret:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - secret
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        content: you know, some things have to remain secrets... ,,https://tenor.com/view/secret-agent-skibidi-toilet-secret-agent-skibidi-toilet-some-things-have-to-remain-secret-gif-14227503984140207923
+  links:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - links
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Official Links & Resources
+            description: A comprehensive directory of all official links for The SnowHaven Empire (TSHE), f34rless, and our trusted affiliates.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> The SnowHaven Empire (TSHE)
+                value: |-
+                  • **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
+                  • **[Official Website](https://url.f34rless.xyz/tshe-website)**
+                  • **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
+                  • **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
+                  • **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
+              - name: <:shield:865895492047470604> f34rless.dev
+                value: |-
+                  • **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
+                  • **[GitHub](https://url.f34rless.xyz/f34rless-github)**
+                  • **[Store](https://url.f34rless.xyz/f34rless-store)**
+                  • **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
+              - name: <:link:908747871136919622> Bots & Affiliates
+                value: |-
+                  • **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
+                  • **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
+                  • **[Noxx Bot](https://url.f34rless.xyz/noxx)**
+                  • **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  credits:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - credits
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Server Credits & About Our Bot
+            description: |-
+              The SnowHaven Empire is built on the hard work, dedication, and passion of an amazing team. Before we dive into the technical side of what powers this server, we want to give a massive shoutout to the people behind the scenes.
+
+              **Thank you to everyone who makes this possible.**
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:crown:1440802004606910504> Leadership & Co-Founders
+                value: |-
+                  **<@1383571174910595134>**
+                  > Incredible partner and Co-Owner. Your endless support, dedication, and shared vision keep this community thriving every single day.
+                  **<@985444871722631199>**
+                  > Co-Founder. Thank you for stepping up and helping lay down the essential foundations of the Empire.
+                  **<@1079418173402660884>**
+                  > Co-Founder. Bringing brilliant ideas and an unwavering commitment to our server's growth.
+              - name: <:hammer:865893950061543455> Development, Management & Moderation
+                value: |-
+                  **<@1362230160463495190>**
+                  > Staff Manager & Administrator. Keeping the team organized and running seamlessly.
+                  **<@1272505564433223711>**
+                  > Developer & Visionary. Conceptualizing and developing the bots and innovative ideas that power us.
+                  **<@981981692149501952>**
+                  > Bot Developer & Xyron Co-Founder. Crafting amazing features across all our bots.
+                  **<@1313220608292687923>**
+                  > Bot Developer. Ensuring all of our custom bots operate flawlessly behind the scenes.
+                  **<@1373774168725655684>**
+                  > Moderator. Enforcing our standards and keeping the community safe through hard work and dedication.
+              - name: <:shield:865895492047470604> The Bot Behind The Empire
+                value: |-
+                  Alongside our incredible team, you might have noticed our bot, <@1531976584276480070>. 
+
+                  **f34rless.dev** (the server owner) **does not own** the bot or its core code. We utilize the **custom branding** feature provided by Sapphire to give the moderation bot our own unique identity in this server.
+              - name: <:topggStar:930089990812229692> Infinite Limits Subscription
+                value: Our server is heavily powered by Sapphire's **Infinite Limits** subscription! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
+              - name: <:link:908747871136919622> Get Your Own Custom Bot
+                value: |-
+                  Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
+
+                  <:blue_link:1216132639568826408> **[Get Custom Branding](https://sapph.xyz/custom-branding)**
+                  <:search:865893351193968680> **[Sapphire Main Website](https://sapph.xyz)**
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  ghost-ping:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - ghost-ping
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Excessive & Mass Pinging
+            description: You are pinging too many users, pinging too frequently, or attempting to mass-ping roles. **This must stop immediately.**
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:shield:865895492047470604> Spam & Disruption
+                value: Mass pinging floods users with notifications and heavily disrupts the chat. This is a direct violation of our anti-spam rules.
+              - name: <:blue_pin:1216132453098459336> Enforcement
+                value: Our AutoMod systems and staff team take spam pinging very seriously. Continuing this behavior will result in an immediate mute, kick, or ban to protect the community from notification spam.
+              - name: <:link:908747871136919622> What You Should Do
+                value: Cease all pinging immediately. If you need to speak to a group, send a standard message without mentions, or wait for active users to reply naturally.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  excessive-pinging:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - excessive-pinging
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Excessive & Mass Pinging
+            description: You are pinging too many users, pinging too frequently, or attempting to mass-ping roles. **This must stop immediately.**
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:shield:865895492047470604> Spam & Disruption
+                value: Mass pinging floods users with notifications and heavily disrupts the chat. This is a direct violation of our anti-spam rules.
+              - name: <:blue_pin:1216132453098459336> Enforcement
+                value: Our AutoMod systems and staff team take spam pinging very seriously. Continuing this behavior will result in an immediate mute, kick, or ban to protect the community from notification spam.
+              - name: <:link:908747871136919622> What You Should Do
+                value: Cease all pinging immediately. If you need to speak to a group, send a standard message without mentions, or wait for active users to reply naturally.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  pinging-with-no-reason:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - pinging-with-no-reason
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Unnecessary Pinging
+            description: Please avoid pinging users without providing a clear reason or context in your message.
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> Context is Key
+                value: If you need to get someone's attention, include your question or statement in the same message as the ping. Pinging someone just to say "hi" or waiting for them to respond before asking your question wastes their time.
+              - name: <:shield:865895492047470604> Be Respectful
+                value: Remember that every ping sends a notification. Be mindful of other people's time and only ping when absolutely necessary.
+              - name: <:link:908747871136919622> Action Required
+                value: Simply type out what you need in full. Repeatedly pinging users pointlessly may be considered spam and could result in moderation action.
+            footer:
+              text: Requested By {username}
+              icon_url: "{useravatarurl}"
+  mod-ping:
+    enabled: false
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - mod-ping
+    ephemeral: true
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        embeds:
+          - description: |-
+              ## Information on <@&1485003903891275977>
+
+              ### 1️⃣ The moderator emergency ping should be used when ...
+              > ... important <#1466990155922542722> are violated. Including:
+              > - A user is acting very disrespectful
+              > - A user posts NSFW content
+              > - A user sends spam / scam / harmful advertisements
+
+              ### 2️⃣ Do NOT use the emergency ping when ...
+              > **... you are in need of anything**, users use channels incorrectly, user don't speak English or for other minor infractions. Moderators are usually checking in from time to time to take care of these issues. 
+              > Please use </report:1532041403742425280> for minor infractions.
+
+              ### 3️⃣ **Always reply** to the message you want to report ...
+              > ... so a moderator can take action immediately. 
+
+              # <:exclamation_mark_red:866413651177897984> **Misuse will result in a ban** <:exclamation_mark_red:866413651177897984>
+            color: "#ff0000"
+            footer:
+              text: After clicking the green button below you will be able to ping the emergency role.
+        components:
+          - components:
+              - type: button
+                id: b0
+                label: I read and understood the above
+                style: success
+              - type: button
+                id: b1
+                label: Decline
+                style: danger
+  patreon:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - patreon
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: 💜 Unlock Exclusive Sneak Peeks & Perks!
+            description: Want to support the dev infrastructure and get behind-the-scenes access to my latest web apps, deep neon purple UI designs, and Docker setups? Check out the membership tiers on Ko-fi!
+            color: "#5865f2"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:link:908747871136919622> How to Gain Access
+                value: |-
+                  Subscribe to any tier at **[https://url.f34rless.xyz/donate](https://url.f34rless.xyz/donate)**.
+
+                  Make sure your Discord account is linked to your Ko-fi to automatically claim your roles and exclusive channels! :3
+              - name: <:sapphTada:998232812324913223> Instant Perks (All Tiers)
+                value: Subscribing to **ANY** tier instantly unlocks embed permissions, image permissions, and more across the entire server.
+              - name: 💜 Amethyst Supporter (£3/mo)
+                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private 💜・amethyst-lounge.
+              - name: 💻 Dev Insider (£10/mo)
+                value: Behind-the-scenes access! Gets you the **Dev Insider** role and 🛠️・dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
+              - name: 👑 Root Admin (£25/mo)
+                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in 👑・root-access, and 10% off any commissions or hosting fees.
+            footer:
+              text: Recommended By {username}
+              icon_url: "{useravatarurl}"
+  square-hosting:
+    enabled: true
+    slash: true
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - square-hosting
+      - sh
+      - sqh
+    ephemeral: false
+    delete_input: false
+    delete_output: false
+    suppress_reply: false
+    actions:
+      - type: send_message
+        embeds:
+          - title: <a:1456058683455963176:1456689407196139736> Square Hosting Links & Resources
+            description: Welcome to **Square Hosting**! We provide a highly reliable Discord bot hosting platform. Host your projects for **100% free**, or check out our incredibly affordable upgrade tiers for when you need that extra power.
+            color: "#5865f2"
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: <:blue_pin:1216132453098459336> Square Hosting
+                value: |-
+                  • **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
+                  • **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
+              - name: <:shield:865895492047470604> Affiliation & Team
+                value: This server's owner, **f34rless.dev**, works directly for Square Hosting! You are in great hands for all your hosting, development, and support needs.
+        components:
+          - components:
+              - type: button
+                id: b0
+                label: Visit Website
+                style: link
+                url: https://url.f34rless.xyz/square-hosting
+                emoji: 🌐
+              - type: button
+                id: b1
+                label: Get Support
+                style: link
+                url: https://url.f34rless.xyz/square-hosting-support
+                emoji: ⭐
+  suggest:
+    enabled: true
+    slash: false
+    prefix: true
+    allowed_roles:
+      - "1466990155020898413"
+    aliases:
+      - suggest
+    ephemeral: false
+    delete_input: 1
+    delete_output: false
+    suppress_reply: true
+    actions:
+      - type: send_message
+        embeds:
+          - title: <:bulb:1008411828965093450> Suggestions Policy
+            description: We love hearing your ideas on how to improve the community! To keep things organized and ensure your feedback is reviewed properly, please follow our suggestion guidelines.
+            color: "#ffd700"
+            timestamp: true
+            thumbnail: "{guildiconurl}"
+            fields:
+              - name: Where should I post my suggestion?
+                value: All suggestions must be submitted in the dedicated <#1535379316014325790> channel.
+              - name: Spamming & Bumping Rules
+                value: Please do not discuss, spam, or bump your suggestions in other channels. Spamming or bumping suggestions outside the suggestion channel may lead to moderation action.
+            footer:
+              text: Actioned By {username}
+              icon_url: "{useravatarurl}"

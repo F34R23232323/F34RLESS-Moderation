@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('quarantine')
@@ -43,17 +44,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const guild = message.guild;
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!quarantine <user>`' });
+    await v2MessageReply(message, { content: 'Usage: `!quarantine <user>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
   const restrictedRoleId = app.config.quarantine.restricted_role_id;
   if (!restrictedRoleId) {
-    await message.reply({ content: 'No restricted role configured.' });
+    await v2MessageReply(message, { content: 'No restricted role configured.' });
     return;
   }
   const roles = member.roles.cache.filter((r: any) => r.id !== guild.id && !r.managed).map((r: any) => r.id);
@@ -63,7 +64,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     [guild.id, targetId, JSON.stringify(roles)],
   );
   await member.roles.set([restrictedRoleId], 'Quarantined');
-  await message.reply({ content: `Quarantined <@${targetId}>.` });
+  await v2MessageReply(message, { content: `Quarantined <@${targetId}>. Roles stored for restore.` });
 }
 
 const command: BotCommand = {

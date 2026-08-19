@@ -9,13 +9,16 @@ import {
   SeparatorBuilder,
   TextDisplayBuilder,
   type BaseInteraction,
+  type Message,
   type MessageCreateOptions,
 } from 'discord.js';
 
 export interface V2MessageOptions {
   imageUrl?: string;
-  buttons?: Array<{ customId: string; label: string; style?: ButtonStyle; disabled?: boolean }>;
+  imageUrls?: string[];
+  buttons?: Array<{ customId?: string; label: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
   accentColor?: string;
+  allowedMentions?: MessageCreateOptions['allowedMentions'];
 }
 
 export function buildV2Content(content: string, opts: V2MessageOptions = {}): { components: unknown[]; flags: number } {
@@ -29,21 +32,22 @@ export function buildV2Content(content: string, opts: V2MessageOptions = {}): { 
   if (opts.buttons && opts.buttons.length > 0) {
     const row = new ActionRowBuilder<ButtonBuilder>();
     for (const b of opts.buttons.slice(0, 5)) {
-      row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(b.customId)
-          .setLabel(b.label)
-          .setStyle(b.style ?? ButtonStyle.Secondary)
-          .setDisabled(b.disabled ?? false),
-      );
+      const btn = new ButtonBuilder().setLabel(b.label).setDisabled(b.disabled ?? false);
+      if (b.url) {
+        btn.setStyle(b.style ?? ButtonStyle.Link).setURL(b.url);
+      } else {
+        btn.setStyle(b.style ?? ButtonStyle.Secondary).setCustomId(b.customId ?? `v2_${Date.now()}`);
+      }
+      row.addComponents(btn);
     }
     container.addActionRowComponents(row as never);
   }
 
-  if (opts.imageUrl) {
-    container.addMediaGalleryComponents(
-      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(opts.imageUrl)),
-    );
+  const urls = [...(opts.imageUrl ? [opts.imageUrl] : []), ...(opts.imageUrls ?? [])];
+  if (urls.length > 0) {
+    const gallery = new MediaGalleryBuilder();
+    for (const url of urls.slice(0, 10)) gallery.addItems(new MediaGalleryItemBuilder().setURL(url));
+    container.addMediaGalleryComponents(gallery);
   }
 
   return { components: [container] as unknown[], flags: MessageFlags.IsComponentsV2 };
@@ -89,7 +93,28 @@ export function hexToInt(hex: string | undefined): number | undefined {
 
 export function v2Send(channel: any, content: string, opts: V2MessageOptions = {}) {
   const payload = buildV2Content(content, opts);
-  return channel.send(payload as MessageCreateOptions);
+  return channel.send({
+    ...payload,
+    ...(opts.allowedMentions ? { allowedMentions: opts.allowedMentions } : {}),
+  } as MessageCreateOptions);
+}
+
+export interface MessageReplyOptions {
+  content?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  accentColor?: string;
+  buttons?: Array<{ customId?: string; label: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
+}
+
+export async function v2MessageReply(message: Message, options: MessageReplyOptions = {}): Promise<Message> {
+  const { content, ...opts } = options;
+  const payload = buildV2Content(content ?? '', opts);
+  return message.reply({ ...payload, allowedMentions: { parse: [], repliedUser: false } } as MessageCreateOptions);
+}
+
+export async function v2EditMessage(message: Message, content: string, opts: V2MessageOptions = {}): Promise<Message> {
+  return message.edit({ ...buildV2Content(content, opts), allowedMentions: { parse: [], repliedUser: false } } as never);
 }
 
 export async function v2Reply(

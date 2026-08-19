@@ -72,10 +72,54 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
       }
     }
 
+    await handleMuteChange(app, oldMember, newMember);
+
     await runRoleConnections(app, newMember, oldRoles, newRoles);
   } catch (err) {
     app.logger.error('guildMemberUpdate handler threw:', err);
   }
+}
+
+async function handleMuteChange(app: App, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
+  const oldDisabled = oldMember.isCommunicationDisabled();
+  const newDisabled = newMember.isCommunicationDisabled();
+  if (oldDisabled === newDisabled) return;
+
+  const action = newDisabled ? 'mute' : 'unmute';
+  // If the bot performed this change itself (via /mute, /timeout, /unmute,
+  // automod or escalation), that flow already logged it — skip the duplicate.
+  if (app.punishmentManager.consumeMuteSuppression(newMember.guild.id, newMember.id, action)) return;
+
+  if (newDisabled) {
+    const until = newMember.communicationDisabledUntil;
+    await app.logManager.log({
+      event: 'member_mute',
+      guildId: newMember.guild.id,
+      targetId: newMember.id,
+      message: `<@${newMember.id}> was muted (timeout applied)${until ? ` until <t:${Math.floor(until.getTime() / 1000)}:R>` : ''}`,
+      details: { source: 'native', until: until?.toISOString() ?? null },
+    });
+    return;
+  }
+
+  // Unmuted. Detect whether it was a timeout that simply expired.
+  let expired = false;
+  try {
+    const [rows] = await app.db.query<RowDataPacket[]>(
+      "SELECT expires_at FROM punishments WHERE guild_id = ? AND user_id = ? AND type = 'mute' AND active = 1 ORDER BY expires_at DESC LIMIT 1",
+      [newMember.guild.id, newMember.id],
+    );
+    if (rows[0] && new Date(rows[0].expires_at).getTime() <= Date.now()) expired = true;
+  } catch {
+    // ignore
+  }
+  await app.logManager.log({
+    event: 'member_unmute',
+    guildId: newMember.guild.id,
+    targetId: newMember.id,
+    message: `<@${newMember.id}> was unmuted${expired ? ' (timeout expired)' : ''}`,
+    details: { source: expired ? 'expired' : 'native' },
+  });
 }
 
 async function runRoleConnections(app: App, member: GuildMember, oldRoles: Set<string>, newRoles: Set<string>): Promise<void> {

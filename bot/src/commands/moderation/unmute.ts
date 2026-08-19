@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('unmute')
@@ -34,16 +35,16 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || 'Mute lifted';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!unmute <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!unmute <user> <reason>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
   const result = await app.punishmentManager.unmute(member, { reason, moderatorId: message.author.id });
-  await message.reply({ content: result.ok ? `Unmuted <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  await v2MessageReply(message, { content: result.ok ? `Unmuted <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

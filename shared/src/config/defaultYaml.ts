@@ -90,6 +90,34 @@ commands:
     aliases: ["h", "commands"]
   # All other commands inherit command_defaults below unless listed here.
 
+# -----------------------------------------------------------------------------
+# Custom commands. Config-based commands (also registered as slash commands).
+# Each key is the command name. Supports multi-step actions, embeds, buttons,
+# select menus, role/ban/kick actions, conditionals and more. See
+# shared/src/types/customCommands.ts for the full action reference.
+# -----------------------------------------------------------------------------
+custom_commands:
+  # example:
+  #   enabled: true
+  #   slash: true
+  #   prefix: true
+  #   cooldown_seconds: 3
+  #   ephemeral: false
+  #   aliases: ["ex"]
+  #   actions:
+  #     - type: send_message
+  #       content: "Hello {user}!"
+  #       embeds:
+  #         - title: "Example"
+  #           description: "This is an example custom command."
+  #           color: "#5865f2"
+  #       components:
+  #         - components:
+  #             - type: button
+  #               id: "b1"
+  #               label: "Click me"
+  #               style: primary
+
 command_defaults:
   cooldown_seconds: 3
 
@@ -138,6 +166,7 @@ reports:
   cooldown_seconds: 30
   channel_id: "000000000000000000"     # where report cards are posted
   action_roles: []                      # roles allowed to action/ignore reports
+  ping_role_id: "000000000000000000"  # optional role pinged when a report is filed
   archive:
     enabled: false
     channel_id: "000000000000000000"    # component-stripped archive
@@ -338,6 +367,29 @@ automod:
         - type: warn
           reason: "Automod: poll spam ({rule})"
         - type: run_escalation_check
+    duplicate_spam:
+      enabled: true
+      threshold: 3                       # near-identical messages in window
+      window_seconds: 60
+      similarity_threshold: 0.75         # 0..1 similarity required to match
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+          reason: "Automod: {rule}"
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: "Your message was removed in {channel}."
+          title: "Repeated Message Detected"
+          description: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
+          delete_after_seconds: 60
+        - type: warn
+          reason: "Automod: repeated message spam ({rule})"
+        - type: run_escalation_check
   # Composite risk scoring: several signals feed a rolling per-user score.
   risk_scoring:
     enabled: false
@@ -471,6 +523,10 @@ punishment_dms:
       enabled: false
       format: components_v2
       content: "Hi {user}, good news from the {guild} moderation team.\\n\\nYour mute has been lifted and you can send messages again.\\n\\nPlease remember to follow the server rules going forward."
+    case_closed:
+      enabled: true
+      format: components_v2
+      content: "Hi {user}, this is a message from the {guild} moderation team.\\n\\nA punishment on your account was removed (case {case_id}) by {moderator}.\\n\\nReason: {reason}\\n\\nIf you have any questions, {appeal_instructions}."
 
 # -----------------------------------------------------------------------------
 # Punishment escalation. Triggers are automod rule hits.
@@ -654,6 +710,27 @@ community:
     enabled: false
     channel_id: "000000000000000000"
     timezone: "UTC"
+
+# -----------------------------------------------------------------------------
+# Message archives. !archive <amount> [user] [channel] stores messages (with
+# attachments, GIFs, avatars and embeds) in the database and produces a
+# shareable dashboard link. Case creation (warn/mute/kick/ban/softban) and
+# automod triggers can also auto-archive evidence.
+# -----------------------------------------------------------------------------
+archives:
+  enabled: true
+  default_amount: 50            # messages archived when no amount is given
+  max_amount: 2000              # hard cap per !archive invocation
+  case_evidence_amount: 40      # recent messages archived for each case
+  automod_context_amount: 15    # context window archived around an automod hit
+  max_attachment_bytes: 10485760   # per attachment download cap (10 MB)
+  max_archive_bytes: 209715200     # total media cap per archive (200 MB)
+  allowed_roles: []             # roles allowed to use !archives (staff list)
+  allowed_users: []             # user IDs allowed to use !archives
+  snapshot_messages: true       # save messages (bulk-batched) for deleted/edited evidence
+  message_retention_days: 90    # auto-purge saved messages after this many days
+  archive_on_delete: true       # batch-archive deleted messages (one archive per batch)
+  archive_on_edit: true         # batch-archive edited messages (before & after, one archive per batch)
 
 # -----------------------------------------------------------------------------
 # Web dashboard. owner_user_id may also come from .env (OWNER_USER_ID).

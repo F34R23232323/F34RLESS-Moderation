@@ -3,6 +3,24 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
+
+function permissionLines(member: any, channel: any): string {
+  const perms = (channel as { permissionsFor: (m: unknown) => { toArray: () => string[] } }).permissionsFor(member);
+  const array = perms.toArray();
+  const granted: string[] = [];
+  for (const permName of array) {
+    for (const role of member.roles.cache.values()) {
+      const rolePerms = role.permissions;
+      if (rolePerms.has(permName as never)) {
+        granted.push(`${permName} (from <@&${role.id}>)`);
+        break;
+      }
+    }
+  }
+  const adminOverride = granted.some((g) => g.startsWith('Administrator'));
+  return `**Effective permissions for <@${member.id}> in <#${channel.id}>**\n${adminOverride ? 'Administrator (all permissions)' : granted.join('\n') || 'no permissions granted'}`;
+}
 
 const data = new SlashCommandBuilder()
   .setName('permissions')
@@ -24,38 +42,26 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     await v2Reply(interaction, 'Not available here.', { ephemeral: true });
     return;
   }
-  const perms = (channel as { permissionsFor: (m: unknown) => { toArray: () => string[] } }).permissionsFor(member);
-  const array = perms.toArray();
-  const granted = [];
-  for (const permName of array) {
-    for (const role of member.roles.cache.values()) {
-      const rolePerms = role.permissions;
-      if (rolePerms.has(permName as never)) {
-        granted.push(`${permName} (from <@&${role.id}>)`);
-        break;
-      }
-    }
-  }
-  const adminOverride = granted.some((g) => g.startsWith('Administrator'));
-  await v2Reply(interaction, `**Effective permissions for <@${user.id}> in <#${channel.id}>**\n${adminOverride ? 'Administrator (all permissions)' : granted.join('\n') || 'no permissions granted'}`);
+  await v2Reply(interaction, permissionLines(member, channel));
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!permissions check <user>`' });
+    await v2MessageReply(message, { content: 'Usage: `!permissions check <user>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
-  const perms = (message.channel as { permissionsFor?: (m: unknown) => { has: (p: string) => boolean } }).permissionsFor?.(member);
-  const key = ['BanMembers', 'KickMembers', 'ManageMessages', 'ModerateMembers', 'ManageChannels', 'ManageRoles', 'Administrator'];
-  const lines = key.filter((p) => perms?.has(p));
-  await message.reply({ content: `<@${targetId}> in <#${message.channelId}>: ${lines.join(', ') || 'no key permissions'}` });
+  if (!('permissionsFor' in message.channel)) {
+    await v2MessageReply(message, { content: 'Not available here.' });
+    return;
+  }
+  await v2MessageReply(message, { content: permissionLines(member, message.channel) });
 }
 
 const command: BotCommand = {

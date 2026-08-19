@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('unlock')
@@ -23,11 +24,15 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const preset = args[0];
   if (!preset) {
-    await message.reply({ content: 'Usage: `!unlock <preset>`' });
+    await v2MessageReply(message, { content: 'Usage: `!unlock <preset>`' });
     return;
   }
-  const result = await app.lockingService.unlock(preset);
-  await message.reply({ content: `Unlocked **${result.unlocked}** channel(s).` });
+  try {
+    const result = await app.lockingService.unlock(preset);
+    await v2MessageReply(message, { content: `Unlocked **${result.unlocked}** channel(s) with preset \`${preset}\`.${result.failed > 0 ? ` ${result.failed} failed.` : ''}` });
+  } catch (err) {
+    await v2MessageReply(message, { content: `Failed: ${(err as Error).message}` });
+  }
 }
 
 const command: BotCommand = {

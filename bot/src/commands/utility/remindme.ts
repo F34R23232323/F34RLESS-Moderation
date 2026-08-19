@@ -5,6 +5,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { parseDuration } from '../../../../shared/src/index';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('remindme')
@@ -50,14 +51,14 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const duration = parseDuration(args[0] ?? '');
   const text = args.slice(1).join(' ');
   if (!duration || duration.isPermanent || !text) {
-    await message.reply({ content: 'Usage: `!remindme <duration> <message>`' });
+    await v2MessageReply(message, { content: 'Usage: `!remindme <duration> <message>`' });
     return;
   }
-  await app.db.execute(
+  const [result] = await app.db.execute(
     'INSERT INTO reminders (user_id, guild_id, channel_id, message, remind_at) VALUES (?, ?, ?, ?, ?)',
     [message.author.id, message.guildId, message.channelId, text, new Date(Date.now() + duration.milliseconds)],
   );
-  await message.reply({ content: 'Reminder set.' });
+  await v2MessageReply(message, { content: `Reminder set (ID ${(result as { insertId: number }).insertId}) for ${duration.milliseconds / 60000} minutes.` });
 }
 
 const command: BotCommand = {

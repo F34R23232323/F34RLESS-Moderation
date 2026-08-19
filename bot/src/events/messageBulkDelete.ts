@@ -4,12 +4,18 @@ import type { App } from '../core/context';
 export async function handleMessageBulkDelete(app: App, messages: Collection<string, Message | PartialMessage>, channel: { guildId: string | null; id: string }): Promise<void> {
   try {
     const lines: string[] = [];
+    const ids: string[] = [];
     for (const [, msg] of messages) {
       const author = msg.author
         ? `${msg.author.username} (${msg.author.id}${msg.author.bot ? ', bot' : ''})`
         : 'unknown';
       const content = msg.content || (msg.partial ? '(uncached)' : '(no text)');
       lines.push(`${author}: ${content}`);
+      ids.push(msg.id);
+    }
+
+    if (channel.guildId) {
+      await app.messageLogs.markBulkDeleted(ids);
     }
 
     let files: { name: string; data: Buffer }[] = [];

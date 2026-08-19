@@ -6,6 +6,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('unquarantine')
@@ -43,7 +44,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const guild = message.guild;
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!unquarantine <user>`' });
+    await v2MessageReply(message, { content: 'Usage: `!unquarantine <user>`' });
     return;
   }
   const [rows] = await app.db.query<RowDataPacket[]>(
@@ -52,14 +53,14 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   );
   const row = rows[0] as { original_roles?: string } | undefined;
   if (!row) {
-    await message.reply({ content: 'User is not quarantined.' });
+    await v2MessageReply(message, { content: 'User is not quarantined.' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   const roles = parseJson(row.original_roles, []) as string[];
   if (member) await member.roles.set([...roles, guild.id], 'Quarantine lifted').catch(() => undefined);
   await app.db.execute('UPDATE quarantines SET active = 0 WHERE guild_id = ? AND user_id = ?', [guild.id, targetId]);
-  await message.reply({ content: `Restored <@${targetId}>'s roles.` });
+  await v2MessageReply(message, { content: `Restored <@${targetId}>'s roles.` });
 }
 
 const command: BotCommand = {

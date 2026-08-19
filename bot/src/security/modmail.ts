@@ -1,6 +1,7 @@
 import type { Message } from 'discord.js';
 import type { App } from '../core/context';
 import type { RowDataPacket } from 'mysql2/promise';
+import { v2MessageReply } from '../utils/v2';
 
 export async function handleMessageCreateDM(app: App, message: Message): Promise<void> {
   try {
@@ -51,7 +52,7 @@ export async function handleMessageCreateDM(app: App, message: Message): Promise
         'in',
       ]);
     }
-    await message.reply({ content: 'Your message has been forwarded to staff.' }).catch(() => undefined);
+    await v2MessageReply(message, { content: 'Your message has been forwarded to staff.' }).catch(() => undefined);
   } catch (err) {
     app.logger.error('modmail DM handler threw:', err);
   }

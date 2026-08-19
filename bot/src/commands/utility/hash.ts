@@ -4,6 +4,12 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import * as crypto from 'crypto';
+import { v2MessageReply } from '../../utils/v2';
+
+function hashResult(algorithm: 'md5' | 'sha1' | 'sha256', text: string): string {
+  const result = crypto.createHash(algorithm).update(text).digest('hex');
+  return `\`${algorithm}\`\n\`\`\`\n${result}\n\`\`\``;
+}
 
 const data = new SlashCommandBuilder()
   .setName('hash')
@@ -14,19 +20,17 @@ const data = new SlashCommandBuilder()
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   const algorithm = interaction.options.getString('algorithm', true) as 'md5' | 'sha1' | 'sha256';
   const text = interaction.options.getString('text', true);
-  const result = crypto.createHash(algorithm).update(text).digest('hex');
-  await v2Reply(interaction, `\`${algorithm}\`\n\`\`\`\n${result}\n\`\`\``, { ephemeral: true });
+  await v2Reply(interaction, hashResult(algorithm, text), { ephemeral: true });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  const algorithm = args[0] ?? 'sha256';
+  const algorithm = (args[0] ?? 'sha256') as 'md5' | 'sha1' | 'sha256';
   const text = args.slice(1).join(' ');
   if (!text) {
-    await message.reply({ content: 'Usage: `!hash <md5|sha1|sha256> <text>`' });
+    await v2MessageReply(message, { content: 'Usage: `!hash <md5|sha1|sha256> <text>`' });
     return;
   }
-  const result = crypto.createHash(algorithm as 'md5' | 'sha1' | 'sha256').update(text).digest('hex');
-  await message.reply({ content: `\`${algorithm}\`: \`${result}\`` });
+  await v2MessageReply(message, { content: hashResult(algorithm, text) });
 }
 
 const command: BotCommand = {

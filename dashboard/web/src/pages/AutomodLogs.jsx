@@ -46,7 +46,7 @@ export default function AutomodLogs() {
                 <td className="mono">{new Date(r.created_at).toLocaleString()}</td>
                 <td>{r.rule}</td>
                 <td>{r.module}</td>
-                <td>@{r.user_id}</td>
+                <td>{r.user_display_name || r.user_username ? `${r.user_display_name || r.user_username}` : `@${r.user_id}`} <span className="mono dim" style={{ fontSize: 11 }}>({r.user_id})</span></td>
                 <td className="pre">{r.content_snippet}</td>
                 <td>{r.response_suppressed ? <span className="badge yellow">throttled</span> : '-'}</td>
               </tr>

@@ -1,4 +1,4 @@
-import { REST, Routes } from 'discord.js';
+import { REST, Routes, SlashCommandBuilder, ActivityType } from 'discord.js';
 import { createDbPool, loadConfig, formatConfigError, buildDatabaseUrl, waitForDb, runMigrations, migrations } from '../../shared/src/index';
 import { BotClient } from './client/BotClient';
 import { Logger } from './core/logger';
@@ -6,6 +6,7 @@ import { LogManager } from './core/logManager';
 import { CooldownManager } from './core/cooldown';
 import { ComponentRegistry } from './core/componentLoader';
 import { loadCommands } from './core/commandLoader';
+import { CustomCommandRunner } from './core/customCommandRunner';
 import { loadEvents } from './core/eventLoader';
 import { loadComponents } from './core/componentLoader';
 import { installGlobalHandlers } from './core/errorHandler';
@@ -28,6 +29,8 @@ import { SlowmodeScheduler } from './management/slowmodeScheduler';
 import { AntiRaidService } from './security/antiRaid';
 import { SavedMessageService } from './services/savedMessageService';
 import { DashboardLogService } from './services/dashboardLogService';
+import { ArchiveService } from './services/archiveService';
+import { MessageLogService } from './services/messageLogService';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 
@@ -70,6 +73,7 @@ async function main(): Promise<void> {
   const logManager = new LogManager(db);
   const cooldowns = new CooldownManager();
   const components = new ComponentRegistry();
+  const customCommands = new CustomCommandRunner();
   const app: App = {
     config,
     env,
@@ -80,8 +84,10 @@ async function main(): Promise<void> {
     logManager,
     cooldowns,
     components,
+    customCommands,
     commands: new Map(),
     aliases: new Map(),
+    customCommandAliases: new Map(),
     messageCommands: new Map(),
     userCommands: new Map(),
     caseService: null as unknown as CaseService,
@@ -103,10 +109,19 @@ async function main(): Promise<void> {
     messages: null as unknown as SavedMessageService,
     messageCache: new MessageContentCache(),
     dashboardLogs: null as unknown as DashboardLogService,
+    archives: null as unknown as ArchiveService,
+    messageLogs: null as unknown as MessageLogService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
   };
+
+  for (const [name, cc] of Object.entries(app.config.custom_commands)) {
+    if (!cc.enabled) continue;
+    for (const alias of cc.aliases) {
+      app.customCommandAliases.set(alias.toLowerCase(), name);
+    }
+  }
 
   const client = new BotClient(app);
   app.client = client;
@@ -127,6 +142,8 @@ async function main(): Promise<void> {
   app.antiRaid = new AntiRaidService(app);
   app.messages = new SavedMessageService(app);
   app.dashboardLogs = new DashboardLogService(app);
+  app.archives = new ArchiveService(app);
+  app.messageLogs = new MessageLogService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
@@ -148,15 +165,18 @@ async function main(): Promise<void> {
   client.once('ready', async () => {
     app.logger.info(`Logged in as ${client.user?.tag}`);
     app.scheduler.start();
+    const activityType: Record<string, ActivityType> = {
+      Playing: ActivityType.Playing,
+      Streaming: ActivityType.Streaming,
+      Listening: ActivityType.Listening,
+      Watching: ActivityType.Watching,
+      Competing: ActivityType.Competing,
+    };
+    const type = activityType[config.bot.activity.type] ?? ActivityType.Playing;
+    const url = type === ActivityType.Streaming ? config.bot.activity.url || 'https://twitch.tv/' : undefined;
     app.client.user?.setPresence({
       status: config.bot.status,
-      activities: [
-        {
-          name: config.bot.activity.text,
-          type: config.bot.activity.type as never,
-          url: config.bot.activity.url || undefined,
-        },
-      ],
+      activities: [{ name: config.bot.activity.text, type, url }],
     });
   });
 
@@ -170,6 +190,19 @@ async function registerSlashCommands(app: App): Promise<void> {
   const bodies = [...app.commands.values()]
     .filter((c) => config.commands[c.name]?.slash ?? true)
     .map((c) => c.data.toJSON());
+  // Custom commands are registered as slash too, except when their name is
+  // owned by a builtin command — Discord forbids duplicate slash names, so
+  // those stay prefix-only (see slash: false in the imported config).
+  for (const [name, cc] of Object.entries(config.custom_commands)) {
+    if (!cc.enabled || !cc.slash) continue;
+    if (app.commands.has(name) || app.messageCommands.has(name) || app.userCommands.has(name)) continue;
+    const builder = new SlashCommandBuilder()
+      .setName(name.slice(0, 32))
+      .setDescription((cc.description || 'Custom command').slice(0, 100))
+      .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(false))
+      .addStringOption((o) => o.setName('args').setDescription('Arguments').setRequired(false));
+    bodies.push(builder.toJSON());
+  }
   for (const cmd of app.messageCommands.values()) {
     if (config.commands[cmd.name]?.slash === false) continue;
     bodies.push({ name: cmd.name, type: 3 } as never);

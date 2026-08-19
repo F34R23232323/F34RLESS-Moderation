@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { parseDuration } from '../../../../shared/src/index';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('warn')
@@ -27,6 +28,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const result = await app.punishmentManager.warn(user as never, {
     reason,
     moderatorId: interaction.user.id,
+    archiveChannelId: interaction.channel?.id ?? null,
     evidence: evidence ? [{ url: evidence }] : undefined,
   });
   if (!result.ok) {
@@ -41,25 +43,25 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const reason = args.slice(1).join(' ') || 'No reason provided';
   const guild = message.guild;
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!warn <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!warn <user> <reason>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found in this server.' });
+    await v2MessageReply(message, { content: 'User not found in this server.' });
     return;
   }
   const guard = app.modGuard.canModerate(member, message.member!);
   if (!guard.ok) {
-    await message.reply({ content: `Cannot warn: ${guard.reason}` });
+    await v2MessageReply(message, { content: `Cannot warn: ${guard.reason}` });
     return;
   }
-  const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id });
+  const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
   if (!result.ok) {
-    await message.reply({ content: `Failed: ${result.error}` });
+    await v2MessageReply(message, { content: `Failed: ${result.error}` });
     return;
   }
-  await message.reply({ content: `Warned <@${targetId}> — case ${result.case!.case_code}.` });
+  await v2MessageReply(message, { content: `Warned <@${targetId}> — case ${result.case!.case_code}.` });
 }
 
 const command: BotCommand = {

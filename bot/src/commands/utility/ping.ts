@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
-import { v2Reply } from '../../utils/v2';
+import { v2EditMessage, v2MessageReply, v2Reply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('ping')
@@ -19,7 +19,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 async function prefixExecute(message: Message, _args: string[], app: App): Promise<void> {
   const ws = app.client.ws.ping;
   const sent = Date.now();
-  await message.reply({ content: 'Pinging...' }).then((m) => m.edit({ content: `WebSocket: ${Math.round(ws)}ms | Round-trip: ${Date.now() - sent}ms` }));
+  await v2MessageReply(message, { content: 'Pinging...' }).then((m) => v2EditMessage(m, `WebSocket: ${Math.round(ws)}ms | Round-trip: ${Date.now() - sent}ms`));
 }
 
 const command: BotCommand = {

@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('embed')
@@ -32,13 +33,14 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const text = args.join(' ');
   if (!text) {
-    await message.reply({ content: 'Usage: `!embed <title | body>`' });
+    await v2MessageReply(message, { content: 'Usage: `!embed <title | body>`' });
     return;
   }
   const parts = text.split(' | ');
   const content = parts.length > 1 ? `**${parts[0]}**\n${parts.slice(1).join(' | ')}` : text;
-  await message.delete().catch(() => undefined);
-  await (message.channel as any).send({ content });
+  const { v2Send } = await import('../../utils/v2');
+  await v2Send(message.channel as any, content).catch(() => undefined);
+  await v2MessageReply(message, { content: 'Sent.' });
 }
 
 const command: BotCommand = {

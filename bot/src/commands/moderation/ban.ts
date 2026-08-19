@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('ban')
@@ -38,6 +39,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const result = await app.punishmentManager.ban(user as never, {
     reason,
     moderatorId: interaction.user.id,
+    archiveChannelId: interaction.channel?.id ?? null,
     durationMs: durationMs > 0 ? durationMs : undefined,
     deleteMessageDays: deleteDays,
   });
@@ -55,16 +57,18 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const durationStr = args[1];
   const reason = args.slice(2).join(' ') || 'No reason provided';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!ban <user> [duration] <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!ban <user> [duration] <reason>`' });
     return;
   }
   const durationMs = durationStr ? (parseDuration(durationStr)?.milliseconds ?? 0) : 0;
   const result = await app.punishmentManager.ban(targetId as never, {
     reason,
     moderatorId: message.author.id,
+    archiveChannelId: message.channel?.id ?? null,
     durationMs: durationMs > 0 ? durationMs : undefined,
   });
-  await message.reply({ content: result.ok ? `Banned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
+  await v2MessageReply(message, { content: result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

@@ -10,12 +10,15 @@ const EVENT_COLORS = {
   rate_limit_event: 'yellow',
   member_ban: 'red',
   member_kick: 'red',
+  member_mute: 'red',
+  member_unmute: 'green',
   member_timeout: 'red',
   moderation_action: 'red',
   automod_trigger: 'pink',
   member_join: 'green',
   member_unban: 'green',
   member_boost: 'orange',
+  archive_created: 'orange',
   report_created: 'blue',
   appeal_created: 'blue',
 };
@@ -112,6 +115,22 @@ export default function Logs() {
   const hasFilter = Object.values(filters).some(Boolean);
   const iconFor = (event) => EVENT_ICONS[event] || FileText;
 
+  function nameFor(entry, id, kind) {
+    const display = kind === 'actor' ? entry.actor_display_name || entry.actor_username : entry.target_display_name || entry.target_username;
+    return display || id || null;
+  }
+
+  function renderMessage(entry) {
+    let text = entry.message || entry.event;
+    if (entry.actor_id && (entry.actor_username || entry.actor_display_name)) {
+      text = text.replaceAll(`<@${entry.actor_id}>`, `@${entry.actor_display_name || entry.actor_username}`);
+    }
+    if (entry.target_id && (entry.target_username || entry.target_display_name)) {
+      text = text.replaceAll(`<@${entry.target_id}>`, `@${entry.target_display_name || entry.target_username}`);
+    }
+    return text;
+  }
+
   return (
     <>
       <div className="page-head">
@@ -182,14 +201,14 @@ export default function Logs() {
               <button className="log-row-main" onClick={() => toggle(entry.id)} aria-expanded={isOpen}>
                 <span className={`badge ${badgeClass(entry.event)} log-badge`}><Icon size={11} /> {entry.event}</span>
                 <span className="log-time">{new Date(entry.created_at).toLocaleString()}</span>
-                <span className="log-msg">{entry.message || entry.event}</span>
+                <span className="log-msg">{renderMessage(entry)}</span>
                 <ChevronDown size={16} className={`chevron ${isOpen ? 'open' : ''}`} />
               </button>
               <div className="log-row-details">
                 <div className="log-details-inner">
                   <div className="log-meta">
-                    {entry.actor_id && <span className="meta-chip"><User size={12} /> Actor: {entry.actor_id}</span>}
-                    {entry.target_id && <span className="meta-chip"><User size={12} /> Target: {entry.target_id}</span>}
+                    {entry.actor_id && <span className="meta-chip"><User size={12} /> Actor: {nameFor(entry, entry.actor_id, 'actor')} <span className="mono dim">({entry.actor_id})</span></span>}
+                    {entry.target_id && <span className="meta-chip"><User size={12} /> Target: {nameFor(entry, entry.target_id, 'target')} <span className="mono dim">({entry.target_id})</span></span>}
                     {entry.channel_id && <span className="meta-chip"><Hash size={12} /> {entry.channel_id}</span>}
                     <span className="meta-chip"><Clock size={12} /> ID {entry.id}</span>
                   </div>

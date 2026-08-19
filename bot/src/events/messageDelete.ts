@@ -6,6 +6,9 @@ export async function handleMessageDelete(app: App, message: Message | PartialMe
   try {
     captureDeleted(message);
     app.messageCache.delete(message.id);
+    if (message.guildId) {
+      await app.messageLogs.onMessageDelete(message);
+    }
     const content = message.content || '';
     await app.logManager.log({
       event: 'message_delete',

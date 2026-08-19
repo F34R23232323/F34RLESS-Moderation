@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('massban')
@@ -53,7 +54,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
       failed++;
       continue;
     }
-    const result = await app.punishmentManager.ban(member, { reason, moderatorId: interaction.user.id, silent: true });
+    const result = await app.punishmentManager.ban(member, { reason, moderatorId: interaction.user.id, silent: true, archive: false });
     if (result.ok) banned++;
     else failed++;
   }
@@ -73,15 +74,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const ids = args[0]?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
   const reason = args.slice(1).join(' ') || 'Mass action';
   if (!guild || ids.length === 0) {
-    await message.reply({ content: 'Usage: `!massban <id1,id2,...> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!massban <id1,id2,...> <reason>`' });
     return;
   }
   let banned = 0;
+  let failed = 0;
   for (const id of ids) {
-    const result = await app.punishmentManager.ban(id as never, { reason, moderatorId: message.author.id, silent: true });
+    const result = await app.punishmentManager.ban(id as never, { reason, moderatorId: message.author.id, silent: true, archive: false });
     if (result.ok) banned++;
+    else failed++;
   }
-  await message.reply({ content: `Mass ban complete: **${banned}** banned.` });
+  await v2MessageReply(message, { content: `Mass ban complete: **${banned}** banned, **${failed}** failed.` });
 }
 
 const command: BotCommand = {

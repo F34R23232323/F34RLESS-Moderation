@@ -9,3 +9,7 @@ export function generateCaseCode(length = 7): string {
   for (let i = 0; i < length; i++) out += ALPHABET[bytes[i] % ALPHABET.length];
   return out;
 }
+
+export function generateArchiveCode(length = 8): string {
+  return `ARC-${generateCaseCode(length)}`;
+}

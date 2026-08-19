@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 function formatUptime(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -23,7 +24,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 }
 
 async function prefixExecute(message: Message, _args: string[], app: App): Promise<void> {
-  await message.reply({ content: `Uptime: ${formatUptime(Date.now() - app.startedAt)}` });
+  await v2MessageReply(message, { content: `Uptime: ${formatUptime(Date.now() - app.startedAt)}` });
 }
 
 const command: BotCommand = {

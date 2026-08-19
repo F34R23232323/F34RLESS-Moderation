@@ -12,6 +12,12 @@ export interface PunishOptions {
   evidence?: unknown[];
   deleteMessageDays?: number;
   silent?: boolean;
+  /** Channel to look for the target's recent messages when archiving evidence. */
+  archiveChannelId?: string | null;
+  /** Set to false to skip auto-archiving evidence for this punishment. */
+  archive?: boolean;
+  /** Which log event to emit for a timeout/mute (default member_timeout). */
+  logEvent?: 'member_mute' | 'member_timeout';
 }
 
 export interface PunishResult {
@@ -24,8 +30,31 @@ export interface PunishResult {
 export class PunishmentManager {
   private readonly app: App;
 
+  // Bot-initiated timeout/mute changes, so the guildMemberUpdate handler
+  // doesn't double-log the same transition that we already logged in the
+  // punishment flow (e.g. via /mute, /timeout, /unmute).
+  private readonly muteSuppressions = new Map<string, { action: 'mute' | 'unmute'; at: number }>();
+  private static readonly MUTE_SUPPRESS_TTL_MS = 15_000;
+
   constructor(app: App) {
     this.app = app;
+  }
+
+  public markMuteChange(guildId: string, userId: string, action: 'mute' | 'unmute'): void {
+    this.muteSuppressions.set(`${guildId}:${userId}`, { action, at: Date.now() });
+  }
+
+  public consumeMuteSuppression(guildId: string, userId: string, action: 'mute' | 'unmute'): boolean {
+    const key = `${guildId}:${userId}`;
+    const entry = this.muteSuppressions.get(key);
+    if (!entry) return false;
+    if (Date.now() - entry.at > PunishmentManager.MUTE_SUPPRESS_TTL_MS) {
+      this.muteSuppressions.delete(key);
+      return false;
+    }
+    if (entry.action !== action) return false;
+    this.muteSuppressions.delete(key);
+    return true;
   }
 
   private async dmBefore(
@@ -63,6 +92,38 @@ export class PunishmentManager {
     });
   }
 
+  private async archiveCaseEvidence(
+    guild: Guild,
+    userId: string,
+    caseRow: CaseRow,
+    options: PunishOptions,
+  ): Promise<string | null> {
+    if (!this.app.config.archives.enabled) return null;
+    if (options.archive === false) return null;
+    try {
+      const result = await this.app.archives.archiveForCase({
+        guild,
+        userId,
+        channelId: options.archiveChannelId ?? null,
+        createdBy: options.moderatorId ?? null,
+        caseId: caseRow.id,
+        reason: options.reason ?? null,
+        type: caseRow.type,
+      });
+      if (result?.link) {
+        const evidence = Array.isArray(caseRow.evidence) ? (caseRow.evidence as unknown[]) : [];
+        await this.app.db.execute('UPDATE cases SET evidence = ? WHERE id = ?', [
+          JSON.stringify([...evidence, { type: 'archive', url: result.link, code: result.code, messages: result.messageCount }]),
+          caseRow.id,
+        ]);
+      }
+      return result?.link ?? null;
+    } catch (err) {
+      this.app.logger.warn(`Archive for case ${caseRow.case_code} failed:`, err);
+      return null;
+    }
+  }
+
   public async warn(target: GuildMember | User, options: PunishOptions): Promise<PunishResult> {
     const guild = target instanceof GuildMember ? target.guild : (await this.resolveGuild());
     if (!guild) return { ok: false, error: 'guild not resolved', dmSent: false };
@@ -95,13 +156,15 @@ export class PunishmentManager {
 
     await this.dmAfter('warn', guild, user, caseRow, options);
 
+    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+
     await this.app.logManager.log({
       event: 'member_warn',
       guildId: guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `Warned <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'warn', caseId: caseRow.id, reason: options.reason },
+      message: `Warned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'warn', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
     });
 
     await this.app.warningEscalation.check(guild.id, target.id);
@@ -110,6 +173,8 @@ export class PunishmentManager {
 
   public async timeout(target: GuildMember, durationMs: number, options: PunishOptions): Promise<PunishResult> {
     const dmSent = await this.dmBefore('mute', target.guild, target.user, options, durationMs);
+    const logEvent = options.logEvent ?? 'member_timeout';
+    this.markMuteChange(target.guild.id, target.id, 'mute');
     try {
       await target.timeout(durationMs, options.reason ?? undefined);
     } catch (err) {
@@ -134,13 +199,16 @@ export class PunishmentManager {
 
     await this.dmAfter('mute', target.guild, target.user, caseRow, options);
 
+    const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
+
+    const verb = logEvent === 'member_mute' ? 'Muted' : 'Timed out';
     await this.app.logManager.log({
-      event: 'member_timeout',
+      event: logEvent,
       guildId: target.guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `Muted <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})`,
-      details: { type: 'mute', durationMs, caseId: caseRow.id, reason: options.reason },
+      message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -148,6 +216,7 @@ export class PunishmentManager {
 
   public async unmute(target: GuildMember, options: PunishOptions): Promise<PunishResult> {
     const dmSent = await this.dmBefore('unmute', target.guild, target.user, options);
+    this.markMuteChange(target.guild.id, target.id, 'unmute');
     try {
       await target.timeout(null);
     } catch (err) {
@@ -172,7 +241,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Unmuted <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'unmute', caseId: caseRow.id, reason: options.reason },
+      details: { type: 'unmute', caseCode: caseRow.case_code, reason: options.reason },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -194,13 +263,14 @@ export class PunishmentManager {
       evidence: options.evidence,
     });
     await this.dmAfter('kick', target.guild, target.user, caseRow, options);
+    const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
     await this.app.logManager.log({
       event: 'member_kick',
       guildId: target.guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `Kicked <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'kick', caseId: caseRow.id, reason: options.reason },
+      message: `Kicked <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'kick', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
     });
     return { ok: true, case: caseRow, dmSent };
   }
@@ -240,13 +310,15 @@ export class PunishmentManager {
 
     await this.dmAfter('ban', guild, user, caseRow, options);
 
+    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+
     await this.app.logManager.log({
       event: 'member_ban',
       guildId: guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})`,
-      details: { type: 'ban', caseId: caseRow.id, reason: options.reason, durationMs: options.durationMs },
+      message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, archiveLink },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -279,7 +351,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: userId,
       message: `Unbanned <@${userId}> (case ${caseRow.case_code})`,
-      details: { type: 'unban', caseId: caseRow.id, reason: options.reason },
+      details: { type: 'unban', caseCode: caseRow.case_code, reason: options.reason },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -310,13 +382,15 @@ export class PunishmentManager {
     });
     await this.dmAfter('kick', guild, user, caseRow, options);
 
+    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+
     await this.app.logManager.log({
       event: 'member_ban',
       guildId: guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `Softbanned <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'softban', caseId: caseRow.id, reason: options.reason },
+      message: `Softbanned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'softban', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -347,7 +421,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Applied temporary role <@&${roleId}> to <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'temp_role', roleId, durationMs, caseId: caseRow.id },
+      details: { type: 'temp_role', roleId, durationMs, caseCode: caseRow.case_code },
     });
     return { ok: true, case: caseRow, dmSent: false };
   }
@@ -364,7 +438,10 @@ export class PunishmentManager {
       case 'mute':
       case 'timeout':
         if (!(target instanceof GuildMember)) return { ok: false, error: 'target must be a member', dmSent: false };
-        return this.timeout(target, options.durationMs ?? 3600000, options);
+        return this.timeout(target, options.durationMs ?? 3600000, {
+          ...options,
+          logEvent: type === 'mute' ? 'member_mute' : 'member_timeout',
+        });
       case 'kick':
         if (!(target instanceof GuildMember)) return { ok: false, error: 'target must be a member', dmSent: false };
         return this.kick(target, options);

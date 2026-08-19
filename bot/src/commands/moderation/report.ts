@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message, MessageContextMenuCommandInt
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('report')
@@ -44,6 +45,10 @@ async function messageContext(app: App, interaction: MessageContextMenuCommandIn
     targetUserId: target.author?.id,
     targetMessageId: target.id,
     reason: target.content.slice(0, 200) || 'reported message',
+    targetContent: target.content.slice(0, 1000) || null,
+    sourceChannelId: target.channelId,
+    sourceModule: 'manual',
+    attachmentUrls: [...target.attachments.values()].map((a) => a.url),
   });
   await interaction.reply({ content: result.merged ? 'Report merged with an existing one.' : 'Report submitted.', ephemeral: true });
 }
@@ -65,11 +70,20 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || 'No reason given';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!report <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!report <user> <reason>`' });
     return;
   }
-  await app.reporting.createReport({ guildId: guild.id, reporterId: message.author.id, targetUserId: targetId, reason });
-  await message.reply({ content: 'Report submitted.' });
+  const cfg = app.config.reports;
+  if (!cfg.enabled) {
+    await v2MessageReply(message, { content: 'Reporting is disabled.' });
+    return;
+  }
+  if (!app.cooldowns.tryConsume('report', message.author.id, guild.id, cfg.cooldown_seconds)) {
+    await v2MessageReply(message, { content: `You can report again in ${app.cooldowns.remainingSeconds('report', message.author.id, guild.id)}s.` });
+    return;
+  }
+  const result = await app.reporting.createReport({ guildId: guild.id, reporterId: message.author.id, targetUserId: targetId, reason });
+  await v2MessageReply(message, { content: result.merged ? 'Your report was merged with an existing one.' : 'Report submitted. Thank you.' });
 }
 
 const command: BotCommand = {

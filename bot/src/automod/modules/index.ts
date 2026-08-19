@@ -12,6 +12,7 @@ import { createInvitesModule } from './invites';
 import { createEmojiSpamModule } from './emojiSpam';
 import { createLineSpamModule } from './lineSpam';
 import { createPollSpamModule } from './pollSpam';
+import { createDuplicateSpamModule } from './duplicateSpam';
 import { createRegexEngineModule } from './regexEngine';
 import { createTypingSpeedModule } from '../heuristics/typingSpeed';
 import { createMassIdenticalJoinsModule } from '../heuristics/massIdenticalJoins';
@@ -32,6 +33,7 @@ export function registerAutomodModules(app: App, manager: AutomodManager): void 
     createEmojiSpamModule(),
     createLineSpamModule(),
     createPollSpamModule(),
+    createDuplicateSpamModule(),
     createRegexEngineModule(),
     createTypingSpeedModule(),
   ];

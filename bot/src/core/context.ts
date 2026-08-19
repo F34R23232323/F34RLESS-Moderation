@@ -23,7 +23,10 @@ import type { SlowmodeScheduler } from '../management/slowmodeScheduler';
 import type { AntiRaidService } from '../security/antiRaid';
 import type { SavedMessageService } from '../services/savedMessageService';
 import type { DashboardLogService } from '../services/dashboardLogService';
+import type { ArchiveService } from '../services/archiveService';
+import type { MessageLogService } from '../services/messageLogService';
 import type { MessageContentCache } from '../utils/messageCache';
+import type { CustomCommandRunner } from './customCommandRunner';
 
 export interface App {
   config: BotConfig;
@@ -35,8 +38,10 @@ export interface App {
   logManager: LogManager;
   cooldowns: CooldownManager;
   components: ComponentRegistry;
+  customCommands: CustomCommandRunner;
   commands: Map<string, BotCommand>;
   aliases: Map<string, string>;
+  customCommandAliases: Map<string, string>;
   messageCommands: Map<string, BotCommand>;
   userCommands: Map<string, BotCommand>;
   caseService: CaseService;
@@ -58,6 +63,8 @@ export interface App {
   messages: SavedMessageService;
   messageCache: MessageContentCache;
   dashboardLogs: DashboardLogService;
+  archives: ArchiveService;
+  messageLogs: MessageLogService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;

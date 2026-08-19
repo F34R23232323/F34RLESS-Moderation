@@ -3,6 +3,12 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
+
+function base64Result(mode: 'encode' | 'decode', text: string): string {
+  const result = mode === 'encode' ? Buffer.from(text).toString('base64') : Buffer.from(text, 'base64').toString('utf8');
+  return `\`${result.slice(0, 1500)}\``;
+}
 
 const data = new SlashCommandBuilder()
   .setName('base64')
@@ -11,21 +17,19 @@ const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName('text').setDescription('Text').setRequired(true));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  const mode = interaction.options.getString('mode', true);
+  const mode = interaction.options.getString('mode', true) as 'encode' | 'decode';
   const text = interaction.options.getString('text', true);
-  const result = mode === 'encode' ? Buffer.from(text).toString('base64') : Buffer.from(text, 'base64').toString('utf8');
-  await v2Reply(interaction, `\`${result.slice(0, 1500)}\``, { ephemeral: true });
+  await v2Reply(interaction, base64Result(mode, text), { ephemeral: true });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  const mode = args[0] ?? 'encode';
+  const mode = (args[0] ?? 'encode') as 'encode' | 'decode';
   const text = args.slice(1).join(' ');
   if (!text) {
-    await message.reply({ content: 'Usage: `!base64 <encode|decode> <text>`' });
+    await v2MessageReply(message, { content: 'Usage: `!base64 <encode|decode> <text>`' });
     return;
   }
-  const result = mode === 'decode' ? Buffer.from(text, 'base64').toString('utf8') : Buffer.from(text).toString('base64');
-  await message.reply({ content: result.slice(0, 1500) });
+  await v2MessageReply(message, { content: base64Result(mode, text) });
 }
 
 const command: BotCommand = {

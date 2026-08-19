@@ -35,7 +35,13 @@ export function createApiRouter(ctx: DashboardContext): Router {
     }
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await ctx.db.query<RowDataPacket[]>(
-      `SELECT id, event, guild_id, channel_id, actor_id, target_id, message, details, created_at FROM logs ${whereSql} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      `SELECT l.id, l.event, l.guild_id, l.channel_id, l.actor_id, l.target_id, l.message, l.details, l.created_at,
+              ga.username AS actor_username, ga.display_name AS actor_display_name,
+              gt.username AS target_username, gt.display_name AS target_display_name
+       FROM logs l
+       LEFT JOIN guild_users ga ON ga.guild_id = l.guild_id AND ga.user_id = l.actor_id
+       LEFT JOIN guild_users gt ON gt.guild_id = l.guild_id AND gt.user_id = l.target_id
+       ${whereSql} ORDER BY l.id DESC LIMIT ? OFFSET ?`,
       [...params, Number(limit), Number(offset)],
     );
     const [countRows] = await ctx.db.query<RowDataPacket[]>(`SELECT COUNT(*) AS count FROM logs ${whereSql}`, params);
@@ -68,7 +74,11 @@ export function createApiRouter(ctx: DashboardContext): Router {
     }
     const whereSql = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
     const [rows] = await ctx.db.query<RowDataPacket[]>(
-      `SELECT id, rule, module, user_id, channel_id, message_id, content_snippet, response_suppressed, case_ids, created_at FROM automod_logs ${whereSql} ORDER BY id DESC LIMIT ? OFFSET ?`,
+      `SELECT am.id, am.rule, am.module, am.user_id, am.channel_id, am.message_id, am.content_snippet, am.response_suppressed, am.case_ids, am.created_at,
+              gu.username AS user_username, gu.display_name AS user_display_name
+       FROM automod_logs am
+       LEFT JOIN guild_users gu ON gu.guild_id = am.guild_id AND gu.user_id = am.user_id
+       ${whereSql} ORDER BY am.id DESC LIMIT ? OFFSET ?`,
       [...params, Number(limit), Number(offset)],
     );
     res.json({ rows });

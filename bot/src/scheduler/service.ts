@@ -30,6 +30,7 @@ export class SchedulerService {
     this.schedulePendingMessageSends();
     this.schedulePendingDashboardLogs();
     this.scheduleChannelSync();
+    this.scheduleSnapshotPurge();
     this.app.logger.info('Scheduler started');
   }
 
@@ -49,6 +50,15 @@ export class SchedulerService {
     this.addCron('channel-sync', '*/10 * * * *', async () => {
       await this.app.messages.syncChannels();
       await this.app.messages.syncRoles();
+    });
+  }
+
+  private scheduleSnapshotPurge(): void {
+    this.addCron('snapshot-purge', '0 4 * * *', async () => {
+      const removed = await this.app.messageLogs.purgeOld();
+      if (removed > 0) {
+        this.app.logger.info(`Purged ${removed} message snapshots older than retention`);
+      }
     });
   }
 

@@ -36,8 +36,10 @@ export async function handleGuildMemberRemove(app: App, member: GuildMember): Pr
       const channel = guild.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
         const text = cfg.message
+          .replaceAll('{mention}', `<@${member.id}>`)
           .replaceAll('{user}', member.user.username)
-          .replaceAll('{guild}', guild.name);
+          .replaceAll('{guild}', guild.name)
+          .replaceAll('{member_count}', String(guild.memberCount));
         await v2Send(channel as never, text, { accentColor: '#ED4245' }).catch(() => undefined);
       }
     }

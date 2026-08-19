@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('softban')
@@ -31,7 +32,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const deleteDays = interaction.options.getInteger('delete_days') ?? 7;
-  const result = await app.punishmentManager.softban(user as never, { reason, moderatorId: interaction.user.id, deleteMessageDays: deleteDays });
+  const result = await app.punishmentManager.softban(user as never, { reason, moderatorId: interaction.user.id, archiveChannelId: interaction.channel?.id ?? null, deleteMessageDays: deleteDays });
   if (!result.ok) {
     await v2Reply(interaction, `Failed: ${result.error}`, { ephemeral: true });
     return;
@@ -44,11 +45,11 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || 'No reason provided';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!softban <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!softban <user> <reason>`' });
     return;
   }
-  const result = await app.punishmentManager.softban(targetId as never, { reason, moderatorId: message.author.id });
-  await message.reply({ content: result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  const result = await app.punishmentManager.softban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  await v2MessageReply(message, { content: result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

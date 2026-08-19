@@ -9,6 +9,7 @@
   "scripts": {
     "gen-config": "tsx scripts/generate-config.ts",
     "import:messages": "tsx scripts/sapphire-messages-import.ts",
+    "import:custom-commands": "tsx scripts/sapphire-custom-commands-import.ts",
     "dev:bot": "tsx bot/src/index.ts",
     "dev:dashboard": "tsx dashboard/server/src/index.ts",
     "dev:web": "vite --config dashboard/web/vite.config.mjs",

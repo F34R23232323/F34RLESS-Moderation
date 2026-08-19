@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('kick')
@@ -26,7 +27,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
-  const result = await app.punishmentManager.kick(resolved.member, { reason, moderatorId: interaction.user.id });
+  const result = await app.punishmentManager.kick(resolved.member, { reason, moderatorId: interaction.user.id, archiveChannelId: interaction.channel?.id ?? null });
   if (!result.ok) {
     await v2Reply(interaction, `Failed: ${result.error}`, { ephemeral: true });
     return;
@@ -39,21 +40,21 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || 'No reason provided';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!kick <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
   const guard = app.modGuard.canModerate(member, message.member!);
   if (!guard.ok) {
-    await message.reply({ content: `Cannot kick: ${guard.reason}` });
+    await v2MessageReply(message, { content: `Cannot kick: ${guard.reason}` });
     return;
   }
-  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id });
-  await message.reply({ content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

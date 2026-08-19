@@ -21,7 +21,7 @@ export interface ChainTrigger {
 export interface ChainResult {
   actionsTaken: string[];
   actionsFailed: Array<{ step: string; error: string }>;
-  caseIds: number[];
+  caseIds: string[];
   responseSuppressed: boolean;
   suppressDecision: ThrottleDecision | null;
   throttleMode: 'silent' | 'batched_summary';
@@ -150,8 +150,9 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           reason: renderPlaceholders(step.reason ?? 'Automod: {rule}', placeholders),
           moderatorId: this.app.client.user?.id ?? null,
           silent: true,
+          archive: false,
         });
-        if (warnResult.case) result.caseIds.push(warnResult.case.id);
+        if (warnResult.case) result.caseIds.push(warnResult.case.case_code);
         if (!warnResult.ok) throw new Error(warnResult.error ?? 'warn failed');
         result.actionsTaken.push('warn');
         break;
@@ -165,8 +166,10 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           reason: renderPlaceholders(step.reason ?? 'Automod: {rule}', placeholders),
           moderatorId: this.app.client.user?.id ?? null,
           silent: true,
+          archive: false,
+          logEvent: step.type === 'mute' ? 'member_mute' : 'member_timeout',
         });
-        if (muteResult.case) result.caseIds.push(muteResult.case.id);
+        if (muteResult.case) result.caseIds.push(muteResult.case.case_code);
         if (!muteResult.ok) throw new Error(muteResult.error ?? 'timeout failed');
         result.actionsTaken.push('timeout');
         break;
@@ -178,8 +181,9 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           reason: renderPlaceholders(step.reason ?? 'Automod: {rule}', placeholders),
           moderatorId: this.app.client.user?.id ?? null,
           silent: true,
+          archive: false,
         });
-        if (kickResult.case) result.caseIds.push(kickResult.case.id);
+        if (kickResult.case) result.caseIds.push(kickResult.case.case_code);
         if (!kickResult.ok) throw new Error(kickResult.error ?? 'kick failed');
         result.actionsTaken.push('kick');
         break;
@@ -191,8 +195,9 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           moderatorId: this.app.client.user?.id ?? null,
           durationMs: step.duration ? (parseDuration(step.duration)?.milliseconds ?? 0) || undefined : undefined,
           silent: true,
+          archive: false,
         });
-        if (banResult.case) result.caseIds.push(banResult.case.id);
+        if (banResult.case) result.caseIds.push(banResult.case.case_code);
         if (!banResult.ok) throw new Error(banResult.error ?? 'ban failed');
         result.actionsTaken.push('ban');
         break;
@@ -225,6 +230,11 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           targetUserId: trigger.user.id,
           targetMessageId: trigger.message?.id ?? null,
           reason: renderPlaceholders(step.reason ?? 'Automod: {rule}', placeholders),
+          targetContent: (trigger.content ?? '').slice(0, 1000),
+          sourceChannelId: trigger.channel?.id ?? null,
+          sourceModule: trigger.module,
+          sourceRule: trigger.rule,
+          attachmentUrls: trigger.message ? [...trigger.message.attachments.values()].map((a) => a.url) : undefined,
         });
         result.actionsTaken.push('create_report');
         break;

@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('prefix')
@@ -31,22 +32,24 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  if (!message.guild) return;
+  const guild = message.guild;
+  if (!guild) return;
   if (!app.modGuard.isOwner(message.author.id)) {
-    await message.reply({ content: 'Owner only.' });
+    await v2MessageReply(message, { content: 'Owner only.' });
     return;
   }
   const newPrefix = args[0];
-  if (!newPrefix) {
-    await message.reply({ content: `Usage: !prefix <new-prefix>` });
+  if (newPrefix) {
+    await app.db.execute(
+      `INSERT INTO custom_config (guild_id, key_name, value) VALUES (?, 'prefix', ?)
+       ON DUPLICATE KEY UPDATE value = VALUES(value)`,
+      [guild.id, JSON.stringify({ prefixes: [newPrefix] })],
+    );
+    await v2MessageReply(message, { content: `Prefix set to \`${newPrefix}\`.` });
     return;
   }
-  await app.db.execute(
-    `INSERT INTO custom_config (guild_id, key_name, value) VALUES (?, 'prefix', ?)
-     ON DUPLICATE KEY UPDATE value = VALUES(value)`,
-    [message.guild.id, JSON.stringify({ prefixes: [newPrefix] })],
-  );
-  await message.reply({ content: `Prefix set to \`${newPrefix}\`.` });
+  const override = app.config.bot.per_guild_prefixes[guild.id] ?? null;
+  await v2MessageReply(message, { content: `Prefixes: ${(override ?? app.config.bot.prefixes).map((p) => `\`${p}\``).join(', ')}` });
 }
 
 const command: BotCommand = {

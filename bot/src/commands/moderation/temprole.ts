@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { parseDuration } from '../../../../shared/src/index';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('temprole')
@@ -50,21 +51,21 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const durationStr = args[2];
   const reason = args.slice(3).join(' ') || 'Temporary role';
   if (!guild || !targetId || !roleId || !durationStr) {
-    await message.reply({ content: 'Usage: `!temprole <user> <role> <duration> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!temprole <user> <role> <duration> <reason>`' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) {
-    await message.reply({ content: 'User not found.' });
+    await v2MessageReply(message, { content: 'User not found.' });
     return;
   }
   const duration = parseDuration(durationStr);
   if (!duration || duration.isPermanent) {
-    await message.reply({ content: 'Provide a valid duration.' });
+    await v2MessageReply(message, { content: 'Provide a valid duration.' });
     return;
   }
   const result = await app.punishmentManager.tempRole(member, roleId, duration.milliseconds, { reason, moderatorId: message.author.id });
-  await message.reply({ content: result.ok ? `Applied <@&${roleId}> to <@${targetId}>.` : `Failed: ${result.error}` });
+  await v2MessageReply(message, { content: result.ok ? `Applied <@&${roleId}> to <@${targetId}> for ${duration.milliseconds / 60000} minutes.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

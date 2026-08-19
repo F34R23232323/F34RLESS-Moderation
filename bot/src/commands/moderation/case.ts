@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('case')
@@ -23,6 +24,18 @@ async function resolveCase(app: App, guildId: string, id: string): Promise<{ c: 
   return c ? { c } : null;
 }
 
+function caseViewLines(c: any): string {
+  return [
+    `**Case ${c.case_code}** (${c.status})`,
+    `Type: ${c.type}`,
+    `User: <@${c.user_id}>`,
+    `Moderator: ${c.moderator_id ? `<@${c.moderator_id}>` : 'system'}`,
+    `Reason: ${c.reason}`,
+    c.duration_ms ? `Duration: ${c.duration_ms}ms` : '',
+    `Created: ${new Date(c.created_at).toISOString()}`,
+  ].filter(Boolean).join('\n');
+}
+
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   await interaction.deferReply();
   const guild = interaction.guild;
@@ -35,16 +48,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
       await v2Reply(interaction, 'Case not found.', { ephemeral: true });
       return;
     }
-    const c = found.c;
-    await v2Reply(interaction, [
-      `**Case ${c.case_code}** (${c.status})`,
-      `Type: ${c.type}`,
-      `User: <@${c.user_id}>`,
-      `Moderator: ${c.moderator_id ? `<@${c.moderator_id}>` : 'system'}`,
-      `Reason: ${c.reason}`,
-      c.duration_ms ? `Duration: ${c.duration_ms}ms` : '',
-      `Created: ${new Date(c.created_at).toISOString()}`,
-    ].filter(Boolean).join('\n'));
+    await v2Reply(interaction, caseViewLines(found.c));
   } else if (sub === 'edit') {
     const found = await resolveCase(app, guild.id, interaction.options.getString('id', true));
     const reason = interaction.options.getString('reason', true);
@@ -92,12 +96,63 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!guild) return;
   const sub = args[0] ?? 'view';
   const id = args[1];
-  if ((sub === 'view' || sub === 'void') && id) {
+  if (sub === 'view' && id) {
     const found = await resolveCase(app, guild.id, id);
-    await message.reply({ content: found ? `Case ${found.c.case_code} (${found.c.status}) - ${found.c.type} - <@${found.c.user_id}> - ${found.c.reason}` : `Case not found.` });
+    await v2MessageReply(message, { content: found ? caseViewLines(found.c) : 'Case not found.' });
     return;
   }
-  await message.reply({ content: 'Usage: `!case view <code>` | `!case edit <code> <reason>` | `!case void <code>` | `!case link <code> <code>` | `!case bulk_edit <ids> <reason>`' });
+  if (sub === 'edit' && id && args[2]) {
+    const found = await resolveCase(app, guild.id, id);
+    const reason = args.slice(2).join(' ');
+    if (!found) {
+      await v2MessageReply(message, { content: 'Case not found.' });
+      return;
+    }
+    await app.caseService.updateReason(found.c.id, reason);
+    await app.logManager.log({ event: 'case_edit', guildId: guild.id, actorId: message.author.id, targetId: found.c.user_id, message: `Case ${found.c.case_code} reason edited`, details: { newReason: reason } });
+    await v2MessageReply(message, { content: `Case ${found.c.case_code} updated.` });
+    return;
+  }
+  if (sub === 'void' && id) {
+    const found = await resolveCase(app, guild.id, id);
+    const reason = args.slice(2).join(' ') || undefined;
+    if (!found) {
+      await v2MessageReply(message, { content: 'Case not found.' });
+      return;
+    }
+    await app.caseService.voidCase(found.c.id, reason);
+    if (found.c.type === 'warn') await app.caseService.deactivateWarning(found.c.id);
+    await v2MessageReply(message, { content: `Case ${found.c.case_code} voided.` });
+    return;
+  }
+  if (sub === 'link' && id && args[2]) {
+    const a = await resolveCase(app, guild.id, id);
+    const b = await resolveCase(app, guild.id, args[2]);
+    if (!a || !b) {
+      await v2MessageReply(message, { content: 'One or both cases not found.' });
+      return;
+    }
+    await app.caseService.linkCases(guild.id, a.c.id, [b.c.id]);
+    await v2MessageReply(message, { content: `Linked case ${a.c.case_code} and ${b.c.case_code}.` });
+    return;
+  }
+  if (sub === 'bulk_edit' && id) {
+    const reason = args.slice(2).join(' ');
+    if (!reason) {
+      await v2MessageReply(message, { content: 'Usage: `!case bulk_edit <ids> <reason>`' });
+      return;
+    }
+    const ids = id.split(',').map((s) => s.trim()).filter(Boolean);
+    const resolved = [];
+    for (const cid of ids) {
+      const found = await resolveCase(app, guild.id, cid);
+      if (found) resolved.push(found.c.id);
+    }
+    await app.caseService.bulkUpdateReason(resolved, reason);
+    await v2MessageReply(message, { content: `Updated ${resolved.length} case(s).` });
+    return;
+  }
+  await v2MessageReply(message, { content: 'Usage: `!case view <code>` | `!case edit <code> <reason>` | `!case void <code>` | `!case link <code> <code>` | `!case bulk_edit <ids> <reason>`' });
 }
 
 const command: BotCommand = {

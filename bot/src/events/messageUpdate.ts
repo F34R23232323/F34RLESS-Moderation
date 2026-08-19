@@ -20,6 +20,10 @@ export async function handleMessageUpdate(app: App, oldMessage: Message | Partia
 
     if (oldContent !== null && oldContent === newContent) return;
 
+    if (newMessage.guildId) {
+      await app.messageLogs.onMessageEdit(oldMessage, newMessage);
+    }
+
     await app.logManager.log({
       event: 'message_edit',
       guildId: newMessage.guildId ?? '0',

@@ -1,7 +1,4 @@
-import type { Guild } from 'discord.js';
-
-
-const DISPLAY_NAMES: Record<string, string> = {
+import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, string> = {
   message_edit: 'Message Edited',
   message_delete: 'Message Deleted',
   message_bulk_delete: 'Messages Bulk Deleted',
@@ -13,6 +10,10 @@ const DISPLAY_NAMES: Record<string, string> = {
   member_avatar_update: 'Avatar Updated',
   member_username_update: 'Username Updated',
   member_timeout: 'Member Timed Out',
+  member_mute: 'Member Muted',
+  member_unmute: 'Member Unmuted',
+  member_warn: 'Member Warned',
+  member_unwarn: 'Warning Removed',
   member_boost: 'Server Boosted',
   role_add: 'Role Added',
   role_remove: 'Role Removed',
@@ -34,6 +35,7 @@ const DISPLAY_NAMES: Record<string, string> = {
   case_voided: 'Case Voided',
   case_unvoided: 'Case Restored',
   case_linked: 'Cases Linked',
+  case_closed: 'Case Closed',
   note_add: 'Note Added',
   note_edit: 'Note Edited',
   note_remove: 'Note Removed',
@@ -54,44 +56,42 @@ export function friendlyEventName(event: string): string {
     .join(' ');
 }
 
-export function resolveChannelName(guild: Guild | null, id: string): string | null {
-  return guild?.channels.cache.get(id)?.name ?? null;
-}
-
-export function resolveRoleName(guild: Guild | null, id: string): string | null {
-  return guild?.roles.cache.get(id)?.name ?? null;
-}
-
-export function resolveUserName(guild: Guild | null, id: string): string | null {
-  const member = guild?.members.cache.get(id);
-  if (member) return member.nickname ?? member.user.username;
-  const user = guild?.client.users.cache.get(id);
-  return user?.username ?? null;
-}
-
-/** Remove mention syntax so log messages never ping anyone. */
-export function stripMentions(text: string, guild: Guild | null): string {
-  return text
-    .replace(/<@!?(\d+)>/g, (_, id: string) => `@${resolveUserName(guild, id) ?? id}`)
-    .replace(/<#(\d+)>/g, (_, id: string) => `#${resolveChannelName(guild, id) ?? id}`)
-    .replace(/<@&(\d+)>/g, (_, id: string) => `@${resolveRoleName(guild, id) ?? id}`);
-}
-
 const LABELS: Record<string, string> = {
   userId: 'User',
   authorId: 'Author',
   moderatorId: 'Moderator',
   targetId: 'Target',
+  targetUser: 'Target User',
+  actorId: 'Actor',
   channelId: 'Channel',
+  parentId: 'Parent Channel',
   messageId: 'Message ID',
+  roleId: 'Role',
   reason: 'Reason',
+  blacklistReason: 'Reason',
+  newReason: 'New Reason',
   content: 'Content',
   old: 'Before',
   new: 'After',
-  roleId: 'Role',
+  oldChannel: 'From',
+  newChannel: 'To',
+  oldNickname: 'Old Nickname',
+  newNickname: 'New Nickname',
+  oldUsername: 'Old Username',
+  newUsername: 'New Username',
+  oldName: 'Old Name',
+  newName: 'New Name',
+  oldTopic: 'Old Topic',
+  newTopic: 'New Topic',
+  oldAvatar: 'Old Avatar',
+  newAvatar: 'New Avatar',
+  changes: 'Changes',
   durationMs: 'Duration',
   caseId: 'Case',
+  caseCode: 'Case',
+  caseIds: 'Cases',
   count: 'Count',
+  amount: 'Amount',
   rule: 'Rule',
   module: 'Module',
   createdAt: 'Created',
@@ -104,43 +104,85 @@ const LABELS: Record<string, string> = {
   name: 'Name',
   title: 'Title',
   description: 'Description',
-  oldNickname: 'Old Nickname',
-  newNickname: 'New Nickname',
   accountAgeDays: 'Account Age',
+  accountType: 'Account Type',
   attachments: 'Attachments',
-  changes: 'Changes',
-  oldChannel: 'From',
-  newChannel: 'To',
+  action: 'Action',
+  banned: 'Banned',
+  failed: 'Failed',
+  filters: 'Filters',
+  criteria: 'Criteria',
+  contains: 'Contains',
+  bots: 'Bots',
+  appealId: 'Appeal ID',
+  avatarUrl: 'Avatar',
+  animated: 'Animated',
+  url: 'URL',
+  id: 'ID',
+  actionsTaken: 'Actions',
+  actionsFailed: 'Failed Actions',
+  responseSuppressed: 'Response',
+  contentSnippet: 'Matched',
+  oldValue: 'Old Value',
+  newValue: 'New Value',
+  level: 'Level',
+  xp: 'XP',
+  oldLevel: 'Old Level',
+  newLevel: 'New Level',
+  oldVerification: 'Old Verification',
+  newVerification: 'New Verification',
+  boostCount: 'Boost Count',
+  boostTier: 'Boost Tier',
+  oldTier: 'Old Tier',
+  newTier: 'New Tier',
 };
 
-const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'inviter', 'actorId']);
+const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'targetUser', 'inviter', 'actorId']);
+const CHANNEL_ID_KEYS = new Set(['channelId', 'parentId', 'inviteChannel']);
+const ROLE_ID_KEYS = new Set(['roleId']);
 
 const SNOWFLAKE_RE = /^\d{17,20}$/;
 
-/** Flatten top-level detail keys into label/value lines (no raw JSON dump). */
-export function formatDetails(details: unknown, guild: Guild | null): string[] {
-  if (!details || typeof details !== 'object') return [];
+function truncate(s: string, max = 1500): string {
+  if (s.length <= max) return s;
+  return `${s.slice(0, max)}… (+${s.length - max} chars)`;
+}
+
+function mentionSnowflake(key: string, raw: string): string | null {
+  if (!SNOWFLAKE_RE.test(raw)) return null;
+  if (CHANNEL_ID_KEYS.has(key)) return `<#${raw}>`;
+  if (ROLE_ID_KEYS.has(key)) return `<@&${raw}>`;
+  if (USER_ID_KEYS.has(key)) return `<@${raw}>`;
+  return null;
+}
+
+/** Flatten detail keys into labelled lines (no raw JSON dump). Mentions are
+ *  rendered as clickable references; pings are disabled at send time. */
+export function formatDetails(details: unknown, guild: Guild | null, depth = 0): string[] {
+  if (!details || typeof details !== 'object' || Array.isArray(details) || depth > 3) return [];
   const lines: string[] = [];
   for (const [key, value] of Object.entries(details as Record<string, unknown>)) {
-    if (value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) continue;
+    if (value === null || value === undefined || value === '') continue;
     const label = LABELS[key] ?? key;
-    let rendered: string;
+
+    if (Array.isArray(value)) {
+      if (value.length === 0) continue;
+      const joined = value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ');
+      lines.push(`**${label}:** ${truncate(joined)}`);
+      continue;
+    }
+
     if (typeof value === 'object') {
-      try {
-        rendered = JSON.stringify(value);
-      } catch {
-        rendered = String(value);
-      }
-    } else {
-      rendered = String(value);
+      const nested = formatDetails(value, guild, depth + 1);
+      if (nested.length === 0) continue;
+      lines.push(`**${label}**`);
+      for (const n of nested) lines.push(`- ${n}`);
+      continue;
     }
-    const raw = typeof value === 'string' ? value : '';
-    if (SNOWFLAKE_RE.test(raw)) {
-      if (key === 'channelId') rendered = `<#${raw}>`;
-      else if (key === 'roleId') rendered = `<@&${raw}>`;
-      else if (USER_ID_KEYS.has(key)) rendered = `<@${raw}>`;
-    }
-    lines.push(`**${label}:** ${stripMentions(rendered, guild).slice(0, 800)}`);
+
+    const raw = String(value);
+    const mention = mentionSnowflake(key, raw);
+    lines.push(`**${label}:** ${truncate(mention ?? raw)}`);
   }
   return lines;
 }
@@ -159,7 +201,7 @@ export function humanizeMs(ms: number): string {
 
 /** True if the event is "moderation_action" or otherwise needs a red accent. */
 export function isDestructiveEvent(event: string): boolean {
-  return ['moderation_action', 'member_ban', 'member_kick', 'member_timeout', 'automod_trigger', 'error_event', 'rate_limit_event'].includes(event);
+  return ['moderation_action', 'member_ban', 'member_kick', 'member_mute', 'member_timeout', 'automod_trigger', 'error_event', 'rate_limit_event'].includes(event);
 }
 
 export const LOG_EVENT_ACCENTS: Record<string, number> = {
@@ -171,6 +213,10 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   member_avatar_update: 0x00b0f4,
   member_username_update: 0x00b0f4,
   member_timeout: 0xed4245,
+  member_mute: 0xed4245,
+  member_unmute: 0x57f287,
+  member_warn: 0xfee75c,
+  member_unwarn: 0x57f287,
   moderation_action: 0xed4245,
   automod_trigger: 0xeb459e,
   error_event: 0xed4245,
@@ -181,6 +227,7 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   case_edit: 0x5865f2,
   case_voided: 0xed4245,
   case_unvoided: 0x57f287,
+  case_closed: 0x57f287,
   note_add: 0x57f287,
   note_edit: 0x5865f2,
   note_remove: 0xfee75c,

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { actionChainSchema, durationSchema, messageFormatSchema, snowflakeSchema } from './actions';
 import { DEFAULT_ACTION_CHAIN, DEFAULT_WARN_CHAIN } from './chainDefaults';
 import { permissionNamesSchema } from './permissions';
+import type { CustomCommandActionUnion, CustomCommandConfig } from '../types/customCommands';
 
 const snowflake = z.string().regex(/^\d{15,20}$/, 'Expected a Discord snowflake ID');
 const snowflakeArray = z.array(snowflake).default([]);
@@ -55,6 +56,155 @@ export const punishmentDmTypeSchema = z
   })
   .strict();
 
+const customEmbedFieldSchema = z
+  .object({
+    name: z.string(),
+    value: z.string(),
+    inline: z.boolean().optional(),
+  })
+  .strict();
+
+const customEmbedSchema = z
+  .object({
+    title: z.string().optional(),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    url: z.string().optional(),
+    timestamp: z.boolean().optional(),
+    image: z.string().optional(),
+    thumbnail: z.string().optional(),
+    author: z
+      .object({
+        name: z.string(),
+        url: z.string().optional(),
+        icon_url: z.string().optional(),
+      })
+      .strict()
+      .optional(),
+    fields: z.array(customEmbedFieldSchema).optional(),
+    footer: z
+      .object({
+        text: z.string(),
+        icon_url: z.string().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+const customButtonSchema = z
+  .object({
+    type: z.literal('button'),
+    id: z.string(),
+    custom_id: z.string().optional(),
+    label: z.string(),
+    style: z.enum(['primary', 'secondary', 'success', 'danger', 'link']).optional(),
+    emoji: z.string().optional(),
+    url: z.string().optional(),
+    disabled: z.boolean().optional(),
+  })
+  .strict();
+
+const customSelectOptionSchema = z
+  .object({
+    label: z.string(),
+    value: z.string(),
+    description: z.string().optional(),
+    emoji: z.string().optional(),
+  })
+  .strict();
+
+const customSelectSchema = z
+  .object({
+    type: z.literal('select'),
+    id: z.string(),
+    custom_id: z.string().optional(),
+    placeholder: z.string().optional(),
+    min_values: z.number().int().optional(),
+    max_values: z.number().int().optional(),
+    options: z.array(customSelectOptionSchema),
+  })
+  .strict();
+
+const customComponentRowSchema = z
+  .object({
+    components: z.array(z.union([customButtonSchema, customSelectSchema])),
+  })
+  .strict();
+
+const customPayloadSchema = z
+  .object({
+    content: z.string().optional(),
+    embeds: z.array(customEmbedSchema).optional(),
+    components: z.array(customComponentRowSchema).optional(),
+    files: z.array(z.string()).optional(),
+  })
+  .strict();
+
+const customTargetSchema = z
+  .object({
+    target: z.enum(['author', 'mentioned', 'first_arg', 'args']).optional(),
+    user_id: z.string().optional(),
+  })
+  .strict();
+
+const customActionSchema: z.ZodType<CustomCommandActionUnion> = z.lazy(() =>
+  z.discriminatedUnion('type', [
+    z.object({ type: z.literal('send_message'), content: z.string().optional(), embeds: z.array(customEmbedSchema).optional(), components: z.array(customComponentRowSchema).optional(), files: z.array(z.string()).optional(), reply: z.boolean().optional(), ephemeral: z.boolean().optional(), delete_after_seconds: z.number().optional(), mention: z.boolean().optional() }).strict(),
+    z.object({ type: z.literal('edit_message'), content: z.string().optional(), embeds: z.array(customEmbedSchema).optional(), components: z.array(customComponentRowSchema).optional(), files: z.array(z.string()).optional() }).strict(),
+    z.object({ type: z.literal('send_channel'), channel_id: z.string(), content: z.string().optional(), embeds: z.array(customEmbedSchema).optional(), components: z.array(customComponentRowSchema).optional(), files: z.array(z.string()).optional(), delete_after_seconds: z.number().optional() }).strict(),
+    z.object({ type: z.literal('dm'), content: z.string().optional(), embeds: z.array(customEmbedSchema).optional(), components: z.array(customComponentRowSchema).optional(), files: z.array(z.string()).optional() }).strict(),
+    z.object({ type: z.literal('delete_message'), delete_after_seconds: z.number() }).strict(),
+    z.object({ type: z.literal('react'), emojis: z.array(z.string()) }).strict(),
+    z.object({ type: z.literal('add_role'), role_id: z.string(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('remove_role'), role_id: z.string(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('add_roles'), role_ids: z.array(z.string()), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('remove_roles'), role_ids: z.array(z.string()), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('kick'), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('ban'), reason: z.string().optional(), delete_message_days: z.number().int().min(0), duration: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('unban'), user_id: z.string(), reason: z.string().optional() }).strict(),
+    z.object({ type: z.literal('timeout'), duration: z.string(), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('untimeout'), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('create_thread'), name: z.string(), auto_archive_duration: z.number().int(), reason: z.string().optional() }).strict(),
+    z.object({ type: z.literal('set_nickname'), nickname: z.string(), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('move_channel'), channel_id: z.string(), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('disconnect'), reason: z.string().optional(), target: customTargetSchema.shape.target, user_id: customTargetSchema.shape.user_id }).strict(),
+    z.object({ type: z.literal('create_role'), name: z.string(), color: z.string().optional(), hoist: z.boolean(), mentionable: z.boolean(), permissions: z.array(z.string()), reason: z.string().optional() }).strict(),
+    z.object({ type: z.literal('delete_role'), role_id: z.string(), reason: z.string().optional() }).strict(),
+    z.object({ type: z.literal('rename_channel'), name: z.string(), channel_id: z.string().optional(), reason: z.string().optional() }).strict(),
+    z.object({ type: z.literal('wait'), ms: z.number().int().min(0) }).strict(),
+    z.object({ type: z.literal('random_pick'), choices: z.array(customPayloadSchema) }).strict(),
+    z.object({ type: z.literal('run_command'), command: z.string(), args: z.string().optional() }).strict(),
+    z.object({ type: z.literal('stop') }).strict(),
+    z.object({ type: z.literal('log'), content: z.string(), channel_id: z.string().optional() }).strict(),
+    z.object({ type: z.literal('webhook'), url: z.string(), content: z.string().optional(), embeds: z.array(customEmbedSchema).optional(), components: z.array(customComponentRowSchema).optional(), files: z.array(z.string()).optional() }).strict(),
+    z.object({ type: z.literal('counter'), name: z.string(), increment_by: z.number().int(), persist: z.boolean().optional(), send_result: z.boolean().optional() }).strict(),
+    z.object({ type: z.literal('if'), condition: z.enum(['has_role', 'not_has_role', 'is_bot', 'has_permission', 'equals_arg']), role_id: z.string().optional(), permission: z.string().optional(), arg_index: z.number().int().optional(), equals: z.string().optional(), then: z.array(customActionSchema).optional(), else: z.array(customActionSchema).optional() }).strict(),
+  ]),
+);
+
+const customCommandSchema: z.ZodType<CustomCommandConfig, z.ZodTypeDef, Partial<CustomCommandConfig>> = z
+  .object({
+    enabled: boolean.default(true),
+    slash: boolean.default(true),
+    prefix: boolean.default(true),
+    cooldown_seconds: z.number().int().min(0).default(3),
+    delete_input: z.union([boolean, z.number().int().min(0)]).default(false),
+    delete_output: z.union([boolean, z.number().int().min(0)]).default(false),
+    ephemeral: boolean.default(false),
+    suppress_reply: boolean.default(false),
+    allowed_users: z.array(z.string()).default([]),
+    allowed_roles: z.array(z.string()).default([]),
+    denied_roles: z.array(z.string()).default([]),
+    permissions: z.array(z.string()).default([]),
+    channel_ids: z.array(z.string()).default([]),
+    channel_mode: z.enum(['allow', 'deny']).default('allow'),
+    aliases: z.array(z.string()).default([]),
+    description: z.string().default(''),
+    actions: z.array(customActionSchema).default([]),
+  })
+  .strict();
+
 export const configSchema = z
   .object({
     bot: z
@@ -78,6 +228,8 @@ export const configSchema = z
       .strict(),
 
     commands: z.record(z.string().min(1), commandSchema).default({}),
+
+    custom_commands: z.record(z.string().min(1), customCommandSchema).default({}),
 
     command_defaults: z
       .object({
@@ -118,6 +270,7 @@ export const configSchema = z
         cooldown_seconds: z.number().int().min(0).default(30),
         channel_id: snowflake.optional(),
         action_roles: snowflakeArray,
+        ping_role_id: snowflake.optional(),
         archive: z
           .object({
             enabled: boolean.default(false),
@@ -127,6 +280,25 @@ export const configSchema = z
           .default({ enabled: false }),
         merge_window_seconds: z.number().int().min(0).default(300),
         false_report_warning_enabled: boolean.default(false),
+      })
+      .strict()
+      .default({}),
+
+    archives: z
+      .object({
+        enabled: z.boolean().default(true),
+        default_amount: z.number().int().min(1).max(5000).default(50),
+        max_amount: z.number().int().min(1).max(5000).default(2000),
+        case_evidence_amount: z.number().int().min(1).max(500).default(40),
+        automod_context_amount: z.number().int().min(1).max(100).default(15),
+        max_attachment_bytes: z.number().int().min(1).default(10 * 1024 * 1024),
+        max_archive_bytes: z.number().int().min(1).default(200 * 1024 * 1024),
+        allowed_roles: z.array(z.string()).default([]),
+        allowed_users: z.array(z.string()).default([]),
+        snapshot_messages: z.boolean().default(true),
+        message_retention_days: z.number().int().min(1).max(365).default(90),
+        archive_on_delete: z.boolean().default(true),
+        archive_on_edit: z.boolean().default(true),
       })
       .strict()
       .default({}),
@@ -178,6 +350,14 @@ export const configSchema = z
               .strict(),
             poll_spam: z
               .object({ ...automodModuleBase, threshold: z.number().int().min(2).default(3), window_seconds: z.number().int().min(1).default(60) })
+              .strict(),
+            duplicate_spam: z
+              .object({
+                ...automodModuleBase,
+                threshold: z.number().int().min(2).default(5),
+                window_seconds: z.number().int().min(1).default(5),
+                similarity_threshold: z.number().min(0).max(1).default(0.8),
+              })
               .strict(),
           })
           .strict(),
@@ -255,7 +435,7 @@ export const configSchema = z
         order: z.enum(['before', 'after']).default('after'),
         types: z
           .record(
-            z.enum(['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute']),
+            z.enum(['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute', 'case_closed']),
             punishmentDmTypeSchema,
           )
           .default({}),
@@ -630,7 +810,7 @@ export type LoggingEntryConfig = z.infer<typeof loggingEntrySchema>;
 export type EscalationActionConfig = z.infer<typeof escalationActionSchema>;
 export type PunishmentDmTypeConfig = z.infer<typeof punishmentDmTypeSchema>;
 
-export const PUNISHMENT_TYPES = ['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute'] as const;
+export const PUNISHMENT_TYPES = ['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute', 'case_closed'] as const;
 export type PunishmentType = (typeof PUNISHMENT_TYPES)[number];
 
 export const LOG_EVENT_NAMES = [
@@ -642,7 +822,11 @@ export const LOG_EVENT_NAMES = [
   'member_ban',
   'member_unban',
   'member_kick',
+  'member_mute',
+  'member_unmute',
   'member_timeout',
+  'member_warn',
+  'member_unwarn',
   'role_add',
   'role_remove',
   'nickname_change',
@@ -662,5 +846,6 @@ export const LOG_EVENT_NAMES = [
   'case_edit',
   'appeal_created',
   'appeal_resolved',
+  'archive_created',
 ] as const;
 export type LogEventName = (typeof LOG_EVENT_NAMES)[number];

@@ -1,5 +1,6 @@
 import React from 'react';
 import { LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
   return (
@@ -11,6 +12,9 @@ export default function Login() {
           <LogIn size={16} />
           Sign in with Discord
         </a>
+        <p className="login-privacy">
+          <Link to="/privacy">Privacy Policy</Link>
+        </p>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
 import { v2Send } from '../utils/v2';
 import { buildRichV2 } from '../utils/v2';
-import { friendlyEventName, stripMentions, formatDetails, logAccent } from './logFormatter';
+import { friendlyEventName, formatDetails, logAccent } from './logFormatter';
 
 export interface LogInput {
   event: string;
@@ -68,20 +68,32 @@ export class LogManager extends EventEmitter {
     try {
       const header = friendlyEventName(input.event);
       const lines: string[] = [];
-      if (input.message) lines.push(stripMentions(input.message, guild));
-      if (input.actorId) lines.push(`**Actor:** ${stripMentions(`<@${input.actorId}>`, guild)}`);
-      if (input.targetId) lines.push(`**User:** ${stripMentions(`<@${input.targetId}>`, guild)}`);
+      if (input.message) lines.push(input.message);
+      if (input.channelId && !input.message?.includes(`<#${input.channelId}>`)) {
+        lines.push(`**Channel:** <#${input.channelId}>`);
+      }
+      if (input.actorId) lines.push(`**Actor:** <@${input.actorId}>`);
+      if (input.targetId) lines.push(`**User:** <@${input.targetId}>`);
       lines.push(...formatDetails(input.details, guild));
+
+      const details = input.details as Record<string, unknown> | null | undefined;
+      const messageId = details && typeof details.messageId === 'string' ? details.messageId : null;
+      if (messageId && input.channelId) {
+        lines.push(`**Link:** <https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}>`);
+      }
+
+      let text = lines.join('\n') || input.event;
+      if (text.length > 3800) text = `${text.slice(0, 3800)}… (+${text.length - 3800} chars)`;
 
       const rich = buildRichV2({
         accentColor: logAccent(input.event),
         header,
-        text: lines.join('\n') || input.event,
-        footer: `<t:${Math.floor(Date.now() / 1000)}:f>`,
+        text,
+        footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
         mediaUrls: input.mediaUrls?.length ? input.mediaUrls : undefined,
       });
       const files = input.files?.map((f) => new AttachmentBuilder(Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data), { name: f.name }));
-      await channel.send({ ...rich, ...(files?.length ? { files } : {}) } as never);
+      await channel.send({ ...rich, ...(files?.length ? { files } : {}), allowedMentions: { parse: [], repliedUser: false } } as never);
     } catch (err) {
       console.error(`Failed to route log ${input.event} to channel:`, err);
     }
@@ -99,12 +111,14 @@ export class LogManager extends EventEmitter {
     actionsTaken: unknown;
     actionsFailed: unknown;
     responseSuppressed: boolean;
-    caseIds: number[];
+    caseIds: string[];
+    archiveCode?: string | null;
+    archiveLink?: string | null;
   }): Promise<void> {
     try {
       await this.db.execute(
-        `INSERT INTO automod_logs (guild_id, rule, module, user_id, channel_id, message_id, content_snippet, stored_content, actions_taken, actions_failed, response_suppressed, case_ids)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO automod_logs (guild_id, rule, module, user_id, channel_id, message_id, content_snippet, stored_content, actions_taken, actions_failed, response_suppressed, case_ids, archive_code)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           entry.guildId,
           entry.rule,
@@ -118,6 +132,7 @@ export class LogManager extends EventEmitter {
           JSON.stringify(entry.actionsFailed),
           entry.responseSuppressed ? 1 : 0,
           JSON.stringify(entry.caseIds),
+          entry.archiveCode ?? null,
         ],
       );
       this.emit('automod_log', entry);
@@ -132,8 +147,15 @@ export class LogManager extends EventEmitter {
     rule: string;
     module: string;
     userId: string;
+    channelId?: string | null;
+    messageId?: string | null;
     contentSnippet?: string | null;
+    actionsTaken: unknown;
+    actionsFailed: unknown;
     responseSuppressed: boolean;
+    caseIds: string[];
+    archiveCode?: string | null;
+    archiveLink?: string | null;
   }): Promise<void> {
     const app = this.app;
     if (!app) return;
@@ -146,17 +168,29 @@ export class LogManager extends EventEmitter {
     const channel = (threadId && guild.channels.cache.get(threadId)) || (targetId && guild.channels.cache.get(targetId));
     if (!channel || !('send' in channel)) return;
 
-    const suppressed = entry.responseSuppressed ? ' (response throttled)' : '';
-    const lines = [`**User:** ${stripMentions(`<@${entry.userId}>`, guild)}`];
+    const lines: string[] = [`**User:** <@${entry.userId}>`];
+    if (entry.channelId) lines.push(`**Channel:** <#${entry.channelId}>`);
+    if (entry.messageId && entry.channelId) {
+      lines.push(`**Link:** <https://discord.com/channels/${entry.guildId}/${entry.channelId}/${entry.messageId}>`);
+    }
     if (entry.contentSnippet) lines.push(`**Matched:** ${entry.contentSnippet.slice(0, 800)}`);
-    if (suppressed) lines.push(`**Response:** suppressed by throttle`);
+    const taken = entry.actionsTaken as string[] | null | undefined;
+    if (Array.isArray(taken) && taken.length > 0) lines.push(`**Actions:** ${taken.join(', ')}`);
+    const failed = entry.actionsFailed as Array<{ step?: string; error?: string }> | null | undefined;
+    if (Array.isArray(failed) && failed.length > 0) {
+      lines.push(`**Failed:** ${failed.map((f) => `${f.step ?? 'step'} (${f.error ?? 'unknown'})`).join('; ')}`);
+    }
+    if (Array.isArray(entry.caseIds) && entry.caseIds.length > 0) lines.push(`**Cases:** ${entry.caseIds.join(', ')}`);
+    if (entry.archiveLink) lines.push(`**Evidence:** ${entry.archiveLink}`);
+    if (entry.responseSuppressed) lines.push(`**Response:** suppressed by throttle`);
+
     const rich = buildRichV2({
       accentColor: 0xeb459e,
-      header: `Automod: ${entry.module}`,
+      header: `Automod: ${entry.module} — ${entry.rule}`,
       text: lines.join('\n'),
-      footer: `Rule: ${entry.rule} • <t:${Math.floor(Date.now() / 1000)}:f>`,
+      footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
     });
-    await channel.send({ ...rich } as never).catch(() => undefined);
+    await channel.send({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never).catch(() => undefined);
   }
 
   public async logCommandUsage(entry: {
@@ -197,7 +231,7 @@ export class LogManager extends EventEmitter {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
         const verbosity = cfg.verbosity === 'verbose' ? cleaned : err instanceof Error ? err.message : cleaned.slice(0, 500);
-        await v2Send(channel, `[Error] ${source}\n${verbosity.slice(0, 1800)}`, { accentColor: '#ED4245' }).catch(() => undefined);
+        await v2Send(channel, `[Error] ${source}\n${verbosity.slice(0, 1800)}`, { accentColor: '#ED4245', allowedMentions: { parse: [], repliedUser: false } }).catch(() => undefined);
       }
     }
     if (cfg.webhook_url) {
@@ -227,7 +261,7 @@ export class LogManager extends EventEmitter {
     if (cfg.channel_id) {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
-        await v2Send(channel, text, { accentColor: '#FEE75C' }).catch(() => undefined);
+        await v2Send(channel, text, { accentColor: '#FEE75C', allowedMentions: { parse: [], repliedUser: false } }).catch(() => undefined);
       }
     }
     if (cfg.webhook_url) {

@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('unban')
@@ -34,11 +35,11 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const targetId = args[0]?.replace(/[<@!>]/g, '');
   const reason = args.slice(1).join(' ') || 'No reason provided';
   if (!guild || !targetId) {
-    await message.reply({ content: 'Usage: `!unban <user> <reason>`' });
+    await v2MessageReply(message, { content: 'Usage: `!unban <user> <reason>`' });
     return;
   }
   const result = await app.punishmentManager.unban(guild, targetId, { reason, moderatorId: message.author.id });
-  await message.reply({ content: result.ok ? `Unbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  await v2MessageReply(message, { content: result.ok ? `Unbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 
 const command: BotCommand = {

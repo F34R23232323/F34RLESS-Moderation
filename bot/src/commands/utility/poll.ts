@@ -4,6 +4,26 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { parseDuration } from '../../../../shared/src/index';
+import { v2MessageReply } from '../../utils/v2';
+
+function pollContent(question: string, options: string[]): string {
+  return [`**${question}**`, ...options.map((o, i) => `**${i + 1}.** ${o}`)].join('\n');
+}
+
+function buildPollComponents(pollId: string, options: string[]): Array<{ type: number; components: Array<{ type: number; custom_id: string; label: string; style: number }> }> {
+  return [
+    {
+      type: 1,
+      components: options.slice(0, 5).map((_, i) => ({
+        type: 2,
+        custom_id: `${pollId}:${i}`,
+        label: String(i + 1),
+        style: 1,
+      })),
+    },
+    { type: 1, components: [{ type: 2, custom_id: `${pollId}:close`, label: 'Close poll', style: 4 }] },
+  ];
+}
 
 const data = new SlashCommandBuilder()
   .setName('poll')
@@ -30,21 +50,9 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const durationStr = interaction.options.getString('duration');
   const durationMs = durationStr ? (parseDuration(durationStr)?.milliseconds ?? 0) : 0;
 
-  const content = [`**${question}**`, ...options.map((o, i) => `**${i + 1}.** ${o}`)].join('\n');
   const sent = await interaction.editReply({
-    content,
-    components: [
-      {
-        type: 1,
-        components: options.slice(0, 5).map((_, i) => ({
-          type: 2,
-          custom_id: `${pollId}:${i}`,
-          label: String(i + 1),
-          style: 1,
-        })),
-      },
-      { type: 1, components: [{ type: 2, custom_id: `${pollId}:close`, label: 'Close poll', style: 4 }] },
-    ],
+    content: pollContent(question, options),
+    components: buildPollComponents(pollId, options) as never,
   });
 
   app.polls.set(pollId, { votes, options, question, messageId: sent.id, channelId: interaction.channelId! });
@@ -78,11 +86,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const question = args[0];
   const options = args.slice(1);
   if (!question || options.length < 2) {
-    await message.reply({ content: 'Usage: `!poll <question> | <option1> | <option2> [option3] [option4]`' });
+    await v2MessageReply(message, { content: 'Usage: `!poll <question> | <option1> | <option2> [option3] [option4]`' });
     return;
   }
-  const content = [`**${question}**`, ...options.map((o, i) => `**${i + 1}.** ${o}`)].join('\n');
-  await (message.channel as any).send({ content });
+  const votes = new Map<string, Set<string>>();
+  const pollId = `poll:${message.id}`;
+  const sent = await (message.channel as any).send({
+    content: pollContent(question, options),
+    components: buildPollComponents(pollId, options),
+    allowedMentions: { parse: [], repliedUser: false },
+  });
+  app.polls.set(pollId, { votes, options, question, messageId: sent.id, channelId: message.channelId });
 }
 
 const command: BotCommand = {

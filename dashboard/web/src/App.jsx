@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FileText, ScrollText, ShieldAlert, Gavel, Timer,
   Settings, Braces, Clock, BarChart3, History, KeyRound, Download,
-  Shapes, Sun, Moon,
+  Shapes, Archive as ArchiveIcon, MessageSquareText, Sun, Moon,
 } from 'lucide-react';
 import { api, raw } from './api';
 import Login from './pages/Login';
@@ -20,6 +20,10 @@ import Audit from './pages/Audit';
 import Sessions from './pages/Sessions';
 import Export from './pages/Export';
 import Builder from './pages/Builder';
+import Archives from './pages/Archives';
+import ArchiveView from './pages/ArchiveView';
+import MessageLog from './pages/MessageLog';
+import Privacy from './pages/Privacy';
 
 const NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
@@ -27,6 +31,8 @@ const NAV = [
   { to: '/logs', label: 'Logs', icon: FileText },
   { to: '/automod', label: 'Automod Logs', icon: ShieldAlert },
   { to: '/cases', label: 'Cases', icon: Gavel },
+  { to: '/archives', label: 'Archives', icon: ArchiveIcon },
+  { to: '/message-log', label: 'Message Log', icon: MessageSquareText },
   { to: '/punishments', label: 'Punishments', icon: Timer },
   { to: '/regex', label: 'Regex Tester', icon: Braces },
   { to: '/timestamp', label: 'Timestamp Gen', icon: Clock },
@@ -66,6 +72,17 @@ export default function App() {
     );
   }
 
+  // Public share links (no auth required — the archive code is the key).
+  if (location.pathname.startsWith('/archive/')) {
+    const code = location.pathname.replace(/^\/archive\//, '').split('/')[0];
+    return <ArchiveView code={code} />;
+  }
+
+  // Public pages (no auth required).
+  if (location.pathname === '/privacy' || location.pathname === '/privacy-policy') {
+    return <Privacy />;
+  }
+
   if (!auth) return <Login />;
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
@@ -95,6 +112,8 @@ export default function App() {
           <Route path="/logs" element={<Logs />} />
           <Route path="/automod" element={<AutomodLogs />} />
           <Route path="/cases" element={<Cases />} />
+          <Route path="/archives" element={<Archives />} />
+          <Route path="/message-log" element={<MessageLog />} />
           <Route path="/punishments" element={<Punishments />} />
           <Route path="/regex" element={<RegexTest />} />
           <Route path="/timestamp" element={<Timestamp />} />

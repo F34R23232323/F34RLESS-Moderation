@@ -4,6 +4,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('appeal')
@@ -50,19 +51,19 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const appeal = args.slice(1).join(' ');
   const guild = message.guild;
   if (!guild || !rawId || !appeal) {
-    await message.reply({ content: 'Usage: `!appeal <case code or number> <message>`' });
+    await v2MessageReply(message, { content: 'Usage: `!appeal <case code or number> <message>`' });
     return;
   }
   const c = /^\d+$/.test(rawId)
     ? await app.caseService.getCaseByNumber(guild.id, parseInt(rawId, 10))
     : await app.caseService.getCaseByCode(guild.id, rawId);
   if (!c || c.user_id !== message.author.id) {
-    await message.reply({ content: 'Case not found or not yours.' });
+    await v2MessageReply(message, { content: 'Case not found or not yours.' });
     return;
   }
   await app.db.execute('INSERT INTO appeals (case_id, guild_id, user_id, message) VALUES (?, ?, ?, ?)', [c.id, guild.id, message.author.id, appeal]);
   await app.caseService.setStatus(c.id, 'appealed');
-  await message.reply({ content: `Appeal filed for case ${c.case_code}.` });
+  await v2MessageReply(message, { content: `Appeal filed for case ${c.case_code}. Staff will review it.` });
 }
 
 const command: BotCommand = {

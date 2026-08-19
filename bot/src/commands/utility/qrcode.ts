@@ -2,7 +2,7 @@ import { SlashCommandBuilder } from 'discord.js';
 import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
-import { v2Reply } from '../../utils/v2';
+import { v2MessageReply, v2Reply } from '../../utils/v2';
 import * as QRCode from 'qrcode';
 
 const data = new SlashCommandBuilder()
@@ -23,11 +23,15 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const text = args.join(' ');
   if (!text) {
-    await message.reply({ content: 'Usage: `!qrcode <text>`' });
+    await v2MessageReply(message, { content: 'Usage: `!qrcode <text>`' });
     return;
   }
   const buffer = await QRCode.toBuffer(text, { width: 512, margin: 2 });
-  await message.reply({ files: [{ attachment: buffer, name: 'qrcode.png' }] });
+  await message.reply({
+    content: `QR for: ${text.slice(0, 200)}`,
+    files: [{ attachment: buffer, name: 'qrcode.png' }],
+    allowedMentions: { parse: [], repliedUser: false },
+  });
 }
 
 const command: BotCommand = {

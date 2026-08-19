@@ -34,6 +34,7 @@ export class PunishmentDmManager {
       moderator: cfg.hide_moderator ? 'staff' : (ctx.moderator ?? 'staff'),
       duration: ctx.durationMs ? humanizeDuration(ctx.durationMs) : 'permanent',
       case_id: ctx.caseCode ?? 'n/a',
+      punishment: type.replace('_', ' '),
       appeal_instructions: 'you can contact a staff member to appeal',
     };
 

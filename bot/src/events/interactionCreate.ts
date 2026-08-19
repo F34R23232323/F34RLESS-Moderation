@@ -27,6 +27,20 @@ export async function handleInteractionCreate(app: App, interaction: Interaction
 }
 
 async function handleSlash(app: App, interaction: any): Promise<void> {
+  const custom = app.config.custom_commands[interaction.commandName];
+  const shadowsBuiltin =
+    app.commands.has(interaction.commandName) ||
+    app.messageCommands.has(interaction.commandName) ||
+    app.userCommands.has(interaction.commandName);
+  if (custom && custom.enabled && !shadowsBuiltin) {
+    if (custom.slash === false) {
+      await v2Reply(interaction, 'This command is disabled for slash.', { ephemeral: true });
+      return;
+    }
+    await app.customCommands.runSlash(app, interaction, interaction.commandName);
+    return;
+  }
+
   const command = app.commands.get(interaction.commandName);
   if (!command) return;
   const cfg = app.config.commands[command.name];

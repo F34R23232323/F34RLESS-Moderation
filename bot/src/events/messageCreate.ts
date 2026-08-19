@@ -2,8 +2,9 @@ import { parseJson } from '../../../shared/src/index';
 import type { Message } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
-import { v2Reply } from '../utils/v2';
+import { buildRichV2, v2Reply } from '../utils/v2';
 import { suggestClosest } from '../../../shared/src/index';
+import { v2MessageReply } from '../utils/v2';
 
 export async function handleMessageCreate(app: App, message: Message): Promise<void> {
   try {
@@ -25,6 +26,8 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
     }
     app.metrics.incMessages();
     app.slowmodeScheduler.onMessage(message.channelId);
+
+    await app.messageLogs.capture(message);
 
     await app.automod.handleMessage(message);
 
@@ -48,16 +51,68 @@ async function handleAfk(app: App, message: Message): Promise<void> {
     );
     if (rows.length > 0) {
       const sinceMs = Date.now() - new Date(rows[0].since).getTime();
-      await (message as any).reply({
-        content: `<@${mentionsUser.id}> is AFK (${Math.round(sinceMs / 60000)}m ago): ${rows[0].reason ?? 'no reason'}`,
-      }).catch(() => undefined);
+      await app.db
+        .execute(
+          'INSERT INTO afk_mentions (guild_id, user_id, mentioner_id, channel_id, message_id) VALUES (?, ?, ?, ?, ?)',
+          [message.guildId, mentionsUser.id, message.author.id, message.channelId, message.id],
+        )
+        .catch(() => undefined);
+      const rich = buildRichV2({
+        accentColor: 0x5865f2,
+        header: 'AFK',
+        text: `<@${mentionsUser.id}> is AFK (${Math.round(sinceMs / 60000)}m ago): ${rows[0].reason ?? 'no reason'}`,
+        footer: 'Removed automatically when they return',
+      });
+      await message.reply({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never).catch(() => undefined);
     }
   }
 
-  await app.db.execute(
-    'UPDATE afk SET cleared = 1 WHERE user_id = ? AND guild_id = ? AND cleared = 0',
+  if (isAfkCommandMessage(app, message)) return;
+
+  const [myRows] = await app.db.query<RowDataPacket[]>(
+    'SELECT autoremove FROM afk WHERE user_id = ? AND guild_id = ? AND cleared = 0 LIMIT 1',
     [message.author.id, message.guildId],
   );
+  const myRow = myRows[0];
+  if (!myRow) return;
+  if (myRow.autoremove === 0) return;
+
+  const [mentions] = await app.db.query<RowDataPacket[]>(
+    'SELECT channel_id, message_id, created_at FROM afk_mentions WHERE guild_id = ? AND user_id = ? AND cleared = 0 ORDER BY created_at ASC LIMIT 10',
+    [message.guildId, message.author.id],
+  );
+  await app.db.execute('UPDATE afk SET cleared = 1 WHERE user_id = ? AND guild_id = ? AND cleared = 0', [
+    message.author.id,
+    message.guildId,
+  ]);
+  await app.db.execute('DELETE FROM afk_mentions WHERE guild_id = ? AND user_id = ?', [message.guildId, message.author.id]).catch(() => undefined);
+
+  const lines: string[] = ['Your AFK status has been removed.'];
+  if (mentions.length > 0) {
+    lines.push('', `**You were mentioned ${mentions.length} time${mentions.length === 1 ? '' : 's'} while AFK:**`);
+    for (const m of mentions) {
+      const when = new Date(m.created_at).getTime() / 1000;
+      lines.push(`<t:${Math.floor(when)}:t> https://discord.com/channels/${message.guildId}/${m.channel_id}/${m.message_id}`);
+    }
+  }
+  const rich = buildRichV2({
+    accentColor: 0x57f287,
+    header: 'AFK Removed',
+    text: lines.join('\n'),
+  });
+  await message.reply({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never).catch(() => undefined);
+}
+
+function isAfkCommandMessage(app: App, message: Message): boolean {
+  if (!app.config.bot.prefix_enabled || !message.content) return false;
+  const prefixes = app.config.bot.per_guild_prefixes[message.guildId ?? ''] ?? app.config.bot.prefixes;
+  const prefix = prefixes.find((p) => message.content.startsWith(p));
+  if (!prefix) return false;
+  const body = message.content.slice(prefix.length).trim();
+  if (!body) return false;
+  const [cmdName] = body.split(/\s+/);
+  const resolved = resolveCommand(app, cmdName.toLowerCase());
+  return resolved === 'afk';
 }
 
 async function handleXp(app: App, message: Message): Promise<void> {
@@ -97,6 +152,17 @@ async function handlePrefix(app: App, message: Message): Promise<void> {
   const body = message.content.slice(prefix.length).trim();
   if (!body) return;
   const [cmdName, ...args] = body.split(/\s+/);
+  const lowerName = cmdName.toLowerCase();
+
+  if (message.guildId) {
+    const configCustom = app.config.custom_commands[lowerName] ?? app.config.custom_commands[cmdName];
+    const configAlias = app.customCommandAliases?.get(lowerName);
+    const resolvedCustom = configCustom ? lowerName : configAlias ?? undefined;
+    if (resolvedCustom && app.config.custom_commands[resolvedCustom]?.enabled) {
+      await app.customCommands.runPrefix(app, message, resolvedCustom, args);
+      return;
+    }
+  }
 
   const builtin = resolveCommand(app, cmdName.toLowerCase());
   if (builtin) {
@@ -161,7 +227,7 @@ async function runCommand(app: App, message: Message, commandName: string, args:
   if (!member) return;
   const guard = app.modGuard.hasRequiredPermissions(member, cmd);
   if (!guard.ok) {
-    await (message as any).reply({ content: `You cannot use that command: ${guard.reason}` }).catch(() => undefined);
+    await v2MessageReply(message, { content: `You cannot use that command: ${guard.reason}` }).catch(() => undefined);
     return;
   }
   if (cmd.ownerOnly && !app.modGuard.isOwner(message.author.id)) return;
@@ -169,7 +235,7 @@ async function runCommand(app: App, message: Message, commandName: string, args:
   const cooldown = cfg?.cooldown_seconds ?? app.config.command_defaults.cooldown_seconds;
   if (!app.cooldowns.tryConsume('cmd', message.author.id, cmd.name, cooldown)) {
     const remaining = app.cooldowns.remainingSeconds('cmd', message.author.id, cmd.name);
-    await (message as any).reply({ content: `Slow down! Try again in ${remaining}s.` }).catch(() => undefined);
+    await v2MessageReply(message, { content: `Slow down! Try again in ${remaining}s.` }).catch(() => undefined);
     return;
   }
 
@@ -178,7 +244,7 @@ async function runCommand(app: App, message: Message, commandName: string, args:
     if (cmd.prefixExecute) {
       await cmd.prefixExecute(message, args, app);
     } else {
-      await (message as any).reply({ content: 'This command is slash-only.' }).catch(() => undefined);
+      await v2MessageReply(message, { content: 'This command is slash-only.' }).catch(() => undefined);
     }
     app.metrics.incCommand(true);
   } catch (err) {
@@ -213,7 +279,7 @@ async function handleUnknown(app: App, message: Message, cmdName: string): Promi
   if (suggestion) {
     const resolved = resolveCommand(app, suggestion.candidate);
     const realName = resolved ?? suggestion.candidate;
-    await (message as any).reply({ content: `Did you mean \`${prefixChar(app, message)}${realName}\`?` }).catch(() => undefined);
+    await v2MessageReply(message, { content: `Did you mean \`${prefixChar(app, message)}${realName}\`?` }).catch(() => undefined);
   }
 }
 

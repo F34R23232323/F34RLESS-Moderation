@@ -3,6 +3,21 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
+
+function roleListLines(guild: any): string {
+  const roles = [...guild.roles.cache.values()]
+    .filter((r: any) => r.id !== guild.id)
+    .sort((a: any, b: any) => b.position - a.position)
+    .slice(0, 40);
+  return `**Roles (${guild.roles.cache.size})**\n${roles.map((r: any) => `<@&${r.id}> (${r.members.size})`).join('\n')}`;
+}
+
+async function roleMembersLines(guild: any, role: any): Promise<string> {
+  const members = await guild.members.fetch();
+  const roleMembers = members.filter((m: any) => m.roles.cache.has(role.id));
+  return `**<@&${role.id}> members (${roleMembers.size})**\n${roleMembers.first(30).map((m: any) => `<@${m.id}>`).join(' ') || 'none'}`;
+}
 
 const data = new SlashCommandBuilder()
   .setName('roles')
@@ -16,17 +31,11 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (!guild) return;
   const sub = interaction.options.getSubcommand();
   if (sub === 'list') {
-    const roles = [...guild.roles.cache.values()]
-      .filter((r) => r.id !== guild.id)
-      .sort((a, b) => b.position - a.position)
-      .slice(0, 40);
-    await v2Reply(interaction, `**Roles (${guild.roles.cache.size})**\n${roles.map((r) => `<@&${r.id}> (${r.members.size})`).join('\n')}`);
+    await v2Reply(interaction, roleListLines(guild));
   } else if (sub === 'members') {
     const role = interaction.options.getRole('role');
     if (!role) return;
-    const members = await guild.members.fetch();
-    const roleMembers = members.filter((m) => m.roles.cache.has(role.id));
-    await v2Reply(interaction, `**<@&${role.id}> members (${roleMembers.size})**\n${roleMembers.first(30).map((m) => `<@${m.id}>`).join(' ') || 'none'}`);
+    await v2Reply(interaction, await roleMembersLines(guild, role));
   }
 }
 
@@ -35,11 +44,20 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!guild) return;
   const sub = args[0] ?? 'list';
   if (sub === 'list') {
-    const roles = [...guild.roles.cache.values()].filter((r) => r.id !== guild.id).sort((a, b) => b.position - a.position).slice(0, 40);
-    await message.reply({ content: `**Roles**\n${roles.map((r) => `<@&${r.id}> (${r.members.size})`).join('\n')}` });
+    await v2MessageReply(message, { content: roleListLines(guild) });
     return;
   }
-  await message.reply({ content: 'Usage: `!roles list` | `!roles members <role>`' });
+  if (sub === 'members') {
+    const roleId = args[1]?.replace(/[<@&>]/g, '');
+    const role = roleId ? guild.roles.cache.get(roleId) : null;
+    if (!role) {
+      await v2MessageReply(message, { content: 'Role not found. Usage: `!roles members <role>`' });
+      return;
+    }
+    await v2MessageReply(message, { content: await roleMembersLines(guild, role) });
+    return;
+  }
+  await v2MessageReply(message, { content: 'Usage: `!roles list` | `!roles members <role>`' });
 }
 
 const command: BotCommand = {

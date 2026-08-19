@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
+import { v2MessageReply } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('antiraid')
@@ -29,9 +30,10 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const action = args[0] ?? 'trigger';
   if (action === 'trigger') {
     await app.antiRaid.trigger(guild.id);
-    await message.reply({ content: 'Anti-raid mode triggered.' });
+    await v2MessageReply(message, { content: 'Anti-raid mode triggered.' });
   } else {
-    await message.reply({ content: 'Anti-raid mode disarmed.' });
+    await app.db.execute('UPDATE gates SET state = \'verified\' WHERE guild_id = ?', [guild.id]);
+    await v2MessageReply(message, { content: 'Anti-raid mode disarmed (gates reset).' });
   }
 }
 
