@@ -30,6 +30,7 @@ export class SchedulerService {
     this.schedulePendingMessageSends();
     this.schedulePendingDashboardLogs();
     this.scheduleChannelSync();
+    this.scheduleRoleConnections();
     this.scheduleSnapshotPurge();
     this.app.logger.info('Scheduler started');
   }
@@ -50,6 +51,15 @@ export class SchedulerService {
     this.addCron('channel-sync', '*/10 * * * *', async () => {
       await this.app.messages.syncChannels();
       await this.app.messages.syncRoles();
+    });
+  }
+
+  private scheduleRoleConnections(): void {
+    const rc = this.app.config.role_connections;
+    if (!rc.enabled) return;
+    const minutes = Math.max(1, rc.sync_interval_minutes);
+    this.addCron(`role-connections-sync`, `*/${minutes} * * * *`, async () => {
+      await this.app.roleConnections.resyncAllGuilds();
     });
   }
 

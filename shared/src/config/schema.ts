@@ -205,6 +205,57 @@ const customCommandSchema: z.ZodType<CustomCommandConfig, z.ZodTypeDef, Partial<
   })
   .strict();
 
+export const roleConnectionConditionSchema = z
+  .object({
+    has_role: z.boolean(),
+    role_id: snowflake,
+  })
+  .strict();
+
+export const roleConnectionSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    name: z.string().min(1).max(100).optional(),
+    main_role: snowflake,
+    logic: z.enum(['all', 'any']).default('all'),
+    held_for_seconds: z.number().int().min(0).default(0),
+    conditions: z.array(roleConnectionConditionSchema).min(1).default([]),
+  })
+  .strict();
+
+export type RoleConnection = z.infer<typeof roleConnectionSchema>;
+export type RoleConnectionCondition = z.infer<typeof roleConnectionConditionSchema>;
+
+const legacyRoleConnectionSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    if_has_role: snowflake,
+    held_for_seconds: z.number().int().min(0).default(0),
+    then_add: snowflakeArray,
+    then_remove: snowflakeArray,
+  })
+  .strict();
+
+function normalizeRoleConnection(val: unknown): unknown {
+  if (val && typeof val === 'object' && 'if_has_role' in (val as Record<string, unknown>)) {
+    const v = val as {
+      enabled?: boolean;
+      if_has_role: string;
+      held_for_seconds?: number;
+      then_add?: string[];
+    };
+    const add = v.then_add ?? [];
+    return {
+      enabled: v.enabled ?? true,
+      main_role: add[0] ?? v.if_has_role,
+      logic: 'all',
+      held_for_seconds: v.held_for_seconds ?? 0,
+      conditions: [{ has_role: true, role_id: v.if_has_role }],
+    };
+  }
+  return val;
+}
+
 export const configSchema = z
   .object({
     bot: z
@@ -229,7 +280,8 @@ export const configSchema = z
 
     commands: z.record(z.string().min(1), commandSchema).default({}),
 
-    custom_commands: z.record(z.string().min(1), customCommandSchema).default({}),
+    custom_commands: z
+      .preprocess((v) => (v == null ? {} : v), z.record(z.string().min(1), customCommandSchema).default({})),
 
     command_defaults: z
       .object({
@@ -511,18 +563,31 @@ export const configSchema = z
       .default({ enabled: false, message: 'Thank you for boosting {guild}, {user}!' }),
 
     role_connections: z
-      .array(
+      .preprocess(
+        // A legacy flat array ({ if_has_role / then_add / then_remove }) is
+        // transparently upgraded to the newer object form so old configs keep
+        // booting. Each legacy entry becomes a single condition on its primary
+        // then_add role.
+        (val) => {
+          if (Array.isArray(val)) {
+            return {
+              enabled: true,
+              sync_interval_minutes: 5,
+              connections: val.map(normalizeRoleConnection),
+            };
+          }
+          return val;
+        },
         z
           .object({
             enabled: boolean.default(true),
-            if_has_role: snowflake,
-            held_for_seconds: z.number().int().min(0).default(0),
-            then_add: snowflakeArray,
-            then_remove: snowflakeArray,
+            sync_interval_minutes: z.number().int().min(1).default(5),
+            connections: z
+              .array(z.preprocess(normalizeRoleConnection, roleConnectionSchema))
+              .default([]),
           })
           .strict(),
-      )
-      .default([]),
+      ),
 
     channel_locking: z
       .object({

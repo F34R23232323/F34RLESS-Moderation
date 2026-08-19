@@ -74,7 +74,14 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
 
     await handleMuteChange(app, oldMember, newMember);
 
-    await runRoleConnections(app, newMember, oldRoles, newRoles);
+    // Role connections re-sync on any role add / remove / update for the member.
+    const rolesChanged =
+      oldRoles.size !== newRoles.size ||
+      [...newRoles].some((id) => !oldRoles.has(id)) ||
+      [...oldRoles].some((id) => !newRoles.has(id));
+    if (rolesChanged) {
+      await app.roleConnections.syncMember(newMember);
+    }
   } catch (err) {
     app.logger.error('guildMemberUpdate handler threw:', err);
   }
@@ -122,34 +129,4 @@ async function handleMuteChange(app: App, oldMember: GuildMember, newMember: Gui
   });
 }
 
-async function runRoleConnections(app: App, member: GuildMember, oldRoles: Set<string>, newRoles: Set<string>): Promise<void> {
-  for (const conn of app.config.role_connections) {
-    if (!conn.enabled) continue;
-    if (!newRoles.has(conn.if_has_role)) continue;
-    if (oldRoles.has(conn.if_has_role)) continue;
-
-    if (conn.held_for_seconds > 0) {
-      app.scheduler.setTimeout(`roleconn:${member.id}:${conn.if_has_role}`, conn.held_for_seconds * 1000, async () => {
-        const fresh = await member.guild.members.fetch(member.id).catch(() => null);
-        if (!fresh || !fresh.roles.cache.has(conn.if_has_role)) return;
-        await applyConnection(app, fresh, conn);
-      });
-    } else {
-      await applyConnection(app, member, conn);
-    }
-  }
-}
-
-async function applyConnection(app: App, member: GuildMember, conn: { then_add: string[]; then_remove: string[] }): Promise<void> {
-  for (const roleId of conn.then_add) {
-    if (!member.roles.cache.has(roleId)) {
-      await member.roles.add(roleId, 'Role connection').catch(() => undefined);
-    }
-  }
-  for (const roleId of conn.then_remove) {
-    if (member.roles.cache.has(roleId)) {
-      await member.roles.remove(roleId, 'Role connection').catch(() => undefined);
-    }
-  }
-}
-export default { name: 'guildMemberUpdate', run: handleGuildMemberUpdate };
+export default { name: 'guildMemberUpdate', run: handleGuildMemberUpdate };

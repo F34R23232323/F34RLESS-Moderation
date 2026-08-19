@@ -15,6 +15,7 @@ export async function handleRoleUpdate(app: App, oldRole: Role, newRole: Role): 
     message: `Role updated: @${newRole.name}`,
     details: { roleId: newRole.id, name: newRole.name, changes },
   });
+  app.roleConnections.onRoleChanged(newRole.guild.id, newRole.id);
 }
 
 export default { name: 'roleUpdate', run: handleRoleUpdate };

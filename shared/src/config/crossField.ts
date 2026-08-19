@@ -88,6 +88,23 @@ export function runCrossFieldChecks(config: BotConfig): ConfigIssue[] {
     }
   }
 
+  const roleConns = config.role_connections.connections;
+  for (let i = 0; i < roleConns.length; i++) {
+    const conn = roleConns[i];
+    if (!conn.enabled) continue;
+    for (let j = 0; j < conn.conditions.length; j++) {
+      const cond = conn.conditions[j];
+      if (cond.role_id === conn.main_role) {
+        add(
+          issues,
+          `role_connections.connections[${i}].conditions[${j}]`,
+          `condition role must not equal the connection's main role (self-reference would flip the role every sync)`,
+          `same as main_role`,
+        );
+      }
+    }
+  }
+
   const logEvents = Object.keys(config.logging);
   for (const ev of logEvents) {
     const entry = config.logging[ev];

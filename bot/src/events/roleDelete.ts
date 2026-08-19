@@ -9,6 +9,8 @@ export async function handleRoleDelete(app: App, role: Role): Promise<void> {
     message: `Role deleted: @${role.name}`,
     details: { roleId: role.id, name: role.name },
   });
+  // Members lost this role implicitly — re-sync anyone affected by a connection.
+  app.roleConnections.onRoleChanged(role.guild.id, role.id);
 }
 
 export default { name: 'roleDelete', run: handleRoleDelete };

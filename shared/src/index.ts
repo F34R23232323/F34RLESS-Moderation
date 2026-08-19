@@ -7,6 +7,7 @@ export * from './utils/snowflake';
 export * from './utils/fuzzy';
 export * from './utils/similarity';
 export * from './utils/placeholders';
+export * from './utils/roleConnections';
 export * from './utils/json';
 export * from './utils/caseCode';
 export * from './db/pool';

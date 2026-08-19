@@ -21,6 +21,9 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
 
     await app.automod.handleJoin(member);
 
+    // Apply any role connection the new member already qualifies for.
+    await app.roleConnections.syncMember(member);
+
     const security = await import('../security/joinChecks');
     await security.runJoinChecks(app, member);
 

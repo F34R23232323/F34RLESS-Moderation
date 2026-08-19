@@ -13,6 +13,7 @@ import { createMessagesRouter } from './routes/messages';
 import { createArchivesRouter } from './routes/archives';
 import { createArchivePublicRouter } from './routes/archivePublic';
 import { createMessageLogRouter } from './routes/messageLog';
+import { createRoleConnectionsRouter } from './routes/roleConnections';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -69,6 +70,7 @@ async function main(): Promise<void> {
   protectedApi.use('/messages', createMessagesRouter(ctx));
   protectedApi.use('/archives', createArchivesRouter(ctx));
   protectedApi.use('/message-log', createMessageLogRouter(ctx));
+  protectedApi.use('/role-connections', createRoleConnectionsRouter(ctx));
   protectedApi.use('/', createMiscRouter(ctx));
   app.use('/api', protectedApi);
 

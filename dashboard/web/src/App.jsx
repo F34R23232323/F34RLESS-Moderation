@@ -3,7 +3,7 @@ import { Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FileText, ScrollText, ShieldAlert, Gavel, Timer,
   Settings, Braces, Clock, BarChart3, History, KeyRound, Download,
-  Shapes, Archive as ArchiveIcon, MessageSquareText, Sun, Moon,
+  Shapes, Archive as ArchiveIcon, MessageSquareText, Sun, Moon, Users,
 } from 'lucide-react';
 import { api, raw } from './api';
 import Login from './pages/Login';
@@ -24,10 +24,12 @@ import Archives from './pages/Archives';
 import ArchiveView from './pages/ArchiveView';
 import MessageLog from './pages/MessageLog';
 import Privacy from './pages/Privacy';
+import RoleConnections from './pages/RoleConnections';
 
 const NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard },
   { to: '/builder', label: 'Message Builder', icon: Shapes },
+  { to: '/role-connections', label: 'Role Connections', icon: Users },
   { to: '/logs', label: 'Logs', icon: FileText },
   { to: '/automod', label: 'Automod Logs', icon: ShieldAlert },
   { to: '/cases', label: 'Cases', icon: Gavel },
@@ -109,6 +111,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/builder" element={<Builder />} />
+          <Route path="/role-connections" element={<RoleConnections />} />
           <Route path="/logs" element={<Logs />} />
           <Route path="/automod" element={<AutomodLogs />} />
           <Route path="/cases" element={<Cases />} />

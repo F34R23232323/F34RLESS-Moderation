@@ -213,7 +213,7 @@ automod:
           format: components_v2
           content: "Your message was removed in {channel}."
           title: "Message Removed"
-          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\n\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
+          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\\n\\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\\n\\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
           footer: "Thanks for helping keep {guild} friendly and safe."
           accent_color: "#ED4245"
           delete_after_seconds: 60
@@ -385,7 +385,7 @@ automod:
           format: components_v2
           content: "Your message was removed in {channel}."
           title: "Repeated Message Detected"
-          description: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
+          description: "Hey {user}, your messages were removed.\\n\\nYour messages were removed because you sent the same or a very similar message multiple times."
           delete_after_seconds: 60
         - type: warn
           reason: "Automod: repeated message spam ({rule})"
@@ -570,19 +570,36 @@ booster:
   message: "Thank you for boosting {guild}, {user}!"
 
 # -----------------------------------------------------------------------------
-# Role connections: if a member holds if_has_role (optionally held continuously
-# for held_for_seconds), apply then_add / then_remove.
+# Role connections: auto-manage roles from conditions, like Sapphire.
+# Each connection has a main_role that is ASSIGNED when the conditions are met
+# and REMOVED when they stop being met.
+#   logic: "all" = every condition must hold (AND), "any" = one is enough (OR).
+#   conditions[].has_role: true = member must have the role, false = must NOT
+#                          have the role.
+#   held_for_seconds: optional — conditions must be met continuously for this
+#                     long before the main role is applied.
+# The bot re-syncs on role add/remove/update events and every
+# sync_interval_minutes minutes.
 # -----------------------------------------------------------------------------
 role_connections:
-  - enabled: true
-    if_has_role: "000000000000000000"
-    held_for_seconds: 0
-    then_add: ["000000000000000000"]
-    then_remove: []
-  # - enabled: true
-  #   if_has_role: "000000000000000000"
-  #   held_for_seconds: 604800            # auto-promote after 7 days in role
-  #   then_add: ["000000000000000000"]
+  enabled: true
+  sync_interval_minutes: 5
+  connections:
+    - name: "Example connection"
+      enabled: true
+      main_role: "000000000000000001"
+      logic: all
+      held_for_seconds: 0
+      conditions:
+        - { has_role: true, role_id: "000000000000000002" }
+        - { has_role: false, role_id: "000000000000000003" }
+    # - name: "Either role grants a perk"
+    #   enabled: true
+    #   main_role: "000000000000000004"
+    #   logic: any
+    #   conditions:
+    #     - { has_role: true, role_id: "000000000000000005" }
+    #     - { has_role: true, role_id: "000000000000000006" }
 
 # -----------------------------------------------------------------------------
 # Named channel-lock presets. Unlock restores a byte-for-byte permission

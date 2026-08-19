@@ -31,6 +31,7 @@ import { SavedMessageService } from './services/savedMessageService';
 import { DashboardLogService } from './services/dashboardLogService';
 import { ArchiveService } from './services/archiveService';
 import { MessageLogService } from './services/messageLogService';
+import { RoleConnectionsService } from './services/roleConnections';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 
@@ -111,6 +112,7 @@ async function main(): Promise<void> {
     dashboardLogs: null as unknown as DashboardLogService,
     archives: null as unknown as ArchiveService,
     messageLogs: null as unknown as MessageLogService,
+    roleConnections: null as unknown as RoleConnectionsService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -144,6 +146,7 @@ async function main(): Promise<void> {
   app.dashboardLogs = new DashboardLogService(app);
   app.archives = new ArchiveService(app);
   app.messageLogs = new MessageLogService(app);
+  app.roleConnections = new RoleConnectionsService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
