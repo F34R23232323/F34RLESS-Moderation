@@ -4,7 +4,16 @@ import { generateArchiveCode } from '../../../shared/src/index';
 import type { App } from '../core/context';
 import { serializeMessageRecord, type SerializedMessage, type StoredEmbed } from '../utils/messageSerialization';
 
-export type ArchiveKind = 'manual' | 'case_evidence' | 'automod_evidence' | 'deleted_message' | 'edited_message';
+export type ArchiveKind = 'manual' | 'case_evidence' | 'automod_evidence' | 'deleted_message' | 'edited_message' | 'message_activity';
+
+export type ArchiveMessageStatus = 'deleted' | 'edited_before' | 'edited_after';
+
+export interface ArchiveRecordInput {
+  record: SerializedMessage;
+  status?: ArchiveMessageStatus | null;
+}
+
+export type ArchiveRecordList = Array<SerializedMessage | ArchiveRecordInput>;
 
 export interface ArchiveRow extends RowDataPacket {
   id: number;
@@ -331,12 +340,13 @@ export class ArchiveService {
   }
 
   /** Build a single archive from pre-serialized records (used for batched
-   *  deleted/edited message archives). Records may span multiple channels. */
+   *  deleted/edited message archives). Records may span multiple channels and
+   *  carry an optional per-message status (deleted/edited_before/edited_after). */
   public async archiveBatch(opts: {
     guildId: string;
     channelId?: string | null;
-    records: SerializedMessage[];
-    kind: 'deleted_message' | 'edited_message';
+    records: ArchiveRecordList;
+    kind: ArchiveKind;
     title?: string | null;
     reason?: string | null;
     createdBy?: string | null;
@@ -344,7 +354,9 @@ export class ArchiveService {
     if (!this.enabled) return null;
     const guild = this.app.client.guilds.cache.get(opts.guildId);
     if (!guild) return null;
-    const records = opts.records.filter((r) => r && r.authorId);
+    const records: ArchiveRecordInput[] = opts.records
+      .map((r) => ('record' in r && r.record ? (r as ArchiveRecordInput) : { record: r as SerializedMessage, status: null }))
+      .filter((r) => Boolean(r.record && r.record.authorId));
     if (records.length === 0) return null;
     try {
       return await this.createArchiveFromRecords(guild, opts.channelId ?? null, records, {
@@ -364,7 +376,7 @@ export class ArchiveService {
   private async createArchiveFromRecords(
     guild: Guild,
     channelId: string | null,
-    records: SerializedMessage[],
+    records: ArchiveRecordList,
     opts: {
       kind: ArchiveKind;
       userId: string | null;
@@ -374,6 +386,10 @@ export class ArchiveService {
       caseId: number | null;
     },
   ): Promise<ArchiveResult> {
+    const normalized: Array<{ record: SerializedMessage; status: string | null }> = records.map((r) => ({
+      record: 'record' in r ? r.record : r,
+      status: 'record' in r ? (r.status ?? null) : null,
+    }));
     const code = generateArchiveCode();
     const [result] = await this.app.db.execute(
       `INSERT INTO archives (code, guild_id, channel_id, filter_user_id, kind, title, reason, created_by, case_id)
@@ -386,13 +402,13 @@ export class ArchiveService {
     let totalBytes = 0;
     const avatarMedia = new Map<string, number>();
 
-    for (let i = 0; i < records.length; i++) {
-      const rec = records[i];
+    for (let i = 0; i < normalized.length; i++) {
+      const { record: rec, status } = normalized[i];
       const embeds = await this.storeEmbedMedia(archiveId, rec.embeds, totalBytes);
       const [mRes] = await this.app.db.execute(
         `INSERT INTO archive_messages
-          (archive_id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (archive_id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           archiveId,
           rec.messageId,
@@ -409,6 +425,7 @@ export class ArchiveService {
           JSON.stringify(rec.referencedMessage),
           new Date(rec.createdAt),
           i,
+          status,
         ],
       );
       const messageRowId = (mRes as { insertId: number }).insertId;
@@ -448,7 +465,7 @@ export class ArchiveService {
 
     await this.app.db.execute(
       'UPDATE archives SET message_count = ?, media_count = ?, total_bytes = ? WHERE id = ?',
-      [records.length, mediaCount, totalBytes, archiveId],
+      [normalized.length, mediaCount, totalBytes, archiveId],
     );
 
     const link = this.getPublicLink(code);

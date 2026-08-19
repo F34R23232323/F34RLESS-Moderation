@@ -608,6 +608,14 @@ td.pre { white-space: normal; word-break: break-word; max-width: 420px; }
 .arc-edit-chip {
   display: inline-block; font-size: 11px; color: #f0b232; margin-bottom: 2px;
 }
+.arc-status-badge {
+  display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: #fff; border-radius: 4px; padding: 1px 6px;
+  margin-bottom: 2px; margin-right: 6px;
+}
+.arc-status-badge.deleted { background: #da373c; }
+.arc-status-badge.edited-before { background: #b98a00; color: #fff; }
+.arc-status-badge.edited-after { background: #248046; }
 
 .arc-comp-container { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
 .arc-comp-row { display: flex; gap: 8px; flex-wrap: wrap; }

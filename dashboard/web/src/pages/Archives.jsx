@@ -16,6 +16,7 @@ function kindBadge(kind) {
   if (kind === 'manual') return 'blue';
   if (kind === 'case_evidence') return 'green';
   if (kind === 'automod_evidence') return 'pink';
+  if (kind === 'message_activity') return 'red';
   return 'yellow';
 }
 
@@ -251,6 +252,9 @@ function ArchiveDetail({ data, onClose, onRefresh, onDelete, onDeleteMedia, onEr
               <div className="archive-msg-item" key={m.id}>
                 <span className="arc-msg-name" style={{ color: `hsl(${hash(m.author_id) % 360}, 70%, 60%)` }}>{m.author_nickname || m.author_username}</span>
                 <span className="mono" style={{ color: 'var(--text-dim)' }}>{new Date(m.created_at).toLocaleString()}</span>
+                {m.status === 'deleted' && <span className="badge red">deleted</span>}
+                {m.status === 'edited_before' && <span className="badge yellow">edited before</span>}
+                {m.status === 'edited_after' && <span className="badge green">edited after</span>}
                 <span className="pre">{m.content || '(no content)'}</span>
               </div>
             ))}

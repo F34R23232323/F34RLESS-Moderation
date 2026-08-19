@@ -145,10 +145,6 @@ export async function handleChannelUpdate(app: App, oldChannel: GuildChannel, ne
   const newParent = newChannel.parent?.name;
   if (oldParent !== newParent) changes['Category'] = `${oldParent ?? 'none'} -> ${newParent ?? 'none'}`;
 
-  if (oldChannel.rawPosition !== newChannel.rawPosition) {
-    changes['Position'] = `${oldChannel.rawPosition} -> ${newChannel.rawPosition}`;
-  }
-
   const permChanges = diffPermissionOverwrites(oldChannel, newChannel);
   if (permChanges.length > 0) changes['Permissions'] = permChanges.join('; ');
 

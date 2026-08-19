@@ -14,6 +14,7 @@ interface TMessage {
   referenced_message: unknown;
   created_at: Date;
   position: number;
+  status: string | null;
 }
 
 interface TMedia {
@@ -41,6 +42,19 @@ function hashId(id: string): number {
 
 function colorFor(id: string): string {
   return `hsl(${hashId(id) % 360}, 70%, 60%)`;
+}
+
+function statusBadge(status: string | null): string {
+  switch (status) {
+    case 'deleted':
+      return `<span class="status-badge deleted">Deleted</span>`;
+    case 'edited_before':
+      return `<span class="status-badge edited-before">Edited (before)</span>`;
+    case 'edited_after':
+      return `<span class="status-badge edited-after">Edited (after)</span>`;
+    default:
+      return '';
+  }
 }
 
 function fmtTime(iso: Date): string {
@@ -181,7 +195,7 @@ export function buildTranscriptHtml(
     body += `<div class="msg">
       <div class="avatar">${avatarUrl ? `<img src="${esc(avatarUrl)}"/>` : ''}</div>
       <div class="msg-body">
-        <div class="msg-head"><span class="name" style="color:${colorFor(m.author_id)}">${esc(display)}</span>${m.author_is_bot ? ' <span class="bot">BOT</span>' : ''}<span class="time">${esc(fmtTime(m.created_at))}</span></div>
+        <div class="msg-head"><span class="name" style="color:${colorFor(m.author_id)}">${esc(display)}</span>${m.author_is_bot ? ' <span class="bot">BOT</span>' : ''}${statusBadge(m.status)}<span class="time">${esc(fmtTime(m.created_at))}</span></div>
         ${m.content ? `<div class="content">${renderContent(m.content)}</div>` : ''}
         ${stickersHtml}
         ${attachments}
@@ -209,6 +223,10 @@ export function buildTranscriptHtml(
   .msg-body{flex:1;min-width:0}
   .msg-head{display:flex;align-items:baseline;gap:8px}
   .name{font-weight:600}.bot{font-size:9.5px;background:#5865f2;color:#fff;border-radius:3px;padding:1px 3px}
+  .status-badge{font-size:9.5px;color:#fff;border-radius:3px;padding:1px 4px;text-transform:uppercase;letter-spacing:.3px}
+  .status-badge.deleted{background:#da373c}
+  .status-badge.edited-before{background:#b98a00;color:#fff}
+  .status-badge.edited-after{background:#248046}
   .time{color:#949ba4;font-size:11.5px}
   .content{font-size:14.5px;margin-top:2px;word-wrap:break-word;overflow-wrap:break-word}
   a{color:#00a8fc;text-decoration:none}

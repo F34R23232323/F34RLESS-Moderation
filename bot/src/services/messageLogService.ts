@@ -11,6 +11,7 @@ const USER_UPSERT_THROTTLE_MS = 30 * 60_000;
 const FLUSH_INTERVAL_MS = 15_000;
 const FLUSH_MAX = 150;
 const BULK_INSERT_BATCH = 50;
+const ARCHIVE_FLUSH_MAX = 5000;
 
 export class MessageLogService {
   private readonly app: App;
@@ -25,12 +26,23 @@ export class MessageLogService {
   private readonly pendingEdits = new Map<string, { guildId: string; before: SerializedMessage; after: SerializedMessage; at: Date }>();
   private readonly timer: NodeJS.Timeout;
 
+  // Deleted/edited records retained in memory until the next auto-archive run
+  // (so ONE big combined archive is built every N hours, with each message
+  // labeled deleted / edited_before / edited_after).
+  private readonly archivePending: Array<{ guildId: string; record: SerializedMessage; status: 'deleted' | 'edited_before' | 'edited_after' }> = [];
+  private readonly archiveTimer: NodeJS.Timeout;
+
   constructor(app: App) {
     this.app = app;
     this.timer = setInterval(() => {
       void this.flush().catch((err) => this.app.logger.warn('MessageLogService.flush failed:', err));
     }, FLUSH_INTERVAL_MS);
     this.timer.unref?.();
+    const archiveIntervalMs = Math.max(1, this.app.config.archives.archive_interval_hours || 2) * 3600_000;
+    this.archiveTimer = setInterval(() => {
+      void this.flushArchive().catch((err) => this.app.logger.warn('MessageLogService.flushArchive failed:', err));
+    }, archiveIntervalMs);
+    this.archiveTimer.unref?.();
   }
 
   public get enabled(): boolean {
@@ -190,15 +202,11 @@ export class MessageLogService {
         for (const it of list) {
           await this.writeSnapshot(it.guildId, it.record, { deletedAt: it.at }).catch(() => undefined);
         }
-        await this.app.archives.archiveBatch({
-          guildId,
-          channelId: null,
-          records: list.map((i) => i.record),
-          kind: 'deleted_message',
-          title: `${list.length} deleted message(s)`,
-          reason: 'batch of deleted messages',
-        });
+        if (this.app.config.archives.archive_on_delete) {
+          for (const it of list) this.archivePending.push({ guildId, record: it.record, status: 'deleted' });
+        }
       }
+      if (this.archivePending.length >= ARCHIVE_FLUSH_MAX) await this.flushArchive();
     } catch (err) {
       this.app.logger.warn('MessageLogService.flushDeletes failed:', err);
     }
@@ -225,19 +233,49 @@ export class MessageLogService {
           edits.push({ content: it.before.content, at: it.at.toISOString() });
           await this.writeSnapshot(guildId, it.after, { edits: edits.slice(-MAX_EDITS_KEPT) }).catch(() => undefined);
         }
-        const records: SerializedMessage[] = [];
-        for (const it of list) records.push(it.before, it.after);
+        if (this.app.config.archives.archive_on_edit) {
+          for (const it of list) {
+            this.archivePending.push({ guildId, record: it.before, status: 'edited_before' });
+            this.archivePending.push({ guildId, record: it.after, status: 'edited_after' });
+          }
+        }
+      }
+      if (this.archivePending.length >= ARCHIVE_FLUSH_MAX) await this.flushArchive();
+    } catch (err) {
+      this.app.logger.warn('MessageLogService.flushEdits failed:', err);
+    }
+  }
+
+  /** Build ONE big combined archive from all accumulated deleted/edited messages
+   *  since the last run (grouped by guild, each message labeled with its
+   *  status). Called on the configured interval and early when the in-memory
+   *  buffer grows very large. */
+  public async flushArchive(): Promise<void> {
+    if (!this.enabled) return;
+    const pending = [...this.archivePending];
+    this.archivePending.length = 0;
+    if (pending.length === 0) return;
+    try {
+      const byGuild = new Map<string, typeof pending>();
+      for (const it of pending) {
+        const arr = byGuild.get(it.guildId) ?? [];
+        arr.push(it);
+        byGuild.set(it.guildId, arr);
+      }
+      for (const [guildId, list] of byGuild) {
+        const deleted = list.filter((i) => i.status === 'deleted').length;
+        const edited = list.length - deleted;
         await this.app.archives.archiveBatch({
           guildId,
           channelId: null,
-          records,
-          kind: 'edited_message',
-          title: `${list.length} edited message(s)`,
-          reason: 'batch of edited messages',
+          records: list.map((i) => ({ record: i.record, status: i.status })),
+          kind: 'message_activity',
+          title: `${deleted} deleted, ${edited} edited message(s)`,
+          reason: 'auto-archived deleted/edited messages',
         });
       }
     } catch (err) {
-      this.app.logger.warn('MessageLogService.flushEdits failed:', err);
+      this.app.logger.warn('MessageLogService.flushArchive failed:', err);
     }
   }
 

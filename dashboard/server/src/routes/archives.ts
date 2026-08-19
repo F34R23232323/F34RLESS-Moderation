@@ -80,7 +80,7 @@ export function createArchivesRouter(ctx: DashboardContext): Router {
       return;
     }
     const [messages] = await ctx.db.query<RowDataPacket[]>(
-      `SELECT id, archive_id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position
+      `SELECT id, archive_id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position, status
        FROM archive_messages WHERE archive_id = ? ORDER BY position ASC`,
       [archive.id],
     );
@@ -187,7 +187,7 @@ export function createArchivesRouter(ctx: DashboardContext): Router {
       return;
     }
     const [messages] = await ctx.db.query<RowDataPacket[]>(
-      `SELECT id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position
+      `SELECT id, message_id, channel_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, created_at, position, status
        FROM archive_messages WHERE archive_id = ? ORDER BY position ASC`,
       [archive.id],
     );

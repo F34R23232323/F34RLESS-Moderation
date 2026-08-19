@@ -277,6 +277,9 @@ function MessageBody({ message, mediaByMsg, mediaUrl, ctx }) {
   const media = mediaByMsg[message.id] || [];
   return (
     <div className="arc-msg-body">
+      {message.status === 'deleted' && <span className="arc-status-badge deleted">Deleted</span>}
+      {message.status === 'edited_before' && <span className="arc-status-badge edited-before">Edited (before)</span>}
+      {message.status === 'edited_after' && <span className="arc-status-badge edited-after">Edited (after)</span>}
       {message.referenced_message?.messageId && (
         <div className="arc-reply">
           <span className="arc-reply-arrow">↪</span>

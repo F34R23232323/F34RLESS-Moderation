@@ -75,7 +75,7 @@ export function createWebSocketServer(httpServer: Server, db: Pool, sessionSecre
     for (const state of clients) {
       void poll(state, db).catch(() => undefined);
     }
-  }, 1500);
+  }, 2500);
 }
 
 async function poll(state: ClientState, db: Pool): Promise<void> {

@@ -7,13 +7,13 @@ export function createMessageLogRouter(ctx: DashboardContext): Router {
 
   router.get('/filters', async (_req, res) => {
     const [guildRows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT guild_id, COUNT(*) AS count FROM message_snapshots GROUP BY guild_id ORDER BY count DESC LIMIT 500',
+      'SELECT guild_id, COUNT(*) AS count FROM message_snapshots GROUP BY guild_id ORDER BY count DESC LIMIT 100',
     );
     const [userRows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT guild_id, user_id, username, display_name FROM guild_users ORDER BY display_name, username LIMIT 10000',
+      'SELECT guild_id, user_id, username, display_name FROM guild_users ORDER BY display_name, username LIMIT 2000',
     );
     const [channelRows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT id, guild_id, name FROM guild_channels ORDER BY name LIMIT 10000',
+      'SELECT id, guild_id, name FROM guild_channels ORDER BY name LIMIT 2000',
     );
     res.json({
       guilds: guildRows.map((g) => ({
