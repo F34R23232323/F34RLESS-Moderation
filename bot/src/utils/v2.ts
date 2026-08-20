@@ -124,7 +124,8 @@ export async function v2Reply(
 ): Promise<void> {
   const payload = buildV2Content(content, opts);
   const flags = opts.ephemeral ? MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral : MessageFlags.IsComponentsV2;
-  const body = { components: payload.components, flags };
+  const allowedMentions = opts.allowedMentions ?? { parse: [] };
+  const body = { components: payload.components, flags, allowedMentions };
   if (interaction.replied || interaction.deferred) {
     await interaction.editReply(body);
   } else {

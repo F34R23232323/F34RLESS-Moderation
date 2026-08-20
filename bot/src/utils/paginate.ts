@@ -45,16 +45,17 @@ export async function paginateV2(opts: PaginateOptions): Promise<void> {
   const payload = render(0);
 
   let sent: Message;
+  const noPing = { parse: [] as string[] };
   if (isInteraction(trigger)) {
     const intr = trigger as ChatInputCommandInteraction;
-    const body: any = { components: payload.components, flags: payload.flags };
+    const body: any = { components: payload.components, flags: payload.flags, allowedMentions: noPing };
     if (intr.replied || intr.deferred) {
       sent = (await intr.editReply(body)) as unknown as Message;
     } else {
       sent = (await intr.reply({ ...body, fetchReply: true })) as unknown as Message;
     }
   } else {
-    sent = await (trigger as Message).reply({ components: payload.components as any, flags: payload.flags } as any);
+    sent = await (trigger as Message).reply({ components: payload.components as any, flags: payload.flags, allowedMentions: noPing } as any);
   }
 
   if (total <= 1) return;
@@ -69,13 +70,13 @@ export async function paginateV2(opts: PaginateOptions): Promise<void> {
     if (i.customId === `${id}_prev`) page = Math.max(0, page - 1);
     else if (i.customId === `${id}_next`) page = Math.min(total - 1, page + 1);
     else return;
-    await i.update({ components: render(page).components as any } as any);
+    await i.update({ components: render(page).components as any, allowedMentions: noPing } as any);
   });
 
   collector.on('end', async () => {
     try {
       const body = buildV2Content(`${header(page)}\n\n${pages[page]}`, { accentColor: opts.accentColor });
-      await sent.edit({ components: body.components as any } as any);
+      await sent.edit({ components: body.components as any, allowedMentions: noPing } as any);
     } catch {
       /* message may be gone */
     }
