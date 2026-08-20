@@ -331,7 +331,7 @@ logging:
     channel_id: "1497610461942648902"
   role_update:
     enabled: true
-    channel_id: "1467188430932021419"
+    channel_id: "1497610461942648902"
   message_delete:
     enabled: true
     channel_id: "1475964127116525652"
@@ -2459,13 +2459,13 @@ dashboard:
     timezone: UTC
 error_reporting:
   enabled: true
-  channel_id: "000000000000000000"
+  channel_id: "1539783293988249692"
   verbosity: standard
-  webhook_url: ""
+  webhook_url: "https://discord.com/api/webhooks/1539783477514215535/EGEtb4tYa7NY19uCMLjJf4rzQAfN7DsXIGkwn49_huWGkc1kcOkLyG_aZUKdmsxJsSHq"
 rate_limit_reporting:
   enabled: true
-  channel_id: "000000000000000000"
-  webhook_url: ""
+  channel_id: "1539783341967016027"
+  webhook_url: "https://discord.com/api/webhooks/1539783518375383070/w23JUce6fq4DXDw-k15PqobAejCtX8Y558F6PW74Jcu6FaEFuk4-Btm6xOQ_8-uBSMzy"
 ops:
   backups_enabled: true
   backup_retention_count: 7

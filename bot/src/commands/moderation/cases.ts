@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
+import { paginateV2, chunkItems } from '../../utils/paginate';
 
 const data = new SlashCommandBuilder()
   .setName('cases')
@@ -26,7 +27,13 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
   const lines = cases.map((c) => `${c.case_code} [${c.status}] ${c.type} — ${c.reason} (${new Date(c.created_at).toLocaleDateString()})`);
-  await v2Reply(interaction, `**Cases for <@${user.id}>** (${cases.length})\n${lines.slice(0, 25).join('\n')}`);
+  const pages = chunkItems(lines, 15).map((c) => c.join('\n'));
+  await paginateV2({
+    trigger: interaction,
+    authorId: interaction.user.id,
+    title: `**Cases for <@${user.id}>** (${cases.length}) — Page {page}/{total}`,
+    pages,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -42,7 +49,13 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     return;
   }
   const lines = cases.map((c) => `${c.case_code} [${c.status}] ${c.type} — ${c.reason} (${new Date(c.created_at).toLocaleDateString()})`);
-  await v2MessageReply(message, { content: `**Cases for <@${targetId}>** (${cases.length})\n${lines.slice(0, 25).join('\n')}` });
+  const pages = chunkItems(lines, 15).map((c) => c.join('\n'));
+  await paginateV2({
+    trigger: message,
+    authorId: message.author.id,
+    title: `**Cases for <@${targetId}>** (${cases.length}) — Page {page}/{total}`,
+    pages,
+  });
 }
 
 const command: BotCommand = {

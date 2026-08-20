@@ -5,15 +5,48 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
 
+const NITRO: Record<number, string> = { 0: 'None', 1: 'Nitro Classic', 2: 'Nitro', 3: 'Nitro Basic' };
+
+function badgeList(user: User): string {
+  const flags = user.flags?.toArray() ?? [];
+  if (flags.length === 0) return 'none';
+  return flags.map((f) => `\`${f}\``).join(' ');
+}
+
 function userInfoLines(guild: { id: string }, user: User, member: GuildMember | null): string[] {
-  return [
-    `**${user.username}** (<@${user.id}>)`,
-    `Account created: <t:${Math.floor(user.createdTimestamp / 1000)}:f>`,
-    member ? `Joined: <t:${Math.floor(member.joinedTimestamp! / 1000)}:f>` : 'Not in this server',
-    member?.premiumSince ? `Boosting since: <t:${Math.floor(member.premiumSinceTimestamp! / 1000)}:f>` : 'Not boosting',
-    member?.voice.channel ? `Voice: ${member.voice.channel.name}` : 'Voice: none',
-    member ? `Roles: ${member.roles.cache.filter((r) => r.id !== guild.id).map((r) => `<@&${r.id}>`).join(' ') || 'none'}` : 'Roles: n/a',
-  ];
+  const lines: string[] = [];
+  lines.push(`**${user.username}** (<@${user.id}>)`);
+  if (user.globalName) lines.push(`**Global name:** ${user.globalName}`);
+  lines.push(`**User ID:** \`${user.id}\``);
+  lines.push(`**Bot:** ${user.bot ? 'Yes' : 'No'}`);
+  lines.push(`**Account created:** <t:${Math.floor(user.createdTimestamp / 1000)}:f> (<t:${Math.floor(user.createdTimestamp / 1000)}:R>)`);
+  lines.push(`**Badges:** ${badgeList(user)}`);
+  const premiumType = (user as unknown as { premiumType?: number }).premiumType;
+  if (premiumType !== undefined) lines.push(`**Nitro:** ${NITRO[premiumType] ?? 'Unknown'}`);
+  if (user.hexAccentColor) lines.push(`**Accent color:** ${user.hexAccentColor}`);
+  if (user.banner) lines.push(`**Banner:** ${user.bannerURL({ size: 512 })}`);
+
+  if (member) {
+    lines.push('');
+    lines.push('# In Server');
+    if (member.nickname) lines.push(`**Nickname:** ${member.nickname}`);
+    lines.push(`**Joined:** <t:${Math.floor(member.joinedTimestamp! / 1000)}:f> (<t:${Math.floor(member.joinedTimestamp! / 1000)}:R>)`);
+    if (member.communicationDisabledUntilTimestamp) {
+      const t = Math.floor(member.communicationDisabledUntilTimestamp / 1000);
+      lines.push(`**Timed out until:** <t:${t}:f> (<t:${t}:R>)`);
+    }
+    if (member.pending) lines.push(`**Pending verification:** Yes`);
+    const highest = member.roles.highest.id !== guild.id ? member.roles.highest : null;
+    if (highest) lines.push(`**Highest role:** <@&${highest.id}>`);
+    lines.push(`**Boosting since:** ${member.premiumSince ? `<t:${Math.floor(member.premiumSinceTimestamp! / 1000)}:f>` : 'Not boosting'}`);
+    lines.push(`**Voice:** ${member.voice.channel ? member.voice.channel.name : 'none'}`);
+    const roles = member.roles.cache.filter((r) => r.id !== guild.id);
+    lines.push(`**Roles (${roles.size}):** ${roles.map((r) => `<@&${r.id}>`).join(' ') || 'none'}`);
+  } else {
+    lines.push('Not in this server');
+  }
+
+  return lines;
 }
 
 const data = new SlashCommandBuilder()

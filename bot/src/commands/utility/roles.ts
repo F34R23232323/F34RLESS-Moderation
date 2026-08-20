@@ -1,23 +1,38 @@
 import { SlashCommandBuilder } from 'discord.js';
-import type { ChatInputCommandInteraction, Message } from 'discord.js';
+import type { ChatInputCommandInteraction, Collection, Guild, GuildMember, Message, Role } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
-import { v2Reply } from '../../utils/v2';
-import { v2MessageReply } from '../../utils/v2';
+import { paginateV2, chunkItems } from '../../utils/paginate';
 
-function roleListLines(guild: any): string {
-  const roles = [...guild.roles.cache.values()]
-    .filter((r: any) => r.id !== guild.id)
-    .sort((a: any, b: any) => b.position - a.position)
-    .slice(0, 40);
-  return `**Roles (${guild.roles.cache.size})**\n${roles.map((r: any) => `<@&${r.id}> (${r.members.size})`).join('\n')}`;
+function allRoles(guild: Guild): Role[] {
+  return [...guild.roles.cache.values()]
+    .filter((r) => r.id !== guild.id)
+    .sort((a, b) => b.position - a.position);
 }
 
-async function roleMembersLines(guild: any, role: any): Promise<string> {
-  const members = await guild.members.fetch();
-  const roleMembers = members.filter((m: any) => m.roles.cache.has(role.id));
-  return `**<@&${role.id}> members (${roleMembers.size})**\n${roleMembers.first(30).map((m: any) => `<@${m.id}>`).join(' ') || 'none'}`;
+async function fetchAllMembers(guild: Guild): Promise<Collection<string, GuildMember>> {
+  return guild.members.fetch();
 }
+
+async function roleMembersLines(guild: Guild, role: Role): Promise<string[]> {
+  const members = await fetchAllMembers(guild);
+  const roleMembers = members.filter((m) => m.roles.cache.has(role.id));
+  return roleMembers.map((m) => `<@${m.id}>`);
+}
+
+async function roleMemberCounts(guild: Guild): Promise<Map<string, number>> {
+  const members = await fetchAllMembers(guild);
+  const counts = new Map<string, number>();
+  for (const r of guild.roles.cache.values()) counts.set(r.id, 0);
+  for (const m of members.values()) {
+    for (const rid of m.roles.cache.keys()) {
+      if (counts.has(rid)) counts.set(rid, (counts.get(rid) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+const PAGE_SIZE = 20;
 
 const data = new SlashCommandBuilder()
   .setName('roles')
@@ -31,11 +46,37 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (!guild) return;
   const sub = interaction.options.getSubcommand();
   if (sub === 'list') {
-    await v2Reply(interaction, roleListLines(guild));
+    const roles = allRoles(guild);
+    if (roles.length === 0) {
+      await paginateV2({ trigger: interaction, authorId: interaction.user.id, title: '**Roles (0)**', pages: ['No roles found.'] });
+      return;
+    }
+    const counts = await roleMemberCounts(guild);
+    const pages = chunkItems(
+      roles.map((r) => `<@&${r.id}> — ${(counts.get(r.id) ?? 0).toLocaleString()} members`),
+      PAGE_SIZE,
+    ).map((c) => c.join('\n'));
+    await paginateV2({
+      trigger: interaction,
+      authorId: interaction.user.id,
+      title: `**Roles (${roles.length})** — Page {page}/{total}`,
+      pages,
+    });
   } else if (sub === 'members') {
     const role = interaction.options.getRole('role');
     if (!role) return;
-    await v2Reply(interaction, await roleMembersLines(guild, role));
+    const members = await roleMembersLines(guild, role as Role);
+    if (members.length === 0) {
+      await paginateV2({ trigger: interaction, authorId: interaction.user.id, title: `**<@&${role.id}> members (0)**`, pages: ['No members.'] });
+      return;
+    }
+    const pages = chunkItems(members, PAGE_SIZE).map((c) => c.join('\n'));
+    await paginateV2({
+      trigger: interaction,
+      authorId: interaction.user.id,
+      title: `**<@&${role.id}> members (${members.length})** — Page {page}/{total}`,
+      pages,
+    });
   }
 }
 
@@ -44,20 +85,33 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!guild) return;
   const sub = args[0] ?? 'list';
   if (sub === 'list') {
-    await v2MessageReply(message, { content: roleListLines(guild) });
+    const roles = allRoles(guild);
+    if (roles.length === 0) {
+      await paginateV2({ trigger: message, authorId: message.author.id, title: '**Roles (0)**', pages: ['No roles found.'] });
+      return;
+    }
+    const counts = await roleMemberCounts(guild);
+    const pages = chunkItems(roles.map((r) => `<@&${r.id}> — ${(counts.get(r.id) ?? 0).toLocaleString()} members`), PAGE_SIZE).map((c) => c.join('\n'));
+    await paginateV2({ trigger: message, authorId: message.author.id, title: `**Roles (${roles.length})** — Page {page}/{total}`, pages });
     return;
   }
   if (sub === 'members') {
     const roleId = args[1]?.replace(/[<@&>]/g, '');
     const role = roleId ? guild.roles.cache.get(roleId) : null;
     if (!role) {
-      await v2MessageReply(message, { content: 'Role not found. Usage: `!roles members <role>`' });
+      await message.reply('Role not found. Usage: `!roles members <role>`');
       return;
     }
-    await v2MessageReply(message, { content: await roleMembersLines(guild, role) });
+    const members = await roleMembersLines(guild, role);
+    if (members.length === 0) {
+      await paginateV2({ trigger: message, authorId: message.author.id, title: `**<@&${role.id}> members (0)**`, pages: ['No members.'] });
+      return;
+    }
+    const pages = chunkItems(members, PAGE_SIZE).map((c) => c.join('\n'));
+    await paginateV2({ trigger: message, authorId: message.author.id, title: `**<@&${role.id}> members (${members.length})** — Page {page}/{total}`, pages });
     return;
   }
-  await v2MessageReply(message, { content: 'Usage: `!roles list` | `!roles members <role>`' });
+  await message.reply('Usage: `!roles list` | `!roles members <role>`');
 }
 
 const command: BotCommand = {
@@ -72,3 +126,4 @@ const command: BotCommand = {
 };
 
 export default command;
+
