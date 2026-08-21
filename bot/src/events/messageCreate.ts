@@ -108,6 +108,17 @@ async function handleAfk(app: App, message: Message): Promise<void> {
   await message.reply({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never).catch(() => undefined);
 }
 
+const LOADING_EMOJI = 'a:loading:1540470374624395274';
+
+async function withPrefixLoading(message: Message, run: () => Promise<void> | void): Promise<void> {
+  const reaction = await message.react(`<${LOADING_EMOJI}>`).catch(() => null);
+  try {
+    await run();
+  } finally {
+    if (reaction) await reaction.remove().catch(() => undefined);
+  }
+}
+
 function isAfkCommandMessage(app: App, message: Message): boolean {
   if (!app.config.bot.prefix_enabled || !message.content) return false;
   const prefixes = app.config.bot.per_guild_prefixes[message.guildId ?? ''] ?? app.config.bot.prefixes;
@@ -164,7 +175,7 @@ async function handlePrefix(app: App, message: Message): Promise<void> {
     const configAlias = app.customCommandAliases?.get(lowerName);
     const resolvedCustom = configCustom ? lowerName : configAlias ?? undefined;
     if (resolvedCustom && app.config.custom_commands[resolvedCustom]?.enabled) {
-      await app.customCommands.runPrefix(app, message, resolvedCustom, args);
+      await withPrefixLoading(message, () => app.customCommands.runPrefix(app, message, resolvedCustom, args));
       return;
     }
   }
@@ -179,7 +190,9 @@ async function handlePrefix(app: App, message: Message): Promise<void> {
     const custom = await resolveCustomCommand(app, message.guildId, cmdName.toLowerCase());
     if (custom) {
       if (app.cooldowns.tryConsume('cmd', message.author.id, `custom:${custom.commandName}`, 3)) {
-        await (message.channel as any).send({ content: custom.response.content }).catch(() => undefined);
+        await withPrefixLoading(message, async () => {
+          await (message.channel as any).send({ content: custom.response.content }).catch(() => undefined);
+        });
       }
       return;
     }
@@ -247,7 +260,7 @@ async function runCommand(app: App, message: Message, commandName: string, args:
   const start = Date.now();
   try {
     if (cmd.prefixExecute) {
-      await cmd.prefixExecute(message, args, app);
+      await withPrefixLoading(message, () => cmd.prefixExecute!(message, args, app));
     } else {
       await v2MessageReply(message, { content: 'This command is slash-only.' }).catch(() => undefined);
     }
