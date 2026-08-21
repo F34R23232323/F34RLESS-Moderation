@@ -8,8 +8,6 @@
   },
   "scripts": {
     "gen-config": "tsx scripts/generate-config.ts",
-    "import:messages": "tsx scripts/sapphire-messages-import.ts",
-    "import:custom-commands": "tsx scripts/sapphire-custom-commands-import.ts",
     "dev:bot": "tsx bot/src/index.ts",
     "dev:dashboard": "tsx dashboard/server/src/index.ts",
     "dev:web": "vite --config dashboard/web/vite.config.mjs",
@@ -20,9 +18,14 @@
     "start:dashboard": "node dist-node/dashboard/server/src/index.js"
   },
   "dependencies": {
+    "@distube/soundcloud": "^2.0.4",
+    "@distube/spotify": "^2.0.2",
+    "@distube/youtube": "^1.0.4",
     "discord.js": "^14.27.0",
+    "distube": "^5.2.3",
     "dotenv": "^16.4.5",
     "express": "^4.22.2",
+    "ffmpeg-static": "^5.3.0",
     "lucide-react": "^0.451.0",
     "mysql2": "^3.11.3",
     "node-cron": "^3.0.3",

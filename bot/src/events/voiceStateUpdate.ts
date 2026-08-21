@@ -3,6 +3,7 @@ import type { App } from '../core/context';
 
 export async function handleVoiceStateUpdate(app: App, oldState: VoiceState, newState: VoiceState): Promise<void> {
   try {
+    app.music.onVoiceStateUpdate(oldState, newState);
     const memberId = newState.member?.id ?? oldState.member?.id;
     if (!memberId) return;
     const guildId = newState.guild.id ?? oldState.guild.id;

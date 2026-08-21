@@ -34,6 +34,7 @@ import { MessageLogService } from './services/messageLogService';
 import { RoleConnectionsService } from './services/roleConnections';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
+import { MusicService } from './music/MusicService';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -113,6 +114,7 @@ async function main(): Promise<void> {
     archives: null as unknown as ArchiveService,
     messageLogs: null as unknown as MessageLogService,
     roleConnections: null as unknown as RoleConnectionsService,
+    music: null as unknown as MusicService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -147,6 +149,7 @@ async function main(): Promise<void> {
   app.archives = new ArchiveService(app);
   app.messageLogs = new MessageLogService(app);
   app.roleConnections = new RoleConnectionsService(app);
+  app.music = new MusicService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
@@ -168,6 +171,7 @@ async function main(): Promise<void> {
   client.once('ready', async () => {
     app.logger.info(`Logged in as ${client.user?.tag}`);
     app.scheduler.start();
+    void app.music.restoreAll().then(() => app.logger.info('Music 24/7 sessions restored'));
     const activityType: Record<string, ActivityType> = {
       Playing: ActivityType.Playing,
       Streaming: ActivityType.Streaming,

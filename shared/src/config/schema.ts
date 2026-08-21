@@ -763,6 +763,20 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    music: z
+      .object({
+        enabled: boolean.default(true),
+        default_volume: z.number().int().min(0).max(200).default(100),
+        max_volume: z.number().int().min(100).max(500).default(200),
+        twenty_four_seven: boolean.default(false),
+        autoplay: boolean.default(false),
+        max_queue_size: z.number().int().min(1).max(2000).default(500),
+        text_channel_id: snowflake.optional(),
+        panel_refresh_seconds: z.number().int().min(0).max(60).default(10),
+      })
+      .strict()
+      .default({}),
+
     staff_permission_groups: z
       .object({
         groups: z

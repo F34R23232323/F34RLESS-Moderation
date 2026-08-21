@@ -28,6 +28,7 @@ import type { MessageLogService } from '../services/messageLogService';
 import type { RoleConnectionsService } from '../services/roleConnections';
 import type { MessageContentCache } from '../utils/messageCache';
 import type { CustomCommandRunner } from './customCommandRunner';
+import type { MusicService } from '../music/MusicService';
 
 export interface App {
   config: BotConfig;
@@ -67,6 +68,7 @@ export interface App {
   archives: ArchiveService;
   messageLogs: MessageLogService;
   roleConnections: RoleConnectionsService;
+  music: MusicService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;

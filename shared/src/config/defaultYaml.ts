@@ -787,7 +787,8 @@ dashboard:
     timezone: "UTC"
 
 # -----------------------------------------------------------------------------
-# Error / rate-limit reporting. webhook_url is an optional external alert.
+# Error / rate-limit reporting. If both channel_id and webhook_url are set,
+# the channel is used and the webhook is skipped (webhook is only a fallback).
 # verbosity: minimal | standard | verbose
 # -----------------------------------------------------------------------------
 error_reporting:

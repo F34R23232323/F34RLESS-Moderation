@@ -8,6 +8,11 @@ import { v2Send } from '../utils/v2';
 import { buildRichV2 } from '../utils/v2';
 import { friendlyEventName, formatDetails, logAccent } from './logFormatter';
 
+export interface RateLimitOrigin {
+  file: string;
+  feature: string;
+}
+
 export interface LogInput {
   event: string;
   guildId: string;
@@ -298,11 +303,17 @@ export class LogManager extends EventEmitter {
     if (!app) return;
     const cfg = app.config.error_reporting;
     if (!cfg.enabled) return;
+
+    const verbosity = cfg.verbosity === 'verbose' ? cleaned : err instanceof Error ? err.message : cleaned.slice(0, 500);
+    const content = `[Error] ${source}\n${verbosity.slice(0, 1800)}`;
+
     if (cfg.channel_id) {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
-        const verbosity = cfg.verbosity === 'verbose' ? cleaned : err instanceof Error ? err.message : cleaned.slice(0, 500);
-        await v2Send(channel, `[Error] ${source}\n${verbosity.slice(0, 1800)}`, { accentColor: '#ED4245', allowedMentions: { parse: [], repliedUser: false } }).catch(() => undefined);
+        const sent = await v2Send(channel, content, { accentColor: '#ED4245', allowedMentions: { parse: [], repliedUser: false } })
+          .then(() => true)
+          .catch(() => false);
+        if (sent) return;
       }
     }
     if (cfg.webhook_url) {
@@ -316,23 +327,36 @@ export class LogManager extends EventEmitter {
     timeout: number;
     global: boolean;
     bucket?: string | null;
+    origin?: RateLimitOrigin | null;
   }): Promise<void> {
     const app = this.app;
+    const originLine = data.origin ? ` (from ${data.origin.file} — ${data.origin.feature})` : '';
     await this.log({
       event: 'rate_limit_event',
       guildId: app?.config.bot.owner_ids[0] ?? '0',
-      message: `Rate limited on ${data.method} ${data.route}${data.global ? ' (GLOBAL)' : ''} for ${data.timeout}ms`,
+      message: `Rate limited on ${data.method} ${data.route}${data.global ? ' (GLOBAL)' : ''} for ${data.timeout}ms${originLine}`,
       details: data,
     }).catch(() => undefined);
 
     if (!app) return;
     const cfg = app.config.rate_limit_reporting;
     if (!cfg.enabled) return;
-    const text = `Rate limited\nMethod: ${data.method}\nRoute: ${data.route}\nTimeout: ${data.timeout}ms\nGlobal: ${data.global}`;
+
+    const lines = ['Rate limited', `Method: ${data.method}`, `Route: ${data.route}`, `Timeout: ${data.timeout}ms`, `Global: ${data.global}`];
+    if (data.bucket) lines.push(`Bucket: ${data.bucket}`);
+    if (data.origin) {
+      lines.push(`Source: ${data.origin.file}`);
+      lines.push(`Feature: ${data.origin.feature}`);
+    }
+    const text = lines.join('\n');
+
     if (cfg.channel_id) {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
-        await v2Send(channel, text, { accentColor: '#FEE75C', allowedMentions: { parse: [], repliedUser: false } }).catch(() => undefined);
+        const sent = await v2Send(channel, text, { accentColor: '#FEE75C', allowedMentions: { parse: [], repliedUser: false } })
+          .then(() => true)
+          .catch(() => false);
+        if (sent) return;
       }
     }
     if (cfg.webhook_url) {

@@ -23,6 +23,9 @@ export interface EnvVars {
   REGISTER_GUILD_ID?: string;
   /** Production guild ID — guild-scoped commands (moderation/admin) are registered here */
   GUILD_ID?: string;
+  /** Optional Spotify API credentials — improve Spotify URL resolution reliability */
+  SPOTIFY_CLIENT_ID?: string;
+  SPOTIFY_CLIENT_SECRET?: string;
 }
 
 function requireEnv(name: string): string {
@@ -51,6 +54,8 @@ export function loadEnv(): EnvVars {
     DASHBOARD_BASE_URL: process.env.DASHBOARD_BASE_URL || 'http://localhost:4693',
     REGISTER_GUILD_ID: process.env.REGISTER_GUILD_ID,
     GUILD_ID: process.env.GUILD_ID,
+    SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
+    SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
   };
 }
 
