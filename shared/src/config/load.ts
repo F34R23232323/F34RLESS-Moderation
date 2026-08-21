@@ -21,6 +21,8 @@ export interface EnvVars {
   CLIENT_SECRET: string;
   DASHBOARD_BASE_URL?: string;
   REGISTER_GUILD_ID?: string;
+  /** Production guild ID — guild-scoped commands (moderation/admin) are registered here */
+  GUILD_ID?: string;
 }
 
 function requireEnv(name: string): string {
@@ -48,6 +50,7 @@ export function loadEnv(): EnvVars {
     CLIENT_SECRET: requireEnv('CLIENT_SECRET'),
     DASHBOARD_BASE_URL: process.env.DASHBOARD_BASE_URL || 'http://localhost:4693',
     REGISTER_GUILD_ID: process.env.REGISTER_GUILD_ID,
+    GUILD_ID: process.env.GUILD_ID,
   };
 }
 

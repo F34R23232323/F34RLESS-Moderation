@@ -234,7 +234,102 @@ export class ReportingService {
       message: `Report #${reportId} marked as ${status}${opts?.action ? ` (${opts.action})` : ''} by <@${resolvedBy}>`,
       details: { status, action: opts?.action, reason: opts?.reason, duration: opts?.duration },
     });
+
+    if (report) {
+      await this.postArchivedCard(reportId, report.guild_id, status, resolvedBy, opts).catch(() => undefined);
+    }
   }
+
+  private async postArchivedCard(
+    reportId: number,
+    guildId: string,
+    status: 'actioned' | 'ignored' | 'false',
+    resolvedBy: string,
+    opts?: ResolveOptions,
+  ): Promise<void> {
+    const cfg = this.app.config.reports;
+    if (!cfg.archive.enabled || !cfg.archive.channel_id) return;
+
+    const [rows] = await this.app.db.query<RowDataPacket[]>('SELECT * FROM reports WHERE id = ?', [reportId]);
+    const report = rows[0];
+    if (!report) return;
+
+    const guild = this.app.client.guilds.cache.get(guildId);
+    if (!guild) return;
+    const channel = guild.channels.cache.get(cfg.archive.channel_id);
+    if (!channel || !('send' in channel)) return;
+
+    const attachments = parseJson(report.attachment_urls, []) as string[];
+    const imageUrl = attachments.find((a) => IMAGE_RE.test(a)) ?? null;
+
+    const targetId: string | null = report.target_user_id ? String(report.target_user_id) : null;
+    let targetAvatarUrl: string | null = imageUrl;
+    let targetCreatedAt: number | null = null;
+    let targetJoinedAt: number | null = null;
+    let targetTag: string | null = null;
+
+    if (targetId) {
+      const user = await this.app.client.users.fetch(targetId).catch(() => null);
+      if (user) {
+        targetAvatarUrl = user.displayAvatarURL({ size: 128, extension: 'png' });
+        targetCreatedAt = Math.floor(user.createdTimestamp / 1000);
+        targetTag = user.tag ?? user.username;
+      }
+      const member = await guild.members.fetch(targetId).catch(() => null);
+      if (member?.joinedAt) {
+        targetJoinedAt = Math.floor(member.joinedAt.getTime() / 1000);
+      }
+    }
+
+    let lastCaseType: string | null = null;
+    let lastCaseAt: number | null = null;
+    if (targetId) {
+      const [caseRows] = await this.app.db.query<RowDataPacket[]>(
+        'SELECT type, created_at FROM cases WHERE guild_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [guildId, targetId],
+      );
+      const lastCase = caseRows[0];
+      if (lastCase) {
+        lastCaseType = String(lastCase.type).toUpperCase();
+        lastCaseAt = Math.floor(new Date(lastCase.created_at).getTime() / 1000);
+      }
+    }
+
+    const reporter = await this.app.client.users.fetch(String(report.reporter_id)).catch(() => null);
+    const reporterTag = reporter?.tag ?? reporter?.username ?? String(report.reporter_id);
+
+    const resolvedByUser = await this.app.client.users.fetch(resolvedBy).catch(() => null);
+    const resolvedByTag = resolvedByUser?.tag ?? resolvedByUser?.username ?? `<@${resolvedBy}>`;
+
+    const resolvedStatus = status === 'actioned' ? 'actioned' : 'ignored';
+
+    const card = buildReportCard({
+      status: resolvedStatus,
+      reportId,
+      reporterCount: Number(report.reporter_count) || 1,
+      targetId,
+      targetTag,
+      targetAvatarUrl,
+      targetCreatedAt,
+      targetJoinedAt,
+      lastCaseType,
+      lastCaseAt,
+      reason: report.reason ? String(report.reason) : null,
+      targetContent: report.target_content ? String(report.target_content) : null,
+      sourceChannelId: report.source_channel_id ? String(report.source_channel_id) : null,
+      targetMessageId: report.target_message_id ? String(report.target_message_id) : null,
+      guildId,
+      reporterTag,
+      reporterId: String(report.reporter_id),
+      resolvedBy,
+      resolvedByTag,
+      resolvedNote: opts?.action ?? opts?.reason ?? null,
+      imageUrl,
+    });
+
+    await (channel as any).send({ ...card, allowedMentions: { parse: [] } }).catch(() => undefined);
+  }
+
 
   private async deleteReportCard(reportId: number): Promise<void> {
     const cfg = this.app.config.reports;

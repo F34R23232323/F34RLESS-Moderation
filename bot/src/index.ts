@@ -188,14 +188,28 @@ async function main(): Promise<void> {
 }
 
 async function registerSlashCommands(app: App): Promise<void> {
-  const { env, config, client } = app;
+  const { env, config } = app;
   const rest = new REST({ version: '10' }).setToken(env.DISCORD_TOKEN);
-  const bodies = [...app.commands.values()]
-    .filter((c) => config.commands[c.name]?.slash ?? true)
-    .map((c) => c.data.toJSON());
-  // Custom commands are registered as slash too, except when their name is
-  // owned by a builtin command — Discord forbids duplicate slash names, so
-  // those stay prefix-only (see slash: false in the imported config).
+
+  // Categories that should be registered as guild-local commands (staff-only, no
+  // need for global discovery) — this lets us use both the 100-guild and 100-global
+  // slots for a combined ceiling of 200 application commands.
+  const GUILD_CATEGORIES = new Set(['moderation', 'admin']);
+
+  const guildBodies: object[] = [];
+  const globalBodies: object[] = [];
+
+  for (const cmd of app.commands.values()) {
+    if (config.commands[cmd.name]?.slash === false) continue;
+    const body = cmd.data.toJSON();
+    if (GUILD_CATEGORIES.has(cmd.category)) {
+      guildBodies.push(body);
+    } else {
+      globalBodies.push(body);
+    }
+  }
+
+  // Custom slash commands go global (user-facing by default)
   for (const [name, cc] of Object.entries(config.custom_commands)) {
     if (!cc.enabled || !cc.slash) continue;
     if (app.commands.has(name) || app.messageCommands.has(name) || app.userCommands.has(name)) continue;
@@ -204,26 +218,39 @@ async function registerSlashCommands(app: App): Promise<void> {
       .setDescription((cc.description || 'Custom command').slice(0, 100))
       .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(false))
       .addStringOption((o) => o.setName('args').setDescription('Arguments').setRequired(false));
-    bodies.push(builder.toJSON());
+    globalBodies.push(builder.toJSON());
   }
+
+  // Context menu commands are guild-only (they are staff tools)
   for (const cmd of app.messageCommands.values()) {
     if (config.commands[cmd.name]?.slash === false) continue;
-    bodies.push({ name: cmd.name, type: 3 } as never);
+    guildBodies.push({ name: cmd.name, type: 3 } as never);
   }
   for (const cmd of app.userCommands.values()) {
     if (config.commands[cmd.name]?.slash === false) continue;
-    bodies.push({ name: cmd.name, type: 2 } as never);
+    guildBodies.push({ name: cmd.name, type: 2 } as never);
   }
 
-  if (bodies.length === 0) return;
-  const targetGuildId = env.REGISTER_GUILD_ID;
-  const route = targetGuildId
-    ? Routes.applicationGuildCommands(env.CLIENT_ID, targetGuildId)
-    : Routes.applicationCommands(env.CLIENT_ID);
+  // When REGISTER_GUILD_ID is set (development), dump everything to that guild
+  // so changes are instant. In production, split across guild + global.
+  const devGuildId = env.REGISTER_GUILD_ID;
 
   try {
-    await rest.put(route, { body: bodies });
-    app.logger.info(`Registered ${bodies.length} commands ${targetGuildId ? `to guild ${targetGuildId}` : 'globally'}`);
+    if (devGuildId) {
+      const all = [...guildBodies, ...globalBodies];
+      await rest.put(Routes.applicationGuildCommands(env.CLIENT_ID, devGuildId), { body: all });
+      app.logger.info(`Registered ${all.length} commands to dev guild ${devGuildId}`);
+    } else {
+      const guildId = env.GUILD_ID;
+      if (guildBodies.length > 0 && guildId) {
+        await rest.put(Routes.applicationGuildCommands(env.CLIENT_ID, guildId), { body: guildBodies });
+        app.logger.info(`Registered ${guildBodies.length} guild commands (moderation/admin) to guild ${guildId}`);
+      }
+      if (globalBodies.length > 0) {
+        await rest.put(Routes.applicationCommands(env.CLIENT_ID), { body: globalBodies });
+        app.logger.info(`Registered ${globalBodies.length} global commands (community/utility/info)`);
+      }
+    }
   } catch (err) {
     app.logger.error('Failed to register slash commands:', err);
   }
