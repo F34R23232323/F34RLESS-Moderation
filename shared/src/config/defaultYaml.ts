@@ -209,6 +209,7 @@ reports:
 #     ping_role_id: "000000000000000000"  # role pinged when an appeal is filed
 #     log_channel_id: "000000000000000000" # where the appeal card is posted
 #     thread_auto_create: true             # auto-open a thread on the card
+#     logging_channel_id: "000000000000000000" # audit log for submitted/accepted/denied/ignored
 #     eligible_punishment_types: [ban, mute, warn, timeout, kick]
 #     cooldown_seconds: 300                # min time between appeals per user
 #     max_open_appeals_per_user: 3
@@ -230,6 +231,7 @@ appeals:
   # ping_role_id: "000000000000000000"
   # log_channel_id: "000000000000000000"
   thread_auto_create: true
+  # logging_channel_id: "000000000000000000"   # audit log for appeal events
   eligible_punishment_types:
     - ban
     - mute

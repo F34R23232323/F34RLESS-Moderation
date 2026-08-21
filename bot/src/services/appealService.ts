@@ -1,7 +1,8 @@
 import type { Guild, GuildMember, Message, TextBasedChannel } from 'discord.js';
+import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
-import { resolveAppealConfig, safeDiscordText, sanitizeForDiscord } from '../../../shared/src/index';
+import { resolveAppealConfig, safeDiscordText, sanitizeForDiscord, type AppealsConfig } from '../../../shared/src/index';
 import {
   buildAppealSystemMessage,
   buildDecidedAppealCard,
@@ -168,6 +169,28 @@ export class AppealService {
     );
   }
 
+  /**
+   * Audit channel logging: posts a compact Components V2 entry to
+   * appeals.logging_channel_id (if configured) for appeal lifecycle events.
+   */
+  private async logAppealEvent(
+    cfg: AppealsConfig,
+    guild: Guild,
+    title: string,
+    lines: string[],
+    accent: number,
+  ): Promise<void> {
+    if (!cfg.logging_channel_id) return;
+    const channel = guild.channels.cache.get(cfg.logging_channel_id) ?? (await guild.channels.fetch(cfg.logging_channel_id).catch(() => null));
+    if (!channel || !('send' in channel)) return;
+    const container = new ContainerBuilder()
+      .setAccentColor(accent as never)
+      .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**${title}**\n${lines.join('\n')}`));
+    await (channel as unknown as SendableChannel)
+      .send({ components: [container], flags: MessageFlags.IsComponentsV2 } as never)
+      .catch(() => undefined);
+  }
+
   /** Resolve the appeal thread channel (fetches once, falls back to cache). */
   private async resolveThread(appeal: AppealRow, guild: Guild): Promise<SendableChannel | null> {
     if (!appeal.discord_thread_id) return null;
@@ -262,6 +285,19 @@ export class AppealService {
       details: { appealId: appeal.id, caseId: caseRow.id, caseCode: caseRow.case_code },
     });
 
+    await this.logAppealEvent(
+      cfg,
+      guild,
+      `Appeal submitted — #${appeal.id}`,
+      [
+        `User: ${user ? `${user.tag} ` : ''}(<@${appeal.user_id}>)`,
+        `Case: **#${caseRow.case_number}** (\`${caseRow.case_code}\`) — ${caseRow.type}`,
+        `Ping: <@&${cfg.ping_role_id ?? 'not set'}>`,
+        `${cfg.log_channel_id ? `[Jump to card](<https://discord.com/channels/${guild.id}/${cfg.log_channel_id}/${sent.id}>)` : ''}`,
+      ].filter(Boolean),
+      0xf0b232,
+    );
+
     return true;
   }
 
@@ -351,6 +387,20 @@ export class AppealService {
       message: `Appeal #${appeal.id} ${statusLabel} (case ${caseRow.case_code})`,
       details: { appealId: appeal.id, caseId: caseRow.id, status: appeal.status, decisionReason: appeal.decision_reason },
     });
+
+    const accent = appeal.status === 'accepted' ? 0x57f287 : appeal.status === 'denied' ? 0xed4245 : 0x99aab5;
+    await this.logAppealEvent(
+      cfg,
+      guild,
+      `Appeal ${statusLabel} — #${appeal.id}`,
+      [
+        `User: (<@${appeal.user_id}>)`,
+        `Case: \`${caseRow.case_code}\` — ${caseRow.type}`,
+        appeal.decided_by ? `By: <@${appeal.decided_by}>` : '',
+        appeal.decision_reason ? `Reason: ${appeal.decision_reason}` : '',
+      ].filter(Boolean),
+      accent,
+    );
 
     return true;
   }

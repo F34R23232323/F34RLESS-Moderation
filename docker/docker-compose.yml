@@ -68,6 +68,7 @@ services:
       OWNER_USER_ID: ${OWNER_USER_ID:?set OWNER_USER_ID in .env}
       CLIENT_ID: ${CLIENT_ID:?set CLIENT_ID in .env}
       CLIENT_SECRET: ${CLIENT_SECRET:?set CLIENT_SECRET in .env}
+      DISCORD_TOKEN: ${DISCORD_TOKEN:?set DISCORD_TOKEN in .env}
       DASHBOARD_BASE_URL: ${DASHBOARD_BASE_URL:-http://localhost:4693}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306

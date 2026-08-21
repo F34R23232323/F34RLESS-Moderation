@@ -44,6 +44,9 @@ export const appealsConfigSchema = z
     enabled: z.boolean().default(false),
     ping_role_id: snowflake.optional(),
     log_channel_id: snowflake.optional(),
+    // Optional audit channel: appeal lifecycle events (submitted / accepted /
+    // denied / ignored) are posted here as Components V2 entries.
+    logging_channel_id: snowflake.optional(),
     thread_auto_create: z.boolean().default(true),
     eligible_punishment_types: z
       .array(z.enum(APPEALABLE_PUNISHMENT_TYPES))

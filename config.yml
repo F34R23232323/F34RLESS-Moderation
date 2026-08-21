@@ -555,6 +555,70 @@ reports:
     channel_id: "1467100822176530453"
   merge_window_seconds: 300
   false_report_warning_enabled: false
+appeals:
+  # Public appeals portal — one config per guild. The global block below is
+  # applied to every guild; per-guild overrides live under guild_overrides and
+  # fall back to these values for anything they omit.
+  enabled: true
+  # Role pinged in the appeal card when a new appeal is filed (the same team
+  # that actions report cards).
+  ping_role_id: "1468007718907547778"
+  # Channel where appeal cards are posted (same channel as report cards).
+  log_channel_id: "1467100532278558752"
+  # Auto-open a thread per appeal so staff can discuss without leaving Discord.
+  thread_auto_create: true
+  # Punishment types that may be appealed via the portal.
+  eligible_punishment_types:
+    - ban
+    - mute
+    - warn
+    - timeout
+    - kick
+  # Minimum time a user must wait between appeal submissions.
+  cooldown_seconds: 300
+  max_open_appeals_per_user: 3
+  blocking:
+    enabled: true
+    default_reason: "Your appeal access is restricted by staff. Do not DM staff about this."
+  # Questions rendered on the appeals portal (https://<dashboard>/appeals/1466990155020898413).
+  form:
+    - id: why_unfair
+      label: "Why do you believe this punishment is unfair?"
+      type: long_text
+      required: true
+      min_length: 30
+      max_length: 2000
+      help_text: "Give as much detail as you can — context helps staff review faster."
+    - id: what_happened
+      label: "In your own words, what happened?"
+      type: long_text
+      required: true
+      min_length: 20
+      max_length: 2000
+      help_text: "Be honest. Staff already have the evidence on record."
+    - id: rules
+      label: "Have you read the server rules and do you understand why this action was taken?"
+      type: short_text
+      required: true
+      min_length: 10
+      max_length: 500
+    - id: agreement
+      label: "I will follow the server rules going forward, and I understand staff decisions are final."
+      type: checkbox
+      required: true
+  guild_overrides: {}
+  # Per-guild overrides example (everything optional — omitted keys fall back
+  # to the global block above):
+  # guild_overrides:
+  #   "1466990155020898413":
+  #     log_channel_id: "000000000000000000"   # post this guild's cards here
+  #     ping_role_id: "000000000000000000"     # ping this role instead
+  #     eligible_punishment_types: [ban]       # only bans can be appealed here
+  #     cooldown_seconds: 600
+  #     max_open_appeals_per_user: 1
+  #     blocking:
+  #       default_reason: "Custom reason for this guild."
+  #     form: []                                # replaces the global form entirely
 archives:
   enabled: true
   default_amount: 50
