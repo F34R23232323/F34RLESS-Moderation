@@ -1,5 +1,10 @@
 FROM node:22-alpine
 
+# ffmpeg is required for audio playback (music system). The bundled
+# ffmpeg-static binary is NOT downloaded because npm installs run with
+# --ignore-scripts, so install the system package instead.
+RUN apk add --no-cache ffmpeg
+
 WORKDIR /app
 
 COPY package.json package-lock.json* ./

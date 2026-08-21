@@ -3,6 +3,7 @@ import { YouTubePlugin } from '@distube/youtube';
 import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';
 import ffmpegStatic from 'ffmpeg-static';
+import * as fs from 'fs';
 import type { GuildMember, GuildTextBasedChannel, VoiceBasedChannel, VoiceState } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
@@ -10,6 +11,22 @@ import { parseJson } from '../../../shared/src/index';
 import { toCustomFilters } from './filters';
 import { buildPanelPayload } from './panel';
 import type { MusicSettings, PanelRef } from './types';
+
+/** Resolve the ffmpeg binary to hand to DisTube.
+ *  Prefers the bundled `ffmpeg-static` binary when present (local dev), otherwise
+ *  falls back to `FFMPEG_PATH` / system `ffmpeg` on PATH — this keeps Docker images
+ *  working where npm runs with `--ignore-scripts` so the ffmpeg-static binary is
+ *  never downloaded. */
+function resolveFfmpegPath(): string | undefined {
+  if (typeof ffmpegStatic === 'string' && ffmpegStatic.length > 0) {
+    try {
+      if (fs.existsSync(ffmpegStatic)) return ffmpegStatic;
+    } catch {
+      // fall through to system ffmpeg
+    }
+  }
+  return process.env.FFMPEG_PATH || 'ffmpeg';
+}
 
 export interface PlayResult {
   newQueue: boolean;
@@ -28,7 +45,7 @@ export class MusicService {
 
   constructor(public readonly app: App) {
     const { env, config } = app;
-    const ffmpegPath = typeof ffmpegStatic === 'string' && ffmpegStatic.length > 0 ? ffmpegStatic : undefined;
+    const ffmpegPath = resolveFfmpegPath();
     this.distube = new DisTube(app.client, {
       plugins: [
         new YouTubePlugin(),
