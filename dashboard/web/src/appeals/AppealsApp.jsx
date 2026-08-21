@@ -39,6 +39,7 @@ export default function AppealsApp({ guildId }) {
   const [auth, setAuth] = useState(null);
   const [view, setView] = useState('loading'); // loading | login | not-configured | not-member | blocked | flow | error
   const [blocked, setBlocked] = useState(null);
+  const [isMember, setIsMember] = useState(true);
   const [cases, setCases] = useState([]);
   const [openAppeal, setOpenAppeal] = useState(null);
   const [step, setStep] = useState(1);
@@ -129,6 +130,7 @@ export default function AppealsApp({ guildId }) {
             return;
           }
           setCases(mine.cases || []);
+          setIsMember(mine.isMember !== false);
           if (mine.openAppeal) {
             setOpenAppeal(mine.openAppeal);
             setView('flow');
@@ -280,7 +282,13 @@ export default function AppealsApp({ guildId }) {
         {step === 1 && (
           <div className="appeal-step-body">
             <h3 className="appeal-h3">Select a case to appeal</h3>
-            <p className="appeal-sub">Only eligible punishments are shown. Cases you've already appealed are hidden.</p>
+            <p className="appeal-sub">Only active eligible punishments are shown. Cases you've already appealed are hidden.</p>
+            {!isMember && (
+              <div className="appeal-note">
+                <ShieldAlert size={15} />
+                <span>You're not currently in this server — you can only appeal bans while outside.</span>
+              </div>
+            )}
             {flowError && <div className="appeal-form-error">{flowError}</div>}
             {cases.length === 0 ? (
               <div className="appeal-empty">

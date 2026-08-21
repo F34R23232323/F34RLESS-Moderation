@@ -273,15 +273,23 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       return;
     }
 
+    // Only active cases can be appealed; kicks can never be appealed. Users
+    // who are not currently in the server may only appeal bans (they have no
+    // other standing — kicks/softbans don't bar re-entry, mutes/warns are
+    // moot once they're gone).
+    const isMember = await ctx.guildAccess.isMember(guildId, userId);
+    let eligible = cfg.eligible_punishment_types.filter((t) => t !== 'kick');
+    if (!isMember) eligible = eligible.filter((t) => t === 'ban' || t === 'tempban');
+
     const [caseRows] = await ctx.db.query<RowDataPacket[]>(
       `SELECT id, case_number, case_code, type, reason, created_at, status
        FROM cases
        WHERE guild_id = ? AND user_id = ?
-         AND type IN (${cfg.eligible_punishment_types.map(() => '?').join(',')})
-         AND status != 'voided'
+         AND type IN (${eligible.map(() => '?').join(',')})
+         AND status = 'active'
        ORDER BY created_at DESC
        LIMIT 50`,
-      [guildId, userId, ...cfg.eligible_punishment_types],
+      [guildId, userId, ...eligible],
     );
 
     const [openAppealRows] = await ctx.db.query<RowDataPacket[]>(
@@ -303,6 +311,7 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
 
     res.json({
       blocked: null,
+      isMember,
       cases,
       openAppeal: openAppealRows[0]
         ? { appealId: Number(openAppealRows[0].id), status: openAppealRows[0].status }
@@ -338,9 +347,9 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       return;
     }
 
-    // Case must exist in this guild AND belong to the requester.
+    // Case must exist in this guild, belong to the requester and be active.
     const [caseRows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT id, case_number, case_code, type FROM cases WHERE id = ? AND guild_id = ? AND user_id = ?',
+      'SELECT id, case_number, case_code, type FROM cases WHERE id = ? AND guild_id = ? AND user_id = ? AND status = \'active\'',
       [caseId, guildId, userId],
     );
     const caseRow = caseRows[0] as { id: number; case_number: number; case_code: string; type: string } | undefined;
@@ -348,7 +357,12 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       res.status(404).json({ error: 'case_not_found' });
       return;
     }
-    if (!cfg.eligible_punishment_types.includes(caseRow.type as never)) {
+    // Kicks are never appealable; users outside the server may only appeal bans.
+    const isMember = await ctx.guildAccess.isMember(guildId, userId);
+    const allowedTypes = cfg.eligible_punishment_types.filter(
+      (t) => t !== 'kick' && (isMember || t === 'ban' || t === 'tempban'),
+    );
+    if (!allowedTypes.includes(caseRow.type as never)) {
       res.status(400).json({ error: 'case_not_eligible' });
       return;
     }

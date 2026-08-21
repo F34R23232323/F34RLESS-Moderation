@@ -1,9 +1,26 @@
+import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { App } from '../core/context';
 
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function randomCode(length: number): string {
+  const bytes = crypto.randomBytes(length);
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += CODE_CHARS[bytes[i] % CODE_CHARS.length];
+  }
+  return code;
+}
+
 export async function runBackup(app: App): Promise<void> {
-  const backupDir = path.resolve(process.cwd(), 'backups');
+  const backupRoot = path.resolve(process.cwd(), 'dbbackups');
+  fs.mkdirSync(backupRoot, { recursive: true });
+
+  const now = new Date();
+  const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+  const backupDir = path.join(backupRoot, `${stamp}_${randomCode(4)}`);
   fs.mkdirSync(backupDir, { recursive: true });
 
   const filename = `backup-${new Date().toISOString().replace(/[:.]/g, '-')}.sql`;
@@ -41,13 +58,18 @@ export async function runBackup(app: App): Promise<void> {
     app.logger.info(`Backup written to ${filePath}`);
 
     const retention = app.config.ops.backup_retention_count;
-    const files = fs
-      .readdirSync(backupDir)
-      .filter((f) => f.startsWith('backup-') && f.endsWith('.sql'))
+    const dirs = fs
+      .readdirSync(backupRoot)
+      .filter((d) => fs.statSync(path.join(backupRoot, d)).isDirectory())
       .sort()
       .reverse();
-    for (const f of files.slice(retention)) {
-      fs.unlinkSync(path.join(backupDir, f));
+    for (const d of dirs.slice(retention)) {
+      const dirPath = path.join(backupRoot, d);
+      for (const f of fs.readdirSync(dirPath)) {
+        fs.unlinkSync(path.join(dirPath, f));
+      }
+      fs.rmdirSync(dirPath);
+      app.logger.info(`Removed old backup folder ${dirPath}`);
     }
   } catch (err) {
     app.logger.error('Backup failed:', err);

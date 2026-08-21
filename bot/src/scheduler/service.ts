@@ -196,12 +196,13 @@ export class SchedulerService {
     });
   }
 
-  private scheduleBackups(): void {
+private scheduleBackups(): void {
     if (!this.app.config.ops.backups_enabled) return;
-    this.addCron('backup', '0 3 * * *', async () => {
+    this.addCron('backup', '0 */12 * * *', async () => {
       const backup = await import('../management/backup');
       await backup.runBackup(this.app);
     });
+    this.app.logger.info('Backups scheduled every 12 hours');
   }
 
   private scheduleSlowmodeRevert(): void {

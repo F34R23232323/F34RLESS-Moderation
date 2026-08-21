@@ -1481,6 +1481,16 @@ td.pre { white-space: normal; word-break: break-word; max-width: 420px; }
   color: var(--danger);
   font-size: 13px;
 }
+.appeal-note {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+  color: var(--text-dim);
+  font-size: 13px;
+}
 .appeal-panel-actions {
   display: flex; justify-content: space-between; align-items: center; gap: 10px;
   margin-top: 18px;

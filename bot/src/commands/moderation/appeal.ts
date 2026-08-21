@@ -29,6 +29,14 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     await v2Reply(interaction, 'You can only appeal your own cases.', { ephemeral: true });
     return;
   }
+  if (c.status !== 'active') {
+    await v2Reply(interaction, 'Only active cases can be appealed — this case is closed.', { ephemeral: true });
+    return;
+  }
+  if (c.type === 'kick') {
+    await v2Reply(interaction, 'Kick cases cannot be appealed.', { ephemeral: true });
+    return;
+  }
   const [result] = await app.db.execute(
     'INSERT INTO appeals (case_id, guild_id, user_id, message) VALUES (?, ?, ?, ?)',
     [c.id, guild.id, interaction.user.id, message],
@@ -64,6 +72,14 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     : await app.caseService.getCaseByCode(guild.id, rawId);
   if (!c || c.user_id !== message.author.id) {
     await v2MessageReply(message, { content: 'Case not found or not yours.' });
+    return;
+  }
+  if (c.status !== 'active') {
+    await v2MessageReply(message, { content: 'Only active cases can be appealed — this case is closed.' });
+    return;
+  }
+  if (c.type === 'kick') {
+    await v2MessageReply(message, { content: 'Kick cases cannot be appealed.' });
     return;
   }
   const [result] = await app.db.execute('INSERT INTO appeals (case_id, guild_id, user_id, message) VALUES (?, ?, ?, ?)', [c.id, guild.id, message.author.id, appeal]);
