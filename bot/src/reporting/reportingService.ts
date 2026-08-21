@@ -1,6 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
-import { v2Send } from '../utils/v2';
+import { buildReportCard } from '../utils/v2';
 import { parseJson } from '../../../shared/src/index';
 
 export interface ReportInput {
@@ -109,38 +109,72 @@ export class ReportingService {
     const channel = cfg.channel_id && guild.channels.cache.get(cfg.channel_id);
     if (!channel || !('send' in channel)) return;
 
-    const credibility = await this.getReporterCredibility(guildId, report.reporter_id);
-    const target = report.target_user_id ? `<@${report.target_user_id}>` : 'unknown';
-    const attachments = parseJson(report.attachment_urls, []) as string[];
     const pingRoleId = (cfg as { ping_role_id?: string }).ping_role_id;
+    const attachments = parseJson(report.attachment_urls, []) as string[];
+    const imageUrl = attachments.find((a) => IMAGE_RE.test(a)) ?? null;
 
-    const lines: string[] = [
-      `**Report #${report.id}** — ${report.reporter_count} reporter(s)`,
-      `Target: ${target}`,
-      `Reporter: <@${report.reporter_id}> (${credibility.actioned} actioned / ${credibility.ignored} ignored / ${credibility.false} false)`,
-    ];
-    if (report.reason) lines.push(`Reason: ${report.reason}`);
-    if (report.source_channel_id) lines.push(`Channel: <#${report.source_channel_id}>`);
-    if (report.source_module) {
-      lines.push(`Module: ${report.source_module}${report.source_rule ? ` — ${report.source_rule}` : ''}`);
+    // Fetch target user for avatar + account creation date
+    const targetId: string | null = report.target_user_id ? String(report.target_user_id) : null;
+    let targetAvatarUrl: string | null = imageUrl;
+    let targetCreatedAt: number | null = null;
+    let targetJoinedAt: number | null = null;
+    let targetTag: string | null = null;
+
+    if (targetId) {
+      const user = await app.client.users.fetch(targetId).catch(() => null);
+      if (user) {
+        targetAvatarUrl = user.displayAvatarURL({ size: 128, extension: 'png' });
+        targetCreatedAt = Math.floor(user.createdTimestamp / 1000);
+        targetTag = user.tag ?? user.username;
+      }
+      const member = await guild.members.fetch(targetId).catch(() => null);
+      if (member?.joinedAt) {
+        targetJoinedAt = Math.floor(member.joinedAt.getTime() / 1000);
+      }
     }
-    if (report.target_content) lines.push(`Content: ${String(report.target_content).slice(0, 1000)}`);
-    if (attachments.length > 0) {
-      lines.push(`Attachments (${attachments.length}): ${attachments.map((a) => a.slice(0, 150)).join('\n')}`);
+
+    // Last moderation case for this user
+    let lastCaseType: string | null = null;
+    let lastCaseAt: number | null = null;
+    if (targetId) {
+      const [caseRows] = await app.db.query<RowDataPacket[]>(
+        'SELECT type, created_at FROM cases WHERE guild_id = ? AND user_id = ? ORDER BY created_at DESC LIMIT 1',
+        [guildId, targetId],
+      );
+      const lastCase = caseRows[0];
+      if (lastCase) {
+        lastCaseType = String(lastCase.type).toUpperCase();
+        lastCaseAt = Math.floor(new Date(lastCase.created_at).getTime() / 1000);
+      }
     }
-    lines.push(`Reported: <t:${Math.floor(new Date(report.created_at).getTime() / 1000)}:R>`);
 
-    const preview = attachments.find((a) => IMAGE_RE.test(a));
+    // Reporter display name
+    const reporter = await app.client.users.fetch(String(report.reporter_id)).catch(() => null);
+    const reporterTag = reporter?.tag ?? reporter?.username ?? String(report.reporter_id);
 
-    await v2Send(channel as never, lines.join('\n'), {
-      accentColor: '#ED4245',
-      imageUrl: preview,
-      buttons: [
-        { customId: `report:action:${report.id}`, label: 'Action', style: 4 },
-        { customId: `report:ignore:${report.id}`, label: 'Ignore', style: 2 },
-      ],
-      allowedMentions: pingRoleId ? { parse: [], roles: [pingRoleId] } : { parse: [] },
-    }).then(async (sent: any) => {
+    const card = buildReportCard({
+      status: 'open',
+      reportId,
+      reporterCount: Number(report.reporter_count) || 1,
+      targetId,
+      targetTag,
+      targetAvatarUrl,
+      targetCreatedAt,
+      targetJoinedAt,
+      lastCaseType,
+      lastCaseAt,
+      reason: report.reason ? String(report.reason) : null,
+      targetContent: report.target_content ? String(report.target_content) : null,
+      sourceChannelId: report.source_channel_id ? String(report.source_channel_id) : null,
+      targetMessageId: report.target_message_id ? String(report.target_message_id) : null,
+      guildId,
+      reporterTag,
+      reporterId: String(report.reporter_id),
+      imageUrl,
+      pingRoleId: pingRoleId ?? null,
+    });
+
+    await (channel as any).send(card).then(async (sent: any) => {
       if (sent?.id) {
         await app.db.execute('UPDATE reports SET channel_message_id = ? WHERE id = ?', [sent.id, reportId]);
       }
@@ -200,8 +234,6 @@ export class ReportingService {
       message: `Report #${reportId} marked as ${status}${opts?.action ? ` (${opts.action})` : ''} by <@${resolvedBy}>`,
       details: { status, action: opts?.action, reason: opts?.reason, duration: opts?.duration },
     });
-
-    await this.archive(reportId);
   }
 
   private async deleteReportCard(reportId: number): Promise<void> {
@@ -217,35 +249,6 @@ export class ReportingService {
     if (!guild) return;
     const channel = guild.channels.cache.get(cfg.channel_id);
     if (!channel || !('messages' in channel)) return;
-    await channel.messages.delete(row.channel_message_id).catch(() => undefined);
-  }
-
-  private async archive(reportId: number): Promise<void> {
-    const cfg = this.app.config.reports;
-    if (!cfg.archive.enabled || !cfg.archive.channel_id) return;
-    const [rows] = await this.app.db.query<RowDataPacket[]>(
-      'SELECT * FROM reports WHERE id = ?',
-      [reportId],
-    );
-    const report = rows[0];
-    if (!report) return;
-    const guild = this.app.client.guilds.cache.get(report.guild_id);
-    const channel = guild?.channels.cache.get(cfg.archive.channel_id);
-    if (!channel || !('send' in channel)) return;
-    const lines = [
-      `**Archived Report #${reportId}** — ${report.status}${report.resolved_action ? ` (${report.resolved_action})` : ''}`,
-      `Reporter: <@${report.reporter_id}>`,
-      `Target: ${report.target_user_id ? `<@${report.target_user_id}>` : 'unknown'}`,
-      report.reason ? `Reason: ${report.reason}` : '',
-      report.source_channel_id ? `Channel: <#${report.source_channel_id}>` : '',
-      report.source_module ? `Module: ${report.source_module}${report.source_rule ? ` — ${report.source_rule}` : ''}` : '',
-      report.target_content ? `Content: ${String(report.target_content).slice(0, 1000)}` : '',
-      report.resolved_reason ? `Resolved reason: ${report.resolved_reason}` : '',
-      report.resolved_duration ? `Duration: ${report.resolved_duration}` : '',
-      report.resolved_by ? `Resolved by: <@${report.resolved_by}>` : '',
-      `Reports merged: ${report.reporter_count}`,
-      report.created_at ? `Reported: <t:${Math.floor(new Date(report.created_at).getTime() / 1000)}:R>` : '',
-    ].filter(Boolean).join('\n');
-    await channel.send({ content: lines, allowedMentions: { parse: [], repliedUser: false } }).catch(() => undefined);
+    await (channel as any).messages.delete(row.channel_message_id).catch(() => undefined);
   }
 }

@@ -83,20 +83,24 @@ async function renderWarns(
   }
 
   const status = (w: WarnRow): string => {
-    if (w.case_status === 'voided') return '`voided`';
-    if (!w.active) return '`cleared`';
-    if (w.expires_at && new Date(w.expires_at).getTime() <= Date.now()) return '`expired`';
-    return '`active`';
+    if (w.case_status === 'voided') return 'Voided';
+    if (!w.active) return 'Cleared';
+    if (w.expires_at && new Date(w.expires_at).getTime() <= Date.now()) return 'Expired';
+    return 'Active';
   };
 
-  const lines = warns.map((w) => {
-    const mod = w.moderator_id ? `<@${w.moderator_id}>` : 'unknown';
-    const expiry = w.expires_at ? ` · expires ${ts(w.expires_at)}` : '';
-    return `#${w.case_code} ${status(w)} — ${w.reason}\n  by ${mod} · <t:${Math.floor(new Date(w.created_at).getTime() / 1000)}:R>${expiry}`;
+  const blocks = warns.map((w) => {
+    const lines = [
+      `**#${w.case_code}** · ${status(w)}`,
+      `> Reason: ${w.reason || 'No reason provided'}`,
+      `> By: ${w.moderator_id ? `<@${w.moderator_id}>` : 'unknown'} · <t:${Math.floor(new Date(w.created_at).getTime() / 1000)}:R>`,
+    ];
+    if (w.expires_at) lines.push(`> Expires: ${ts(w.expires_at)}`);
+    return lines.join('\n');
   });
 
   await send(
-    `**Warns for <@${userId}>** — ${activeCount} active / ${warns.length} shown\n${lines.join('\n')}`,
+    `**Warnings for <@${userId}>** — ${activeCount} active · ${warns.length} total shown\n${blocks.join('\n\n')}`,
     { ephemeral: self },
   );
 }

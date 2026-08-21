@@ -8,12 +8,14 @@ export async function handleUserUpdate(app: App, oldUser: User | PartialUser, ne
     const isBot = newUser.bot ? ' (bot)' : '';
 
     if (oldUser.avatar !== newUser.avatar) {
+      const avatarUrl = newUser.displayAvatarURL({ size: 256 });
       await app.logManager.log({
         event: 'member_avatar_update',
         guildId,
         targetId: newUser.id,
         message: `<@${newUser.id}>${isBot} updated their avatar`,
-        details: { userId: newUser.id, avatarUrl: newUser.displayAvatarURL({ size: 256 }) },
+        details: { userId: newUser.id },
+        mediaUrls: [avatarUrl],
       });
     }
 

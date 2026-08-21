@@ -3,65 +3,67 @@ import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
-import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { paginateV2, chunkItems } from '../../utils/paginate';
 
-const data = new SlashCommandBuilder()
-  .setName('cases')
-  .setDescription('List cases for a user')
-  .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true));
-
-async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
-  const guild = interaction.guild;
-  if (!guild) return;
-  const user = await resolveUserOption(interaction, app);
-  if (!user) {
-    await v2Reply(interaction, 'User not found.', { ephemeral: true });
-    return;
-  }
-  const cases = await app.caseService.listCasesForUser(guild.id, user.id);
-  if (cases.length === 0) {
-    await v2Reply(interaction, `No cases for <@${user.id}>.`);
-    return;
-  }
-  const lines = cases.map((c) => `${c.case_code} [${c.status}] ${c.type} — ${c.reason} (${new Date(c.created_at).toLocaleDateString()})`);
-  const pages = chunkItems(lines, 15).map((c) => c.join('\n'));
-  await paginateV2({
-    trigger: interaction,
-    authorId: interaction.user.id,
-    title: `**Cases for <@${user.id}>** (${cases.length}) — Page {page}/{total}`,
-    pages,
-  });
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  if (!guild || !targetId) {
-    await v2MessageReply(message, { content: 'Usage: `!cases <user>`' });
-    return;
-  }
-  const cases = await app.caseService.listCasesForUser(guild.id, targetId);
-  if (cases.length === 0) {
-    await v2MessageReply(message, { content: `No cases for <@${targetId}>.` });
-    return;
-  }
-  const lines = cases.map((c) => `${c.case_code} [${c.status}] ${c.type} — ${c.reason} (${new Date(c.created_at).toLocaleDateString()})`);
-  const pages = chunkItems(lines, 15).map((c) => c.join('\n'));
-  await paginateV2({
-    trigger: message,
-    authorId: message.author.id,
-    title: `**Cases for <@${targetId}>** (${cases.length}) — Page {page}/{total}`,
-    pages,
+function fmtDate(d: Date | string): string {
+  return `<t:${Math.floor(new Date(d).getTime() / 1000)}:f>`;
+}
+
+const data = new SlashCommandBuilder()
+  .setName('cases')
+  .setDescription('List all moderation cases in the server');
+
+async function renderAll(app: App, guildId: string): Promise<{ title: string; pages: string[] } | string> {
+  const cases = await app.caseService.listCases(guildId, { limit: 500 });
+  if (cases.length === 0) return 'No cases have been recorded in this server yet.';
+
+  const blocks = cases.map((c) => {
+    const lines = [
+      `**#${c.case_code}** · ${cap(c.type)} · ${cap(c.status)}`,
+      `> User: <@${c.user_id}>`,
+      `> Reason: ${c.reason || 'No reason provided'}`,
+      `> When: ${fmtDate(c.created_at)}`,
+    ];
+    if (c.moderator_id) lines.splice(2, 0, `> Moderator: <@${c.moderator_id}>`);
+    return lines.join('\n');
   });
+
+  const pages = chunkItems(blocks, 10).map((c) => c.join('\n\n'));
+  return { title: `**Server Cases (${cases.length})** — Page {page}/{total}`, pages };
+}
+
+async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
+  const guild = interaction.guild;
+  if (!guild) return;
+  const result = await renderAll(app, guild.id);
+  if (typeof result === 'string') {
+    await v2Reply(interaction, result);
+    return;
+  }
+  await paginateV2({ trigger: interaction, authorId: interaction.user.id, title: result.title, pages: result.pages });
+}
+
+async function prefixExecute(message: Message, _args: string[], app: App): Promise<void> {
+  const guild = message.guild;
+  if (!guild) return;
+  const result = await renderAll(app, guild.id);
+  if (typeof result === 'string') {
+    await v2MessageReply(message, { content: result });
+    return;
+  }
+  await paginateV2({ trigger: message, authorId: message.author.id, title: result.title, pages: result.pages });
 }
 
 const command: BotCommand = {
   name: 'cases',
   category: 'moderation',
-  description: 'List cases for a user',
+  description: 'List all moderation cases in the server',
   data,
   permissions: ['ModerateMembers'],
   aliases: [],

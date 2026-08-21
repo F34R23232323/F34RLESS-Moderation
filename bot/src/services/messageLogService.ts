@@ -304,6 +304,16 @@ export class MessageLogService {
     return rec;
   }
 
+  /** Return image attachment URLs for a cached message (used to display
+   *  deleted-message images directly in logs). Read BEFORE onMessageDelete
+   *  clears the cache entry. */
+  public getImageAttachmentUrls(messageId: string): string[] {
+    const rec = this.memCache.get(messageId);
+    if (!rec) return [];
+    if (Date.now() - rec.createdAt > CACHE_TTL_MS) return [];
+    return rec.attachments.filter((a) => a.contentType?.startsWith('image/')).map((a) => a.url).filter(Boolean);
+  }
+
   private async recordFromDb(guildId: string, channelId: string, messageId: string): Promise<SerializedMessage | null> {
     const [rows] = await this.app.db.query<RowDataPacket[]>(
       `SELECT author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, attachments, created_at

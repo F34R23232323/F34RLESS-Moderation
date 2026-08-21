@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { AttachmentBuilder } from 'discord.js';
-import type { Guild } from 'discord.js';
+import { AttachmentBuilder, ChannelType } from 'discord.js';
+import type { Guild, GuildBasedChannel } from 'discord.js';
 import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
 import { isLogIgnored, type LogIgnoreContext } from '../../../shared/src/index';
@@ -55,7 +55,7 @@ export class LogManager extends EventEmitter {
       targetRoleIds: null,
     };
     if (guild && input.channelId) {
-      ctx.categoryId = guild.channels.cache.get(input.channelId)?.parentId ?? null;
+      ctx.categoryId = await this.resolveCategoryId(guild, input.channelId);
     }
     const needRoles = [global, perEvent].some((s) => s && s.roles.length > 0);
     if (needRoles && guild) {
@@ -73,6 +73,28 @@ export class LogManager extends EventEmitter {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Resolve the category a channel belongs to. Walks up the parent chain so
+   * that messages posted in threads/forums inside a category are attributed to
+   * that category (a single-level parentId lookup would only reach the parent
+   * channel, not the category itself). Fetches channels from the API if they
+   * are not in the cache.
+   */
+  private async resolveCategoryId(guild: Guild, channelId: string): Promise<string | null> {
+    let channel: GuildBasedChannel | null =
+      guild.channels.cache.get(channelId) ?? (await guild.channels.fetch(channelId).catch(() => null));
+    if (!channel) return null;
+    let guard = 0;
+    while (channel && channel.parentId && guard < 10) {
+      const parent: GuildBasedChannel | null =
+        guild.channels.cache.get(channel.parentId) ?? (await guild.channels.fetch(channel.parentId).catch(() => null));
+      if (!parent) break;
+      channel = parent;
+      guard++;
+    }
+    return channel && channel.type === ChannelType.GuildCategory ? channel.id : null;
   }
 
   public async log(input: LogInput): Promise<number | null> {

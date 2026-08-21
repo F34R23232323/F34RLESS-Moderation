@@ -6,10 +6,14 @@ export async function handleMessageDelete(app: App, message: Message | PartialMe
   try {
     captureDeleted(message);
     app.messageCache.delete(message.id);
+    const content = message.content || '';
+    const mediaUrls =
+      message.guildId && 'author' in message
+        ? app.messageLogs.getImageAttachmentUrls(message.id)
+        : [...message.attachments.values()].filter((a) => a.contentType?.startsWith('image/')).map((a) => a.url);
     if (message.guildId) {
       await app.messageLogs.onMessageDelete(message);
     }
-    const content = message.content || '';
     await app.logManager.log({
       event: 'message_delete',
       guildId: message.guildId ?? '0',
@@ -25,6 +29,7 @@ export async function handleMessageDelete(app: App, message: Message | PartialMe
         content: content.slice(0, 1500),
         attachments: message.attachments?.size ?? 0,
       },
+      mediaUrls: mediaUrls.length ? mediaUrls : undefined,
     });
   } catch (err) {
     app.logger.error('messageDelete handler threw:', err);
