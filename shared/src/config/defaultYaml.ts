@@ -772,6 +772,8 @@ archives:
   archive_on_delete: true       # accumulate deleted messages into auto-archives
   archive_on_edit: true         # accumulate edited messages (before & after) into auto-archives
   archive_interval_hours: 2     # build one big auto-archive every N hours (deleted + edited)
+  archive_threshold_deleted: 100  # also flush early when this many deleted messages accumulate
+  archive_threshold_edited: 50    # also flush early when this many edited messages accumulate
 
 # -----------------------------------------------------------------------------
 # Web dashboard. owner_user_id may also come from .env (OWNER_USER_ID).

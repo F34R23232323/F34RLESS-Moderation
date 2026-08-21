@@ -206,7 +206,11 @@ export class MessageLogService {
           for (const it of list) this.archivePending.push({ guildId, record: it.record, status: 'deleted' });
         }
       }
-      if (this.archivePending.length >= ARCHIVE_FLUSH_MAX) await this.flushArchive();
+      const deletedCount = this.archivePending.filter((i) => i.status === 'deleted').length;
+      const thresholdDeleted = this.app.config.archives.archive_threshold_deleted;
+      if (deletedCount >= thresholdDeleted || this.archivePending.length >= ARCHIVE_FLUSH_MAX) {
+        await this.flushArchive();
+      }
     } catch (err) {
       this.app.logger.warn('MessageLogService.flushDeletes failed:', err);
     }
@@ -240,7 +244,11 @@ export class MessageLogService {
           }
         }
       }
-      if (this.archivePending.length >= ARCHIVE_FLUSH_MAX) await this.flushArchive();
+      const editedPairCount = this.archivePending.filter((i) => i.status === 'edited_before').length;
+      const thresholdEdited = this.app.config.archives.archive_threshold_edited;
+      if (editedPairCount >= thresholdEdited || this.archivePending.length >= ARCHIVE_FLUSH_MAX) {
+        await this.flushArchive();
+      }
     } catch (err) {
       this.app.logger.warn('MessageLogService.flushEdits failed:', err);
     }

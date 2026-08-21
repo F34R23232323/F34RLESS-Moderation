@@ -369,6 +369,8 @@ export const configSchema = z
         archive_on_delete: z.boolean().default(true),
         archive_on_edit: z.boolean().default(true),
         archive_interval_hours: z.number().int().min(1).max(24).default(2),
+        archive_threshold_deleted: z.number().int().min(1).default(100),
+        archive_threshold_edited: z.number().int().min(1).default(50),
       })
       .strict()
       .default({}),
