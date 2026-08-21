@@ -2,8 +2,10 @@ import { DisTube, Events, type Queue, type Song } from 'distube';
 import { YouTubePlugin } from '@distube/youtube';
 import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';
+import { YtDlpPlugin } from '@distube/yt-dlp';
 import ffmpegStatic from 'ffmpeg-static';
 import * as fs from 'fs';
+import { spawnSync } from 'child_process';
 import type { GuildMember, GuildTextBasedChannel, VoiceBasedChannel, VoiceState } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
@@ -28,6 +30,29 @@ function resolveFfmpegPath(): string | undefined {
   return process.env.FFMPEG_PATH || 'ffmpeg';
 }
 
+/** Check whether the `yt-dlp` binary is available on PATH (or via YTDLP_FILENAME).
+ *  When it is, YtDlpPlugin handles URL playback — it is far more resilient to
+ *  YouTube's bot-detection than the JS extractors (the "Failed to find any
+ *  playable formats" error). */
+function ytDlpAvailable(): boolean {
+  const bin = process.env.YTDLP_FILENAME || 'yt-dlp';
+  try {
+    const res = spawnSync(bin, ['--version'], { timeout: 5000, stdio: 'ignore' });
+    return res.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** YouTube search-only plugin. Search queries still use the JS YouTube extractor,
+ *  but URL playback is delegated to YtDlpPlugin (which handles YouTube's anti-bot
+ *  checks far more reliably). */
+class SearchOnlyYouTubePlugin extends YouTubePlugin {
+  override validate(): boolean {
+    return false;
+  }
+}
+
 export interface PlayResult {
   newQueue: boolean;
   count: number;
@@ -46,17 +71,26 @@ export class MusicService {
   constructor(public readonly app: App) {
     const { env, config } = app;
     const ffmpegPath = resolveFfmpegPath();
+    const plugins: Array<import('distube').DisTubePlugin> = [
+      new SpotifyPlugin({
+        api: {
+          clientId: env.SPOTIFY_CLIENT_ID,
+          clientSecret: env.SPOTIFY_CLIENT_SECRET,
+        },
+      }),
+      new SoundCloudPlugin(),
+      new SearchOnlyYouTubePlugin(),
+    ];
+    // yt-dlp is the last plugin and the catch-all for URL playback (its validate()
+    // returns true for every URL). It needs the yt-dlp binary installed on the host.
+    if (ytDlpAvailable()) {
+      plugins.push(new YtDlpPlugin({ update: false }));
+      app.logger.info('[music] yt-dlp detected — using it for URL playback');
+    } else {
+      app.logger.warn('[music] yt-dlp not found on PATH — YouTube playback may fail bot-detection');
+    }
     this.distube = new DisTube(app.client, {
-      plugins: [
-        new YouTubePlugin(),
-        new SpotifyPlugin({
-          api: {
-            clientId: env.SPOTIFY_CLIENT_ID,
-            clientSecret: env.SPOTIFY_CLIENT_SECRET,
-          },
-        }),
-        new SoundCloudPlugin(),
-      ],
+      plugins,
       customFilters: toCustomFilters(),
       emitNewSongOnly: true,
       savePreviousSongs: true,
