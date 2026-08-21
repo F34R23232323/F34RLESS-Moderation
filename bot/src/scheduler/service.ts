@@ -29,6 +29,7 @@ export class SchedulerService {
     this.scheduleTrustLevels();
     this.schedulePendingMessageSends();
     this.schedulePendingDashboardLogs();
+    this.schedulePendingAppealActions();
     this.scheduleChannelSync();
     this.scheduleRoleConnections();
     this.scheduleSnapshotPurge();
@@ -44,6 +45,12 @@ export class SchedulerService {
   private schedulePendingDashboardLogs(): void {
     this.addCron('dashboard-log-sends', '*/5 * * * * *', async () => {
       await this.app.dashboardLogs.processPending();
+    });
+  }
+
+  private schedulePendingAppealActions(): void {
+    this.addCron('appeal-actions', '*/5 * * * * *', async () => {
+      await this.app.appeals.processPending();
     });
   }
 

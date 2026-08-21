@@ -14,6 +14,7 @@ import { createArchivesRouter } from './routes/archives';
 import { createArchivePublicRouter } from './routes/archivePublic';
 import { createMessageLogRouter } from './routes/messageLog';
 import { createRoleConnectionsRouter } from './routes/roleConnections';
+import { createAppealsRouter } from './routes/appeals';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -61,6 +62,9 @@ async function main(): Promise<void> {
 
   // Public archive share links + media (no auth required — the code is the key).
   app.use('/api/archive', createArchivePublicRouter(ctx));
+
+  // Public appeals portal API (self-authenticated: session + membership + CSRF).
+  app.use('/api/appeals', createAppealsRouter(ctx));
 
   const protectedApi = express.Router();
   protectedApi.use(requireAuth(ctx));

@@ -5,6 +5,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import type { DashboardContext } from './context';
 
 const SESSION_COOKIE = 'f34rless_session';
+const CSRF_COOKIE = 'f34rless_csrf';
 const SESSION_TTL_MS = 7 * 86400000;
 
 export interface SessionUser {
@@ -15,6 +16,21 @@ export interface SessionUser {
 
 export function sign(value: string, secret: string): string {
   return crypto.createHmac('sha256', secret).update(value).digest('hex').slice(0, 32);
+}
+
+/** Deterministic double-submit CSRF token for a session (no DB storage needed). */
+export function csrfFor(sessionToken: string, secret: string): string {
+  return sign(`csrf:${sessionToken}`, secret);
+}
+
+export function setCsrfCookie(res: Response, sessionToken: string, secret: string): void {
+  res.cookie(CSRF_COOKIE, csrfFor(sessionToken, secret), {
+    httpOnly: false, // read by the frontend JS, sent back in the X-CSRF-Token header
+    sameSite: 'lax',
+    secure: false,
+    maxAge: SESSION_TTL_MS,
+    path: '/',
+  });
 }
 
 export async function createSession(ctx: DashboardContext, user: SessionUser, req: Request): Promise<string> {
@@ -34,33 +50,82 @@ export async function destroySession(ctx: DashboardContext, cookie: string): Pro
   }
 }
 
+export interface SessionInfo {
+  userId: string;
+  sessionToken: string;
+  revoked: boolean;
+}
+
+/**
+ * Shared session validation. Returns the session info if the cookie is valid
+ * and not revoked/expired, otherwise null.
+ */
+export async function readSession(ctx: DashboardContext, cookie: string | undefined): Promise<SessionInfo | null> {
+  if (!cookie) return null;
+  const [token, mac] = cookie.split('.');
+  if (!token || !mac || sign(token, ctx.sessionSecret) !== mac) return null;
+  const [rows] = await ctx.db.query<RowDataPacket[]>(
+    'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
+    [token],
+  );
+  const session = rows[0] as { user_id: string; revoked: number; expires_at: Date } | undefined;
+  if (!session || session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) return null;
+  return { userId: session.user_id, sessionToken: token, revoked: false };
+}
+
+/** Owner-gated auth (existing dashboard behaviour). */
 export function requireAuth(ctx: DashboardContext) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const cookie = req.cookies?.[SESSION_COOKIE] as string | undefined;
-    if (!cookie) {
+    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
+    if (!session) {
       res.status(401).json({ error: 'unauthorized' });
       return;
     }
-    const [token, mac] = cookie.split('.');
-    if (!token || !mac || sign(token, ctx.sessionSecret) !== mac) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
-    }
-    const [rows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
-      [token],
-    );
-    const session = rows[0] as { user_id: string; revoked: number; expires_at: Date } | undefined;
-    if (!session || session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
-    }
-    if (session.user_id !== ctx.ownerUserId) {
+    if (session.userId !== ctx.ownerUserId) {
       res.status(403).json({ error: 'forbidden' });
       return;
     }
-    (req as unknown as { userId: string }).userId = session.user_id;
-    (req as unknown as { sessionToken: string }).sessionToken = token;
+    (req as unknown as { userId: string }).userId = session.userId;
+    (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
+    next();
+  };
+}
+
+/**
+ * Auth for regular (non-owner) users — any valid session. Used by the public
+ * appeals portal. Verifies guild membership separately via GuildAccessService.
+ */
+export function requireUserAuth(ctx: DashboardContext) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
+    if (!session) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+    (req as unknown as { userId: string }).userId = session.userId;
+    (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
+    next();
+  };
+}
+
+/**
+ * CSRF protection for mutating appeals routes (double-submit cookie pattern).
+ * The X-CSRF-Token header must match the token derived from the session.
+ */
+export function requireCsrf(ctx: DashboardContext) {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const sessionToken = (req as unknown as { sessionToken?: string }).sessionToken;
+    if (!sessionToken) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+    const expected = csrfFor(sessionToken, ctx.sessionSecret);
+    const header = (req.headers['x-csrf-token'] as string | undefined) ?? '';
+    const cookie = (req.cookies?.[CSRF_COOKIE] as string | undefined) ?? '';
+    if (header !== expected || cookie !== expected) {
+      res.status(403).json({ error: 'csrf mismatch' });
+      return;
+    }
     next();
   };
 }

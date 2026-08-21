@@ -34,6 +34,11 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     [c.id, guild.id, interaction.user.id, message],
   );
   await app.caseService.setStatus(c.id, 'appealed');
+  // Queue the Discord-side card post (same IPC queue the portal uses).
+  await app.db.execute(
+    "INSERT INTO appeal_actions (guild_id, appeal_id, action) VALUES (?, ?, 'post')",
+    [guild.id, (result as { insertId: number }).insertId],
+  ).catch(() => undefined);
 
   await app.logManager.log({
     event: 'appeal_created',
@@ -61,8 +66,12 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: 'Case not found or not yours.' });
     return;
   }
-  await app.db.execute('INSERT INTO appeals (case_id, guild_id, user_id, message) VALUES (?, ?, ?, ?)', [c.id, guild.id, message.author.id, appeal]);
+  const [result] = await app.db.execute('INSERT INTO appeals (case_id, guild_id, user_id, message) VALUES (?, ?, ?, ?)', [c.id, guild.id, message.author.id, appeal]);
   await app.caseService.setStatus(c.id, 'appealed');
+  await app.db.execute(
+    "INSERT INTO appeal_actions (guild_id, appeal_id, action) VALUES (?, ?, 'post')",
+    [guild.id, (result as { insertId: number }).insertId],
+  ).catch(() => undefined);
   await v2MessageReply(message, { content: `Appeal filed for case ${c.case_code}. Staff will review it.` });
 }
 

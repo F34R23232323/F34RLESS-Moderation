@@ -171,5 +171,28 @@ export function runCrossFieldChecks(config: BotConfig): ConfigIssue[] {
     }
   }
 
+  // ── Appeals ────────────────────────────────────────────────────────────────
+  const checkAppealsConfig = (cfg: { enabled: boolean; log_channel_id?: string | null; ping_role_id?: string | null; form: Array<{ id: string; min_length?: number; max_length?: number; type: string }> }, path: string): void => {
+    if (cfg.enabled && !cfg.log_channel_id) {
+      add(issues, `${path}.log_channel_id`, 'a Discord channel ID when enabled', 'not set — appeal embeds have nowhere to go');
+    }
+    const seenQuestionIds = new Set<string>();
+    for (const q of cfg.form) {
+      if (seenQuestionIds.has(q.id)) {
+        add(issues, `${path}.form`, 'unique question ids', `duplicate question id "${q.id}"`);
+      }
+      seenQuestionIds.add(q.id);
+      if (q.type !== 'checkbox') {
+        if (q.min_length !== undefined && q.max_length !== undefined && q.min_length > q.max_length) {
+          add(issues, `${path}.form`, `min_length <= max_length for question "${q.id}"`, `min_length ${q.min_length} > max_length ${q.max_length}`);
+        }
+      }
+    }
+  };
+  checkAppealsConfig(config.appeals, 'appeals');
+  for (const [guildId, override] of Object.entries(config.appeals.guild_overrides ?? {})) {
+    checkAppealsConfig(override as Parameters<typeof checkAppealsConfig>[0], `appeals.guild_overrides.${guildId}`);
+  }
+
   return issues;
 }

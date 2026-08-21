@@ -1259,3 +1259,350 @@ td.pre { white-space: normal; word-break: break-word; max-width: 420px; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =============================================================================
+   Public Appeals Portal (/appeals/:guildId)
+   ============================================================================= */
+.appeals-wrap {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  padding: 28px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.appeal-header {
+  width: 100%;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.appeal-brand { display: flex; align-items: center; gap: 12px; }
+.appeal-brand-mark {
+  width: 40px; height: 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: var(--glow);
+}
+.appeal-brand-name { font-weight: 800; font-size: 16px; letter-spacing: 0.02em; }
+.appeal-brand-guild { font-size: 12.5px; color: var(--text-dim); }
+.appeal-guild-icon { width: 40px; height: 40px; border-radius: 50%; box-shadow: var(--shadow-card); }
+
+.appeal-card {
+  width: 100%;
+  max-width: 720px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px);
+}
+
+/* Step progress */
+.appeal-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
+  margin-bottom: 26px;
+  position: relative;
+}
+.appeal-steps::before {
+  content: '';
+  position: absolute;
+  top: 13px; left: 6%; right: 6%;
+  height: 2px;
+  background: var(--border-strong);
+}
+.appeal-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 20%;
+  z-index: 1;
+}
+.appeal-step-dot {
+  width: 27px; height: 27px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--panel-solid);
+  border: 2px solid var(--border-strong);
+  color: var(--text-faint);
+  font-size: 12px; font-weight: 700;
+  transition: var(--transition);
+}
+.appeal-step.done .appeal-step-dot { background: var(--success); border-color: var(--success); color: #04110c; }
+.appeal-step.active .appeal-step-dot {
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--glow);
+}
+.appeal-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.25;
+}
+.appeal-step.active .appeal-step-label { color: var(--text); }
+
+/* States (login / not-member / blocked / not-configured / error) */
+.appeal-state {
+  width: 100%;
+  max-width: 720px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: var(--shadow-card);
+}
+.appeal-state-icon {
+  width: 54px; height: 54px; border-radius: 16px;
+  display: grid; place-items: center;
+  background: rgba(109, 109, 251, 0.13);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+.appeal-state-title { margin: 4px 0 0; font-size: 20px; font-family: var(--font-display); }
+.appeal-state-body { color: var(--text-dim); font-size: 14px; max-width: 420px; line-height: 1.55; }
+.appeal-state-body p { margin: 8px 0 16px; }
+.appeal-block-card {
+  margin-top: 8px;
+  text-align: left;
+  width: 100%;
+  max-width: 420px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+.appeal-block-card strong { color: var(--text); }
+
+.appeal-center {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: var(--text-dim);
+  padding: 40px 0;
+}
+.appeal-spin { animation: spin 0.9s linear infinite; }
+
+/* Flow body */
+.appeal-step-body { animation: revealUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.appeal-h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 18px; }
+.appeal-sub { margin: 0 0 18px; color: var(--text-dim); font-size: 13.5px; }
+.appeal-section-title {
+  display: flex; align-items: center; gap: 7px;
+  font-weight: 700; font-size: 13px;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-dim);
+  margin: 22px 0 12px;
+}
+
+/* Case select */
+.appeal-cases { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.appeal-case {
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: var(--transition);
+}
+.appeal-case:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.appeal-case.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(109, 109, 251, 0.18);
+}
+.appeal-case-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.appeal-case-reason { color: var(--text-dim); font-size: 13.5px; line-height: 1.5; max-height: 48px; overflow: hidden; }
+.appeal-case-date { margin-top: 8px; font-size: 12px; color: var(--text-faint); }
+
+.appeal-badge {
+  display: inline-flex; align-items: center;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.appeal-badge.pending { background: rgba(56, 189, 248, 0.14); color: var(--info); }
+.appeal-badge.accepted { background: rgba(52, 211, 153, 0.14); color: var(--success); }
+.appeal-badge.denied { background: rgba(244, 63, 94, 0.14); color: var(--danger); }
+.appeal-badge.ignored { background: rgba(154, 170, 189, 0.16); color: var(--text-dim); }
+.appeal-badge.warn, .appeal-badge.kick, .appeal-badge.softban { background: rgba(251, 191, 36, 0.14); color: var(--warn); }
+.appeal-badge.ban, .appeal-badge.tempban { background: rgba(244, 63, 94, 0.16); color: var(--danger); }
+.appeal-badge.mute, .appeal-badge.timeout { background: rgba(109, 109, 251, 0.16); color: var(--accent); }
+
+/* Form */
+.appeal-field { margin-bottom: 18px; }
+.appeal-label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+.appeal-required { color: var(--danger); margin-left: 3px; }
+.appeal-help { color: var(--text-faint); font-size: 12.5px; margin-bottom: 8px; line-height: 1.5; }
+.appeal-input {
+  width: 100%;
+  background: var(--sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 10px 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: var(--transition);
+}
+.appeal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109, 109, 251, 0.16); }
+.appeal-textarea { resize: vertical; min-height: 110px; }
+.appeal-counter { text-align: right; font-size: 11.5px; color: var(--text-faint); margin-top: 4px; }
+.appeal-counter.over { color: var(--danger); }
+.appeal-checkbox { display: flex; align-items: center; gap: 9px; cursor: pointer; font-size: 14px; color: var(--text-dim); }
+.appeal-checkbox input { accent-color: var(--accent); width: 16px; height: 16px; }
+.appeal-form-error {
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.28);
+  color: var(--danger);
+  font-size: 13px;
+}
+.appeal-panel-actions {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  margin-top: 18px;
+}
+.appeal-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 15px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13.5px; font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.appeal-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+.appeal-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.appeal-btn-primary {
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--glow);
+}
+.appeal-btn-primary:hover { filter: brightness(1.08); border-color: transparent; }
+
+.appeal-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: var(--text-dim); text-align: center;
+  padding: 34px 0; font-size: 14px;
+}
+
+/* Status view */
+.appeal-status-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.appeal-timeline { display: flex; flex-direction: column; gap: 0; margin: 16px 0 4px; }
+.appeal-timeline-item { display: flex; gap: 12px; position: relative; padding-bottom: 18px; }
+.appeal-timeline-item:not(:last-child)::before {
+  content: '';
+  position: absolute; left: 5px; top: 18px; bottom: 0;
+  width: 2px; background: var(--border-strong);
+}
+.appeal-timeline-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent-grad);
+  border: 2px solid var(--bg);
+  box-shadow: var(--glow);
+  margin-top: 3px;
+}
+.appeal-timeline-label { font-weight: 600; font-size: 13.5px; text-transform: capitalize; }
+.appeal-timeline-at { font-size: 12px; color: var(--text-faint); }
+
+.appeal-decision {
+  margin-top: 6px;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  background: rgba(109, 109, 251, 0.08);
+  border: 1px solid var(--border);
+}
+.appeal-decision-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.appeal-decision-at { font-size: 12px; color: var(--text-faint); }
+.appeal-decision-reason { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
+
+/* Chat */
+.appeal-chat {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--sunken);
+}
+.appeal-chat-scroll { max-height: 360px; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.appeal-msg { max-width: 82%; display: flex; flex-direction: column; gap: 3px; }
+.appeal-msg.mine { align-self: flex-end; align-items: flex-end; }
+.appeal-msg.theirs { align-self: flex-start; align-items: flex-start; }
+.appeal-msg.system { align-self: center; align-items: center; }
+.appeal-msg-meta { font-size: 11px; color: var(--text-faint); display: flex; gap: 8px; }
+.appeal-msg.system .appeal-msg-meta { display: none; }
+.appeal-msg-time { opacity: 0.8; }
+.appeal-msg-body {
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.appeal-msg.mine .appeal-msg-body { background: var(--accent-grad); color: #fff; border-color: transparent; }
+.appeal-msg.system .appeal-msg-body { background: transparent; border-color: transparent; color: var(--text-faint); font-size: 12px; font-style: italic; }
+.appeal-chat-input { display: flex; gap: 10px; padding: 12px; border-top: 1px solid var(--border); align-items: flex-end; }
+.appeal-chat-input textarea {
+  flex: 1;
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 9px 11px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  resize: none;
+  outline: none;
+}
+.appeal-chat-input textarea:focus { border-color: var(--accent); }
+.appeal-chat-input .appeal-btn { white-space: nowrap; }
+.appeal-chat-locked { padding: 12px; text-align: center; color: var(--text-faint); font-size: 12.5px; border-top: 1px solid var(--border); }
+
+/* Admin chat reuse */
+.appeal-admin-chat {
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 300px; overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: var(--sunken);
+}
+.modal-wide { width: 640px; max-width: 94vw; }
+
+@media (max-width: 560px) {
+  .appeal-card { padding: 18px 14px; }
+  .appeal-steps::before { left: 4%; right: 4%; }
+  .appeal-chat-input { flex-direction: column; align-items: stretch; }
+  .appeal-chat-input .appeal-btn { justify-content: center; }
+}
+

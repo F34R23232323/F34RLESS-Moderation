@@ -9,6 +9,11 @@ interface ClientState {
   lastLogId: number;
   lastAutomodLogId: number;
   streams: Set<string>;
+  userId: string | null;
+  // Appeals portal live stream — scope: `${guildId}:${appealId}` keys.
+  appealKeys: Set<string>;
+  appealLastMessageId: Map<string, number>;
+  appealStatusSnapshot: Map<string, string>;
 }
 
 function parseCookies(header: string | undefined): Record<string, string> {
@@ -45,14 +50,23 @@ export function createWebSocketServer(httpServer: Server, db: Pool, sessionSecre
       return;
     }
     void db
-      .query<RowDataPacket[]>('SELECT revoked FROM sessions WHERE token = ?', [raw])
+      .query<RowDataPacket[]>('SELECT user_id, revoked FROM sessions WHERE token = ?', [raw])
       .then(([rows]) => {
-        const session = rows[0] as { revoked: number } | undefined;
+        const session = rows[0] as { user_id: string; revoked: number } | undefined;
         if (!session || session.revoked === 1) {
           ws.close(4001, 'revoked');
           return;
         }
-        const state: ClientState = { ws, lastLogId: 0, lastAutomodLogId: 0, streams: new Set(['logs']) };
+        const state: ClientState = {
+          ws,
+          lastLogId: 0,
+          lastAutomodLogId: 0,
+          streams: new Set(['logs']),
+          userId: session.user_id,
+          appealKeys: new Set(),
+          appealLastMessageId: new Map(),
+          appealStatusSnapshot: new Map(),
+        };
         clients.add(state);
         ws.send(JSON.stringify({ type: 'hello', payload: { connected: true } }));
 
@@ -61,6 +75,19 @@ export function createWebSocketServer(httpServer: Server, db: Pool, sessionSecre
             const msg = JSON.parse(data.toString()) as WsClientMessage;
             if (msg.type === 'subscribe') {
               state.streams = new Set(msg.payload.streams);
+              const keys: string[] = [];
+              if (Array.isArray(msg.payload.appeals)) {
+                for (const sub of msg.payload.appeals) {
+                  if (!sub || !/^\d{15,20}$/.test(sub.guildId) || !Number.isInteger(sub.appealId)) continue;
+                  keys.push(`${sub.guildId}:${sub.appealId}`);
+                }
+              }
+              // Ownership is re-verified server-side so a user can never tail
+              // someone else's appeal (staff streams via dashboard polling).
+              state.appealKeys = new Set();
+              if (keys.length > 0 && state.userId) {
+                void verifyAppealOwnership(db, state, keys).catch(() => undefined);
+              }
             }
           } catch {
             /* ignore */
@@ -76,6 +103,21 @@ export function createWebSocketServer(httpServer: Server, db: Pool, sessionSecre
       void poll(state, db).catch(() => undefined);
     }
   }, 2500);
+}
+
+async function verifyAppealOwnership(db: Pool, state: ClientState, keys: string[]): Promise<void> {
+  for (const key of keys) {
+    const [guildId, appealIdStr] = key.split(':');
+    const appealId = Number(appealIdStr);
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT user_id FROM appeals WHERE id = ? AND guild_id = ?',
+      [appealId, guildId],
+    );
+    const appeal = rows[0] as { user_id: string } | undefined;
+    if (appeal && (String(appeal.user_id) === state.userId)) {
+      state.appealKeys.add(key);
+    }
+  }
 }
 
 async function poll(state: ClientState, db: Pool): Promise<void> {
@@ -117,5 +159,67 @@ async function poll(state: ClientState, db: Pool): Promise<void> {
         },
       }),
     );
+  }
+  if (state.streams.has('appeals') && state.appealKeys.size > 0) {
+    await pollAppeals(state, db);
+  }
+}
+
+async function pollAppeals(state: ClientState, db: Pool): Promise<void> {
+  for (const key of state.appealKeys) {
+    const [guildId, appealIdStr] = key.split(':');
+    const appealId = Number(appealIdStr);
+
+    // Status + decision changes.
+    const [aRows] = await db.query<RowDataPacket[]>(
+      'SELECT status, decided_at, decided_by, decision_reason FROM appeals WHERE id = ? AND guild_id = ?',
+      [appealId, guildId],
+    );
+    const appeal = aRows[0] as { status: string; decided_at: Date | null; decided_by: string | null; decision_reason: string | null } | undefined;
+    if (appeal) {
+      const snap = `${appeal.status}|${appeal.decided_at ?? ''}`;
+      if (state.appealStatusSnapshot.get(key) !== snap) {
+        state.appealStatusSnapshot.set(key, snap);
+        state.ws.send(
+          JSON.stringify({
+            type: 'appeal_status',
+            payload: {
+              guildId,
+              appealId,
+              status: appeal.status,
+              decidedAt: appeal.decided_at ? new Date(appeal.decided_at).toISOString() : null,
+              decidedBy: appeal.decided_by,
+              decisionReason: appeal.decision_reason,
+            },
+          }),
+        );
+      }
+    }
+
+    // New chat messages.
+    const lastId = state.appealLastMessageId.get(key) ?? 0;
+    const [mRows] = await db.query<RowDataPacket[]>(
+      'SELECT id, sender_type, sender_id, content, sent_at FROM appeal_messages WHERE appeal_id = ? AND id > ? ORDER BY id ASC LIMIT 100',
+      [appealId, lastId],
+    );
+    for (const m of mRows) {
+      state.appealLastMessageId.set(key, Math.max(lastId, Number(m.id)));
+      state.ws.send(
+        JSON.stringify({
+          type: 'appeal_message',
+          payload: {
+            guildId,
+            appealId,
+            message: {
+              id: Number(m.id),
+              senderType: m.sender_type,
+              senderId: m.sender_id,
+              content: m.content,
+              sentAt: new Date(m.sent_at).toISOString(),
+            },
+          },
+        }),
+      );
+    }
   }
 }

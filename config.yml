@@ -102,6 +102,54 @@ commands:
     aliases:
       - h
       - commands
+  hash:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions: []
+    immune_roles: []
+    aliases: []
+  botinfo:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions: []
+    immune_roles: []
+    aliases:
+      - bi
+      - about
+  stats:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 3
+    permissions: []
+    immune_roles: []
+    aliases:
+      - metrics
+      - botstats
+  dehash:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 3
+    permissions: []
+    immune_roles: []
+    aliases:
+      - uncrack
+      - rainbow
+  imageinfo:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 3
+    permissions: []
+    immune_roles: []
+    aliases:
+      - ii
+      - img
   massmute:
     enabled: true
     immune_roles:
@@ -469,7 +517,7 @@ logging:
     channel_id: "1475965409709789376"
   moderation_action:
     enabled: true
-    channel_id: "1467185535411028229"
+    channel_id: "1540115016420823173"
 warnings:
   escalation_ladder:
     - count: 2
@@ -2461,10 +2509,12 @@ error_reporting:
   enabled: true
   channel_id: "1539783293988249692"
   verbosity: standard
+  # webhook_url is only used as a fallback when channel_id is unset or unreachable.
   webhook_url: "https://discord.com/api/webhooks/1539783477514215535/EGEtb4tYa7NY19uCMLjJf4rzQAfN7DsXIGkwn49_huWGkc1kcOkLyG_aZUKdmsxJsSHq"
 rate_limit_reporting:
   enabled: true
   channel_id: "1539783341967016027"
+  # webhook_url is only used as a fallback when channel_id is unset or unreachable.
   webhook_url: "https://discord.com/api/webhooks/1539783518375383070/w23JUce6fq4DXDw-k15PqobAejCtX8Y558F6PW74Jcu6FaEFuk4-Btm6xOQ_8-uBSMzy"
 ops:
   backups_enabled: true
@@ -3321,3 +3371,15 @@ custom_commands:
             footer:
               text: Actioned By {username}
               icon_url: "{useravatarurl}"
+
+# --- Music system (DisTube) ---
+# Optional per-guild overrides for the music system. Commands: /play /skip /stop /queue /np /loop /shuffle /volume /filter /seek /pause /resume /247 /autoplay /panel
+music:
+  enabled: true
+  default_volume: 100
+  max_volume: 200
+  twenty_four_seven: false
+  autoplay: false
+  max_queue_size: 500
+  panel_refresh_seconds: 10
+

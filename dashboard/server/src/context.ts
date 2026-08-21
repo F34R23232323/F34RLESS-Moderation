@@ -1,5 +1,7 @@
 import { createDbPool, loadConfig, buildDatabaseUrl, formatConfigError } from '../../../shared/src/index';
 import type { Pool } from 'mysql2/promise';
+import type { BotConfig } from '../../../shared/src/index';
+import { GuildAccessService } from './appeals/guildAccess';
 
 export interface DashboardContext {
   db: Pool;
@@ -9,6 +11,9 @@ export interface DashboardContext {
   clientSecret: string;
   baseUrl: string;
   port: number;
+  discordToken: string;
+  config: BotConfig;
+  guildAccess: GuildAccessService;
 }
 
 export function loadDashboardContext(): DashboardContext {
@@ -35,5 +40,8 @@ export function loadDashboardContext(): DashboardContext {
     clientSecret: env.CLIENT_SECRET,
     baseUrl: env.DASHBOARD_BASE_URL || 'http://localhost:4693',
     port: config.config.dashboard.port,
+    discordToken: env.DISCORD_TOKEN,
+    config: config.config,
+    guildAccess: new GuildAccessService(env.DISCORD_TOKEN),
   };
 }

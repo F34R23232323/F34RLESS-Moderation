@@ -138,12 +138,16 @@ export function buildPanelPayload(settings: MusicSettings, queue: Queue | null):
       ),
     );
 
-  const row3 = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
-    filterSelect,
+  // Select menus must live in their own action row — Discord does not allow
+  // mixing a select menu with buttons in the same row.
+  const filterRow = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(filterSelect);
+  rows.push(filterRow);
+
+  const row4 = new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
     new ButtonBuilder().setCustomId('music:refresh').setLabel('🔄 Refresh').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('music:queue').setLabel('📃 Queue').setStyle(ButtonStyle.Secondary).setDisabled(idle),
   );
-  rows.push(row3);
+  rows.push(row4);
 
   return { embeds: [embed], components: rows };
 }

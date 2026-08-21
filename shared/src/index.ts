@@ -14,3 +14,4 @@ export * from './utils/caseCode';
 export * from './db/pool';
 export * from './db/migrationRunner';
 export * from './db/migrations';
+export * from './appeals/schema';

@@ -1,7 +1,15 @@
 import { Router, type Request, type Response } from 'express';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { DashboardContext } from './context';
-import { createSession, destroySession, setSessionCookie, clearSessionCookie, SESSION_COOKIE_NAME } from './auth';
+import {
+  createSession,
+  destroySession,
+  setSessionCookie,
+  setCsrfCookie,
+  clearSessionCookie,
+  readSession,
+  SESSION_COOKIE_NAME,
+} from './auth';
 
 export function createAuthRouter(ctx: DashboardContext): Router {
   const router = Router();
@@ -60,12 +68,82 @@ export function createAuthRouter(ctx: DashboardContext): Router {
 
       const cookie = await createSession(ctx, { id: user.id, username: user.username, avatar: user.avatar }, req);
       setSessionCookie(res, cookie);
+      setCsrfCookie(res, cookie.split('.')[0], ctx.sessionSecret);
       console.log(`[oauth] session created, redirecting to / in ${Date.now() - started}ms`);
       res.redirect('/');
     } catch (err) {
       console.error(`[oauth] callback failed after ${Date.now() - started}ms:`, err);
       res.status(500).send('OAuth callback failed');
     }
+  });
+
+  // ── Public appeals portal login (any Discord user, not owner-gated) ────────
+  const appealsRedirectUri = `${ctx.baseUrl}/oauth/appeals-callback`;
+
+  router.get('/appeals-login', (req: Request, res: Response) => {
+    const returnPath = req.query.return as string | undefined;
+    // Only allow redirecting back into the appeals portal (prevents open redirect).
+    const state = returnPath && returnPath.startsWith('/appeals/') ? returnPath : '/appeals';
+    const url = new URL('https://discord.com/oauth2/authorize');
+    url.searchParams.set('client_id', ctx.clientId);
+    url.searchParams.set('redirect_uri', appealsRedirectUri);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope', 'identify');
+    url.searchParams.set('state', state);
+    res.redirect(url.toString());
+  });
+
+  router.get('/appeals-callback', async (req: Request, res: Response) => {
+    const code = req.query.code as string | undefined;
+    const state = (req.query.state as string | undefined) ?? '/appeals';
+    if (!code) {
+      res.status(400).send('Missing code');
+      return;
+    }
+    try {
+      const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: ctx.clientId,
+          client_secret: ctx.clientSecret,
+          grant_type: 'authorization_code',
+          code,
+          redirect_uri: appealsRedirectUri,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!tokenRes.ok) {
+        res.status(400).send('OAuth token exchange failed');
+        return;
+      }
+      const tokenJson = (await tokenRes.json()) as { access_token: string };
+      const userRes = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+        signal: AbortSignal.timeout(15000),
+      });
+      const user = (await userRes.json()) as { id: string; username: string; avatar: string | null };
+      const cookie = await createSession(ctx, { id: user.id, username: user.username, avatar: user.avatar }, req);
+      setSessionCookie(res, cookie);
+      setCsrfCookie(res, cookie.split('.')[0], ctx.sessionSecret);
+      const target = state.startsWith('/appeals/') ? state : '/appeals';
+      res.redirect(target);
+    } catch (err) {
+      console.error('[oauth] appeals callback failed:', err);
+      res.status(500).send('OAuth callback failed');
+    }
+  });
+
+  router.get('/appeals-me', async (req: Request, res: Response) => {
+    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
+    if (!session) {
+      res.json({ authenticated: false });
+      return;
+    }
+    res.json({
+      authenticated: true,
+      userId: session.userId,
+    });
   });
 
   router.post('/logout', async (req: Request, res: Response) => {

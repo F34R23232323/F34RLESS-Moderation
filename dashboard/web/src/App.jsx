@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FileText, ShieldAlert, Gavel, Timer,
   Settings, Braces, Clock, BarChart3, History, KeyRound, Download,
   Shapes, Archive as ArchiveIcon, MessageSquareText, Sun, Moon, Users,
-  Menu, X, Search, WifiOff, PanelLeftClose, PanelLeftOpen,
+  Menu, X, Search, WifiOff, PanelLeftClose, PanelLeftOpen, Scale,
 } from 'lucide-react';
 import { raw } from './api';
 import Login from './pages/Login';
@@ -27,6 +27,8 @@ import MessageLog from './pages/MessageLog';
 import Privacy from './pages/Privacy';
 import RoleConnections from './pages/RoleConnections';
 import ErrorBoundary from './components/ErrorBoundary';
+import AppealsAdmin from './pages/AppealsAdmin';
+import AppealsApp from './appeals/AppealsApp';
 
 const NAV_GROUPS = [
   {
@@ -42,6 +44,7 @@ const NAV_GROUPS = [
       { to: '/logs', label: 'Logs', icon: FileText },
       { to: '/automod', label: 'Automod Logs', icon: ShieldAlert },
       { to: '/cases', label: 'Cases', icon: Gavel },
+      { to: '/appeals-admin', label: 'Appeals', icon: Scale },
       { to: '/punishments', label: 'Punishments', icon: Timer },
       { to: '/message-log', label: 'Message Log', icon: MessageSquareText },
       { to: '/archives', label: 'Archives', icon: ArchiveIcon },
@@ -203,6 +206,14 @@ export default function App() {
     return <Privacy />;
   }
 
+  // Public appeals portal — multi-tenant per guild, with its own login flow.
+  if (location.pathname.startsWith('/appeals/')) {
+    const guildId = location.pathname.replace(/^\/appeals\//, '').split('/')[0];
+    if (/^\d{15,20}$/.test(guildId)) {
+      return <AppealsApp guildId={guildId} />;
+    }
+  }
+
   if (!auth) return <Login />;
 
   const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
@@ -283,6 +294,7 @@ export default function App() {
               <Route path="/logs" element={<Logs />} />
               <Route path="/automod" element={<AutomodLogs />} />
               <Route path="/cases" element={<Cases />} />
+              <Route path="/appeals-admin" element={<AppealsAdmin />} />
               <Route path="/archives" element={<Archives />} />
               <Route path="/message-log" element={<MessageLog />} />
               <Route path="/punishments" element={<Punishments />} />

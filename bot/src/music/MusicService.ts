@@ -365,12 +365,15 @@ export class MusicService {
       if (ref && ref.channelId === channelId) {
         const msg = await channel.messages.fetch(ref.messageId).catch(() => null);
         if (msg) {
-          await msg.edit(payload).catch(() => undefined);
+          await msg.edit(payload).catch((err) => this.app.logger.warn(`[music] panel edit failed for ${guildId}`, err));
           return;
         }
         this.panels.delete(guildId);
       }
-      const sent = await channel.send(payload).catch(() => null);
+      const sent = await channel.send(payload).catch((err) => {
+        this.app.logger.warn(`[music] panel send failed for ${guildId} (channel ${channelId})`, err);
+        return null;
+      });
       if (sent) this.panels.set(guildId, { channelId, messageId: sent.id });
     } catch (err) {
       this.app.logger.warn(`[music] refreshPanel failed for ${guildId}`, err);

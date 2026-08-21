@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { actionChainSchema, durationSchema, messageFormatSchema, snowflakeSchema } from './actions';
 import { DEFAULT_ACTION_CHAIN, DEFAULT_WARN_CHAIN } from './chainDefaults';
 import { permissionNamesSchema } from './permissions';
+import { appealsSectionSchema } from '../appeals/schema';
 import type { CustomCommandActionUnion, CustomCommandConfig } from '../types/customCommands';
 
 const snowflake = z.string().regex(/^\d{15,20}$/, 'Expected a Discord snowflake ID');
@@ -352,6 +353,11 @@ export const configSchema = z
       })
       .strict()
       .default({}),
+
+    // Public appeals portal. The global block applies to every guild unless a
+    // per-guild override exists under `guild_overrides` (any key omitted there
+    // falls back to the global value).
+    appeals: appealsSectionSchema.default({ enabled: false, eligible_punishment_types: ['ban', 'mute', 'warn', 'timeout'] }),
 
     archives: z
       .object({

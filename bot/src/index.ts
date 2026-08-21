@@ -32,6 +32,7 @@ import { DashboardLogService } from './services/dashboardLogService';
 import { ArchiveService } from './services/archiveService';
 import { MessageLogService } from './services/messageLogService';
 import { RoleConnectionsService } from './services/roleConnections';
+import { AppealService } from './services/appealService';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 import { MusicService } from './music/MusicService';
@@ -115,6 +116,7 @@ async function main(): Promise<void> {
     messageLogs: null as unknown as MessageLogService,
     roleConnections: null as unknown as RoleConnectionsService,
     music: null as unknown as MusicService,
+    appeals: null as unknown as AppealService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -150,6 +152,7 @@ async function main(): Promise<void> {
   app.messageLogs = new MessageLogService(app);
   app.roleConnections = new RoleConnectionsService(app);
   app.music = new MusicService(app);
+  app.appeals = new AppealService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 

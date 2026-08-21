@@ -197,6 +197,61 @@ reports:
   false_report_warning_enabled: false   # staff-marked bad-faith reports feed warnings
 
 # -----------------------------------------------------------------------------
+# Appeals portal.
+# A public, per-guild page where members can appeal punishments (ban/mute/warn/
+# timeout/etc.). Cases are appealed by case number and attach to the existing
+# case system. The global block below applies to every guild; per-guild
+# overrides live under guild_overrides (keyed by guild snowflake) and fall
+# back to these values for any key they omit.
+#
+#   appeals:
+#     enabled: true
+#     ping_role_id: "000000000000000000"  # role pinged when an appeal is filed
+#     log_channel_id: "000000000000000000" # where the appeal card is posted
+#     thread_auto_create: true             # auto-open a thread on the card
+#     eligible_punishment_types: [ban, mute, warn, timeout, kick]
+#     cooldown_seconds: 300                # min time between appeals per user
+#     max_open_appeals_per_user: 3
+#     blocking:
+#       enabled: true
+#       default_reason: "Appeals are disabled for this user."
+#     form:                                # dynamic questions rendered on the site
+#       - id: why_unfair                   # slug (a-z0-9_-)
+#         label: "Why is this unfair?"
+#         type: long_text                  # short_text | long_text | checkbox
+#         required: true
+#         min_length: 30
+#         max_length: 2000
+#         help_text: "Optional hint text shown under the question"
+#     guild_overrides: {}                  # optional per-guild overrides
+# -----------------------------------------------------------------------------
+appeals:
+  enabled: false
+  # ping_role_id: "000000000000000000"
+  # log_channel_id: "000000000000000000"
+  thread_auto_create: true
+  eligible_punishment_types:
+    - ban
+    - mute
+    - warn
+    - timeout
+    - kick
+  cooldown_seconds: 300
+  max_open_appeals_per_user: 3
+  blocking:
+    enabled: true
+    default_reason: "Appeals are disabled for this user."
+  form:
+    - id: why_unfair
+      label: "Why do you believe this punishment is unfair?"
+      type: long_text
+      required: true
+      min_length: 30
+      max_length: 2000
+      help_text: "Give as much detail as you can."
+  guild_overrides: {}
+
+# -----------------------------------------------------------------------------
 # Automod.
 # Each module has: enabled, threshold, immune_roles, channel_ignore_list,
 # an ordered action_chain, an optional per-module log target, and response

@@ -22,12 +22,17 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
     if (!message.inGuild()) {
       const { handleMessageCreateDM } = await import('../security/modmail');
       await handleMessageCreateDM(app, message);
+      // Appeals DM reply listener (open/pending appeals only).
+      await app.appeals.handleDmReply(message).catch((err) => app.logger.error('appeal DM handler threw:', err));
       return;
     }
     app.metrics.incMessages();
     app.slowmodeScheduler.onMessage(message.channelId);
 
     await app.messageLogs.capture(message);
+
+    // Relay staff replies posted inside an appeal thread into the web chat.
+    await app.appeals.handleThreadMessage(message).catch((err) => app.logger.error('appeal thread relay threw:', err));
 
     await app.automod.handleMessage(message);
 
