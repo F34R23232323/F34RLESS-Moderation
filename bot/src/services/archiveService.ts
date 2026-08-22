@@ -290,21 +290,30 @@ export class ArchiveService {
     const cap = Math.min(amount, this.app.config.archives.max_amount);
     const collected: Message[] = [];
     let before: string | undefined;
-    for (let i = 0; i < 100 && collected.length < cap; i++) {
+    // When filtering by a specific user, don't walk the whole channel history:
+    // stop after a few consecutive pages without matches (target isn't active
+    // there anymore) and cap total pages so evidence stays recent.
+    const maxPages = userId ? 10 : 100;
+    const maxEmptyPages = 2;
+    let emptyPages = 0;
+    for (let i = 0; i < maxPages && collected.length < cap; i++) {
       const opts: Record<string, unknown> = { limit: 100 };
       if (aroundId) opts.around = aroundId;
       else if (before) opts.before = before;
       const fetched = await (channel as any).messages.fetch(opts);
       if (fetched.size === 0) break;
-      const candidates = aroundId ? [...fetched.values()] : [...fetched.values()];
+      const candidates = [...fetched.values()];
+      let matched = 0;
       for (const m of candidates) {
         if (userId && m.author.id !== userId) continue;
+        matched++;
         collected.push(m);
         if (collected.length >= cap) break;
       }
       if (aroundId) break;
       before = fetched.last()?.id;
       if (fetched.size < 100) break;
+      if (userId && matched === 0 && ++emptyPages >= maxEmptyPages) break;
     }
     return collected;
   }

@@ -47,6 +47,12 @@ import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, stri
   sticker_create: 'Sticker Added',
   sticker_delete: 'Sticker Removed',
   sticker_update: 'Sticker Updated',
+  integration_create: 'Application Added',
+  integration_update: 'Application Updated',
+  integration_delete: 'Application Removed',
+  webhook_create: 'Webhook Created',
+  webhook_update: 'Webhook Updated',
+  webhook_delete: 'Webhook Deleted',
 };
 
 export function friendlyEventName(event: string): string {
@@ -104,6 +110,11 @@ const LABELS: Record<string, string> = {
   name: 'Name',
   title: 'Title',
   description: 'Description',
+  appName: 'Application',
+  integrationId: 'Application ID',
+  integrationType: 'Application Type',
+  webhookName: 'Webhook',
+  webhookId: 'Webhook ID',
   accountAgeDays: 'Account Age',
   accountType: 'Account Type',
   attachments: 'Attachments',
@@ -232,6 +243,12 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   note_edit: 0x5865f2,
   note_remove: 0xfee75c,
   member_boost: 0xf0b232,
+  integration_create: 0x57f287,
+  integration_update: 0x5865f2,
+  integration_delete: 0xed4245,
+  webhook_create: 0x57f287,
+  webhook_update: 0x5865f2,
+  webhook_delete: 0xed4245,
 };
 
 export function logAccent(event: string): number {

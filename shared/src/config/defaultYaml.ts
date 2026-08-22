@@ -130,7 +130,8 @@ command_defaults:
 # channel_delete, voice_state_update, invite_create, invite_delete,
 # moderation_action, automod_trigger, command_usage, error_event,
 # rate_limit_event, report_created, report_resolved, case_edit,
-# appeal_created, appeal_resolved
+# appeal_created, appeal_resolved, integration_create, integration_update,
+# integration_delete, webhook_create, webhook_update, webhook_delete
 # -----------------------------------------------------------------------------
 # Global logging exclusions. Entries here suppress events across EVERY log type:
 #   channels:   events that happen in this channel are not logged
@@ -154,6 +155,14 @@ logging:
   message_edit: { enabled: true, channel_id: "000000000000000000" }
   moderation_action: { enabled: true, channel_id: "000000000000000000" }
   command_usage: { enabled: false, channel_id: "000000000000000000" }
+  # Applications (OAuth2 apps / bots) added to or removed from the server.
+  # Requires the bot to have the VIEW_AUDIT_LOG permission.
+  integration_create: { enabled: true, channel_id: "000000000000000000" }
+  integration_update: { enabled: true, channel_id: "000000000000000000" }
+  integration_delete: { enabled: true, channel_id: "000000000000000000" }
+  webhook_create: { enabled: true, channel_id: "000000000000000000" }
+  webhook_update: { enabled: true, channel_id: "000000000000000000" }
+  webhook_delete: { enabled: true, channel_id: "000000000000000000" }
   # Per-event example — don't log kicks in the staff lounge category:
   # member_kick:
   #   enabled: true

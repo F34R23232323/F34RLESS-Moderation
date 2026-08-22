@@ -81,7 +81,7 @@ export function runCrossFieldChecks(config: BotConfig): ConfigIssue[] {
     }
     for (const p of patterns) {
       try {
-        new RegExp(p, rule.flags);
+        new RegExp(typeof p === 'string' ? p : p.pattern, rule.flags);
       } catch (e) {
         add(issues, `regex_engine.rules.${rule.name}`, 'valid regular expression', `failed to compile: ${(e as Error).message}`);
       }

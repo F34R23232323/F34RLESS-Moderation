@@ -492,7 +492,21 @@ export const configSchema = z
               .object({
                 name: z.string().min(1),
                 pattern: z.string().optional(),
-                patterns: z.array(z.string().min(1)).optional(),
+                patterns: z
+                  .array(
+                    z.union([
+                      z.string().min(1),
+                      z
+                        .object({
+                          pattern: z.string().min(1),
+                          // Require a Luhn-valid card number (with a valid card
+                          // issuer prefix) before the pattern counts as a hit.
+                          luhn: boolean.default(false),
+                        })
+                        .strict(),
+                    ]),
+                  )
+                  .optional(),
                 flags: z.string().max(10).default('gi'),
                 scope: z.enum(['message', 'username', 'nickname']).default('message'),
                 enabled: boolean.default(true),
@@ -952,5 +966,11 @@ export const LOG_EVENT_NAMES = [
   'appeal_created',
   'appeal_resolved',
   'archive_created',
+  'integration_create',
+  'integration_update',
+  'integration_delete',
+  'webhook_create',
+  'webhook_update',
+  'webhook_delete',
 ] as const;
 export type LogEventName = (typeof LOG_EVENT_NAMES)[number];
