@@ -2,19 +2,7 @@ import type { GuildMember } from 'discord.js';
 import { AuditLogEvent } from 'discord.js';
 import type { App } from '../core/context';
 import { v2Send } from '../utils/v2';
-
-async function findKickActor(app: App, member: GuildMember): Promise<string | null> {
-  try {
-    const logs = await member.guild.fetchAuditLogs({ type: AuditLogEvent.MemberKick, limit: 10 });
-    const entry = logs.entries.find(
-      (e) => e.targetId === member.id && Date.now() - e.createdTimestamp < 6000,
-    );
-    return entry?.executorId ?? null;
-  } catch (err) {
-    app.logger.debug(`kick audit lookup failed for ${member.id}: ${(err as Error).message}`);
-    return null;
-  }
-}
+import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleGuildMemberRemove(app: App, member: GuildMember): Promise<void> {
   try {
@@ -45,7 +33,7 @@ export async function handleGuildMemberRemove(app: App, member: GuildMember): Pr
     }
 
     const isBot = member.user.bot;
-    const actorId = await findKickActor(app, member);
+    const actorId = await resolveAuditActor(app, member.guild, AuditLogEvent.MemberKick, { targetId: member.id, windowMs: 6000, limit: 10 });
     if (actorId) {
       await app.logManager.log({
         event: 'member_kick',

@@ -1,4 +1,4 @@
-bot:
+﻿bot:
   prefixes:
     - "!"
     - "?"
@@ -338,6 +338,15 @@ logging:
   channel_update:
     enabled: true
     channel_id: "1487426366625284208"
+  integration_create:
+    enabled: true
+    channel_id: "1467182157876166696"
+  integration_update:
+    enabled: true
+    channel_id: "1467182157876166696"
+  integration_delete:
+    enabled: true
+    channel_id: "1467182157876166696"
   automod_rule_update:
     enabled: true
     channel_id: "1467189652569194636"
@@ -431,7 +440,13 @@ logging:
   member_username_update:
     enabled: true
     channel_id: "1467188528227160236"
+  webhook_create:
+    enabled: true
+    channel_id: "1467182268647739402"
   webhook_update:
+    enabled: true
+    channel_id: "1467182268647739402"
+  webhook_delete:
     enabled: true
     channel_id: "1467182268647739402"
   automod_trigger:
@@ -556,7 +571,7 @@ reports:
   merge_window_seconds: 300
   false_report_warning_enabled: false
 appeals:
-  # Public appeals portal — one config per guild. The global block below is
+  # Public appeals portal â€” one config per guild. The global block below is
   # applied to every guild; per-guild overrides live under guild_overrides and
   # fall back to these values for anything they omit.
   enabled: true
@@ -590,7 +605,7 @@ appeals:
       required: true
       min_length: 30
       max_length: 2000
-      help_text: "Give as much detail as you can — context helps staff review faster."
+      help_text: "Give as much detail as you can â€” context helps staff review faster."
     - id: what_happened
       label: "In your own words, what happened?"
       type: long_text
@@ -610,14 +625,14 @@ appeals:
       required: true
       min_length: 2
       max_length: 200
-      help_text: "Roughly is fine — e.g. 'about a year' or 'a few weeks'."
+      help_text: "Roughly is fine â€” e.g. 'about a year' or 'a few weeks'."
     - id: evidence
       label: "Do you have any evidence or additional context that supports your appeal?"
       type: long_text
       required: false
       min_length: 0
       max_length: 2000
-      help_text: "Screenshots, message links, timestamps — anything staff should consider. Optional."
+      help_text: "Screenshots, message links, timestamps â€” anything staff should consider. Optional."
     - id: zero_rights_ack
       label: "I understand that severe infractions (hate speech, CSAM, doxxing, threats) carry zero appeal rights."
       type: checkbox
@@ -627,7 +642,7 @@ appeals:
       type: checkbox
       required: true
     - id: no_dm_ack
-      label: "I understand I must not DM staff about this appeal — all communication goes through the portal."
+      label: "I understand I must not DM staff about this appeal â€” all communication goes through the portal."
       type: checkbox
       required: true
     - id: agreement
@@ -641,7 +656,7 @@ appeals:
       min_length: 0
       max_length: 2000
   guild_overrides: {}
-  # Per-guild overrides example (everything optional — omitted keys fall back
+  # Per-guild overrides example (everything optional â€” omitted keys fall back
   # to the global block above):
   # guild_overrides:
   #   "1466990155020898413":
@@ -1189,8 +1204,8 @@ regex_engine:
         - \bw+[e3]+t+b+[a@4]+ck+\b|\bw+[o0]+g+b+[o0]+y+\b|\bw+[o0]+g+b+[o0]+[yi]+\b
         - \bsp+[i1]+[ck]+\b
         - \bch+[i1!]+nk+\b
-        - \bn[i1l!|і]+[g9q]+[e3еa@]*[rяр]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|і]+[g9q]{2,}(?:a|4|@|а)(?:s|z)?\b
-        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3еa@][\.\-_*\s]*[rяр](?:s|z|er|ers)?(?![\w])
+        - \bn[i1l!|Ñ–]+[g9q]+[e3Ðµa@]*[rÑÑ€]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|Ñ–]+[g9q]{2,}(?:a|4|@|Ð°)(?:s|z)?\b
+        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3Ðµa@][\.\-_*\s]*[rÑÑ€](?:s|z|er|ers)?(?![\w])
         - \bp[i1]c[a@]n[i1]?nn[yi]\b|\bp[\.\-_*\s]+[i1]c[\.\-_*\s]+[a@4]n[\.\-_*\s]+[i1]?n[\.\-_*\s]+[yi]\b
         - \bw[o0][g9]\b|\bw[o0][g9]{2}[o0][yi]?\b
         - \bn[i1][b8]{2}[e3a@](?:r|s)?\b|\bn[i1][b8]{2}e?r[s5]?\b
@@ -1200,7 +1215,7 @@ regex_engine:
         - \bn[e3][g9]r[o0](?:[i1]d)?[s5]?\b
         - \b(?:s[a@]nd|p[o0]rch|tree)\s*m[o0]nk[e3][yi]\b
         - \bm[o0]nk[e3][yi]\s*(?:b[o0][yi]|girl|man|woman|face|poster|b[o0]y)\b
-        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3еa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rяр](?:s|z|er|ers)?(?![\w])
+        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3Ðµa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rÑÑ€](?:s|z|er|ers)?(?![\w])
         - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4]\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[uo0*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
@@ -1208,7 +1223,7 @@ regex_engine:
         - \bs[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*p[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*c(?:k)?s?\b
         - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\b
         - \bch[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k\b
-        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3еa@]*[rяр]?(?![\w])
+        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3Ðµa@]*[rÑÑ€]?(?![\w])
         - \bgr[e3][a@]se[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*b[a@4]ll\b|\bg[\.\-_*\s]*r[\.\-_*\s]*[e3][\.\-_*\s]*[a@4][\.\-_*\s]*[s5][\.\-_*\s]*[yi]\b
         - \bp[\.\-_*\s]+[i1][\.\-_*\s]+[ck][\.\-_*\s]+[a@4][\.\-_*\s]+n[\.\-_*\s]+n[\.\-_*\s]+[yi]\b
         - \bs[\.\-_*\s]+[a@4][\.\-_*\s]+m[\.\-_*\s]+b[\.\-_*\s]+[o0]\b
@@ -1431,7 +1446,8 @@ regex_engine:
         - \bsw[a@]t{1,2}(ing|ted|ter)\b
         - \b(dropping|leaking|posting|going\s+to|will|gonna|gon)\s+(dox|doxx)\b|\bdox{1,2}(?:ed|ing|er|ers)\b
         - \b\d{3}[-\s]\d{2}[-\s]\d{4}\b
-        - \b(?:\d[ -]?){15,16}\b
+        - pattern: \b(?:\d[ -]?){15,16}\b
+          luhn: true
         - (send|give|dm|pm|post|share)\s+(me|us|them|him|her)\s+(ur|your|their|his|her)\s+(ip|address|location|real\s+name|phone)\b
         - (their|his|her|your|ur)\s+(full\s+)?(name|address|phone\s*number|social\s+security)\s+(is|[:=])\b
         - (doxx?|swat)\s*(me|you|him|her|them|us|someone|anyone)\b
@@ -1539,7 +1555,7 @@ regex_engine:
         - type: run_escalation_check
     - name: Extremeism
       patterns:
-        - 卐|卍|卐卐
+        - å|å|åå
         - \b(great\s+replacement|white\s+replacement)\b
         - \b(blood\s+and\s+soil|sieg\s+heil)\b
         - \b14\s*words\b(?!\s+(?:is|are|was|were|means|being))\b(?:\s*(of\s+)?(truth|wisdom|the|our))?|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))?
@@ -2635,7 +2651,7 @@ custom_commands:
     actions:
       - type: send_message
         embeds:
-          - title: ℹ️ Information
+          - title: â„¹ï¸ Information
             description: |-
               For support, go to <#1467119424455704760>
               For staff applications, go to <#1467133723148419103>
@@ -2668,12 +2684,12 @@ custom_commands:
                 value: |-
                   Use the </report:1532041403742425280> command with <@1531976584276480070> to submit a report.
 
-                  You can also **right-click a message or user → Apps → Report message/user**.
+                  You can also **right-click a message or user â†’ Apps â†’ Report message/user**.
               - name: <:link:908747871136919622> What to Include
                 value: |-
-                  • A clear reason for the report
-                  • Message links or screenshots (if possible)
-                  • Any relevant context that helps staff understand the situation
+                  â€¢ A clear reason for the report
+                  â€¢ Message links or screenshots (if possible)
+                  â€¢ Any relevant context that helps staff understand the situation
               - name: <:shield:865895492047470604> What Happens Next?
                 value: Our staff team will **review the report privately** and take appropriate action if needed. False reports or abuse of the system may result in punishment.
             footer:
@@ -2770,7 +2786,7 @@ custom_commands:
                   `EXT` - Extortion
                 inline: true
             footer:
-              text: Internal Staff Documentation • Select a category below
+              text: Internal Staff Documentation â€¢ Select a category below
         components:
           - components:
               - type: select
@@ -2829,14 +2845,14 @@ custom_commands:
             fields:
               - name: <:shield:865895492047470604> Ownership & Operation
                 value: "**f34rless.dev** (the server owner) **does not own** the bot or its core code. We simply utilize the custom branding feature provided by Sapphire to give the bot our own unique identity in this server."
-              - name: ⭐ Infinite Limits Subscription
+              - name: â­ Infinite Limits Subscription
                 value: Our server is powered by Sapphire's **Infinite Limits subscription**! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
               - name: <:link:908747871136919622> Get Your Own Custom Bot
                 value: |-
                   Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
 
-                  • **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
-                  • **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
+                  â€¢ **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
+                  â€¢ **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3000,9 +3016,9 @@ custom_commands:
                   Please head over there and read through them carefully.
               - name: <:shield:865895492047470604> Why it Matters
                 value: |-
-                  • You are responsible for knowing and following these rules.
-                  • **Ignorance is never a valid defence** if you break a rule.
-                  • By participating in this server, you agree to abide by everything listed.
+                  â€¢ You are responsible for knowing and following these rules.
+                  â€¢ **Ignorance is never a valid defence** if you break a rule.
+                  â€¢ By participating in this server, you agree to abide by everything listed.
               - name: <:link:908747871136919622> Need Clarification?
                 value: If you are confused about a specific rule or policy, don't guess! Feel free to ask a staff member for clarification to avoid future infractions.
             footer:
@@ -3035,14 +3051,14 @@ custom_commands:
                 value: |-
                   All appeals must be submitted through our official platform. We do not accept appeals through any other channel.
 
-                  **🔗 [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
+                  **ðŸ”— [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
               - name: <:shield:865895492047470604> Important Guidelines
                 value: |-
-                  • **Do not** DM staff members about your punishment or appeal.
-                  • **Do not** have friends or third parties submit an appeal on your behalf.
-                  • Be patient. Staff will review your submission and provide a final, binding decision.
+                  â€¢ **Do not** DM staff members about your punishment or appeal.
+                  â€¢ **Do not** have friends or third parties submit an appeal on your behalf.
+                  â€¢ Be patient. Staff will review your submission and provide a final, binding decision.
               - name: <:link:908747871136919622> Zero Appeal Rights
-                value: Please note that certain severe infractions—such as hate speech, CSAM, doxxing, and threats—carry **zero appeal rights** under any circumstances.
+                value: Please note that certain severe infractionsâ€”such as hate speech, CSAM, doxxing, and threatsâ€”carry **zero appeal rights** under any circumstances.
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3105,7 +3121,7 @@ custom_commands:
               - name: <:link:908747871136919622> Further Information
                 value: |-
                   For a comprehensive breakdown of our moderation principles and staff jurisdiction, please read the full policy here:
-                  **🔗 [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
+                  **ðŸ”— [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3147,23 +3163,23 @@ custom_commands:
             fields:
               - name: <:blue_pin:1216132453098459336> The SnowHaven Empire (TSHE)
                 value: |-
-                  • **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
-                  • **[Official Website](https://url.f34rless.xyz/tshe-website)**
-                  • **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
-                  • **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
-                  • **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
+                  â€¢ **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
+                  â€¢ **[Official Website](https://url.f34rless.xyz/tshe-website)**
+                  â€¢ **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
+                  â€¢ **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
+                  â€¢ **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
               - name: <:shield:865895492047470604> f34rless.dev
                 value: |-
-                  • **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
-                  • **[GitHub](https://url.f34rless.xyz/f34rless-github)**
-                  • **[Store](https://url.f34rless.xyz/f34rless-store)**
-                  • **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
+                  â€¢ **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
+                  â€¢ **[GitHub](https://url.f34rless.xyz/f34rless-github)**
+                  â€¢ **[Store](https://url.f34rless.xyz/f34rless-store)**
+                  â€¢ **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
               - name: <:link:908747871136919622> Bots & Affiliates
                 value: |-
-                  • **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
-                  • **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
-                  • **[Noxx Bot](https://url.f34rless.xyz/noxx)**
-                  • **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
+                  â€¢ **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
+                  â€¢ **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
+                  â€¢ **[Noxx Bot](https://url.f34rless.xyz/noxx)**
+                  â€¢ **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3335,17 +3351,17 @@ custom_commands:
           - description: |-
               ## Information on <@&1485003903891275977>
 
-              ### 1️⃣ The moderator emergency ping should be used when ...
+              ### 1ï¸âƒ£ The moderator emergency ping should be used when ...
               > ... important <#1466990155922542722> are violated. Including:
               > - A user is acting very disrespectful
               > - A user posts NSFW content
               > - A user sends spam / scam / harmful advertisements
 
-              ### 2️⃣ Do NOT use the emergency ping when ...
+              ### 2ï¸âƒ£ Do NOT use the emergency ping when ...
               > **... you are in need of anything**, users use channels incorrectly, user don't speak English or for other minor infractions. Moderators are usually checking in from time to time to take care of these issues. 
               > Please use </report:1532041403742425280> for minor infractions.
 
-              ### 3️⃣ **Always reply** to the message you want to report ...
+              ### 3ï¸âƒ£ **Always reply** to the message you want to report ...
               > ... so a moderator can take action immediately. 
 
               # <:exclamation_mark_red:866413651177897984> **Misuse will result in a ban** <:exclamation_mark_red:866413651177897984>
@@ -3377,7 +3393,7 @@ custom_commands:
     actions:
       - type: send_message
         embeds:
-          - title: 💜 Unlock Exclusive Sneak Peeks & Perks!
+          - title: ðŸ’œ Unlock Exclusive Sneak Peeks & Perks!
             description: Want to support the dev infrastructure and get behind-the-scenes access to my latest web apps, deep neon purple UI designs, and Docker setups? Check out the membership tiers on Ko-fi!
             color: "#5865f2"
             timestamp: true
@@ -3390,12 +3406,12 @@ custom_commands:
                   Make sure your Discord account is linked to your Ko-fi to automatically claim your roles and exclusive channels! :3
               - name: <:sapphTada:998232812324913223> Instant Perks (All Tiers)
                 value: Subscribing to **ANY** tier instantly unlocks embed permissions, image permissions, and more across the entire server.
-              - name: 💜 Amethyst Supporter (£3/mo)
-                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private 💜・amethyst-lounge.
-              - name: 💻 Dev Insider (£10/mo)
-                value: Behind-the-scenes access! Gets you the **Dev Insider** role and 🛠️・dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
-              - name: 👑 Root Admin (£25/mo)
-                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in 👑・root-access, and 10% off any commissions or hosting fees.
+              - name: ðŸ’œ Amethyst Supporter (Â£3/mo)
+                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private ðŸ’œãƒ»amethyst-lounge.
+              - name: ðŸ’» Dev Insider (Â£10/mo)
+                value: Behind-the-scenes access! Gets you the **Dev Insider** role and ðŸ› ï¸ãƒ»dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
+              - name: ðŸ‘‘ Root Admin (Â£25/mo)
+                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in ðŸ‘‘ãƒ»root-access, and 10% off any commissions or hosting fees.
             footer:
               text: Recommended By {username}
               icon_url: "{useravatarurl}"
@@ -3423,8 +3439,8 @@ custom_commands:
             fields:
               - name: <:blue_pin:1216132453098459336> Square Hosting
                 value: |-
-                  • **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
-                  • **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
+                  â€¢ **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
+                  â€¢ **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
               - name: <:shield:865895492047470604> Affiliation & Team
                 value: This server's owner, **f34rless.dev**, works directly for Square Hosting! You are in great hands for all your hosting, development, and support needs.
         components:
@@ -3434,13 +3450,13 @@ custom_commands:
                 label: Visit Website
                 style: link
                 url: https://url.f34rless.xyz/square-hosting
-                emoji: 🌐
+                emoji: ðŸŒ
               - type: button
                 id: b1
                 label: Get Support
                 style: link
                 url: https://url.f34rless.xyz/square-hosting-support
-                emoji: ⭐
+                emoji: â­
   suggest:
     enabled: true
     slash: false

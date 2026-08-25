@@ -1,6 +1,7 @@
 import type { RowDataPacket } from 'mysql2/promise';
-import type { GuildMember } from 'discord.js';
+import { AuditLogEvent, type GuildMember } from 'discord.js';
 import type { App } from '../core/context';
+import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
   try {
@@ -9,11 +10,17 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
     const oldRoles = new Set(oldMember.roles.cache.keys());
     const newRoles = new Set(newMember.roles.cache.keys());
 
+    const rolesChanged = oldRoles.size !== newRoles.size || [...newRoles].some((id) => !oldRoles.has(id));
+    const roleActorId = rolesChanged
+      ? await resolveAuditActor(app, guild, AuditLogEvent.MemberRoleUpdate, { targetId: newMember.id })
+      : null;
+
     for (const roleId of newRoles) {
       if (!oldRoles.has(roleId)) {
         await app.logManager.log({
           event: 'role_add',
           guildId: guild.id,
+          actorId: roleActorId,
           targetId: newMember.id,
           message: `<@${newMember.id}> was given <@&${roleId}>`,
           details: { roleId },
@@ -25,6 +32,7 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
         await app.logManager.log({
           event: 'role_remove',
           guildId: guild.id,
+          actorId: roleActorId,
           targetId: newMember.id,
           message: `<@${newMember.id}> lost <@&${roleId}>`,
           details: { roleId },
@@ -33,9 +41,11 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
     }
 
     if (oldMember.nickname !== newMember.nickname) {
+      const nickActorId = await resolveAuditActor(app, guild, AuditLogEvent.MemberUpdate, { targetId: newMember.id });
       await app.logManager.log({
         event: 'nickname_change',
         guildId: guild.id,
+        actorId: nickActorId,
         targetId: newMember.id,
         message: `<@${newMember.id}> nickname changed`,
         details: { old: oldMember.nickname, new: newMember.nickname },
@@ -75,10 +85,6 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
     await handleMuteChange(app, oldMember, newMember);
 
     // Role connections re-sync on any role add / remove / update for the member.
-    const rolesChanged =
-      oldRoles.size !== newRoles.size ||
-      [...newRoles].some((id) => !oldRoles.has(id)) ||
-      [...oldRoles].some((id) => !newRoles.has(id));
     if (rolesChanged) {
       await app.roleConnections.syncMember(newMember);
     }
@@ -99,9 +105,11 @@ async function handleMuteChange(app: App, oldMember: GuildMember, newMember: Gui
 
   if (newDisabled) {
     const until = newMember.communicationDisabledUntil;
+    const actorId = await resolveAuditActor(app, newMember.guild, AuditLogEvent.MemberUpdate, { targetId: newMember.id });
     await app.logManager.log({
       event: 'member_mute',
       guildId: newMember.guild.id,
+      actorId,
       targetId: newMember.id,
       message: `<@${newMember.id}> was muted (timeout applied)${until ? ` until <t:${Math.floor(until.getTime() / 1000)}:R>` : ''}`,
       details: { source: 'native', until: until?.toISOString() ?? null },

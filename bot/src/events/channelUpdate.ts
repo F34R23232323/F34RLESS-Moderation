@@ -1,5 +1,6 @@
-import { PermissionsBitField, type ForumChannel, type GuildChannel, type TextChannel, type ThreadChannel, type VoiceChannel } from 'discord.js';
+import { AuditLogEvent, PermissionsBitField, type ForumChannel, type GuildChannel, type TextChannel, type ThreadChannel, type VoiceChannel } from 'discord.js';
 import type { App } from '../core/context';
+import { resolveAuditActor } from '../utils/auditLog';
 
 function humanizePerm(name: string): string {
   return name.replace(/([A-Z])/g, ' $1').trim();
@@ -149,10 +150,12 @@ export async function handleChannelUpdate(app: App, oldChannel: GuildChannel, ne
   if (permChanges.length > 0) changes['Permissions'] = permChanges.join('; ');
 
   if (Object.keys(changes).length === 0) return;
+  const actorId = await resolveAuditActor(app, newChannel.guild, AuditLogEvent.ChannelUpdate, { targetId: newChannel.id });
   await app.logManager.log({
     event: 'channel_update',
     guildId: newChannel.guild.id,
     channelId: newChannel.id,
+    actorId,
     message: `Channel <#${newChannel.id}> updated`,
     details: { channel: `#${newChannel.name}`, changes },
   });

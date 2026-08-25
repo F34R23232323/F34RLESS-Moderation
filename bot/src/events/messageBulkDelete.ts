@@ -1,5 +1,6 @@
-import type { Collection, Message, PartialMessage } from 'discord.js';
+import { AuditLogEvent, type Collection, type Message, type PartialMessage } from 'discord.js';
 import type { App } from '../core/context';
+import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleMessageBulkDelete(app: App, messages: Collection<string, Message | PartialMessage>, channel: { guildId: string | null; id: string; name?: string }): Promise<void> {
   try {
@@ -47,10 +48,14 @@ export async function handleMessageBulkDelete(app: App, messages: Collection<str
       files = [{ name: `bulk-delete-${Date.now()}.txt`, data: Buffer.from(text.slice(0, 1900000), 'utf8') }];
     }
 
+    const guild = channel.guildId ? app.client.guilds.cache.get(channel.guildId) ?? null : null;
+    const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.MessageBulkDelete, { targetId: channel.id }) : null;
+
     await app.logManager.log({
       event: 'message_bulk_delete',
       guildId: channel.guildId ?? '0',
       channelId: channel.id,
+      actorId,
       message: `Bulk deleted ${messages.size} messages in <#${channel.id}>${files.length ? ' (transcript attached)' : ''}`,
       details: { count: messages.size, channelId: channel.id, users: users.size },
       files,

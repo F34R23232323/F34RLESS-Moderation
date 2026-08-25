@@ -1,11 +1,15 @@
-import type { ThreadChannel } from 'discord.js';
+import { AuditLogEvent, type ThreadChannel } from 'discord.js';
 import type { App } from '../core/context';
+import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleThreadDelete(app: App, thread: ThreadChannel): Promise<void> {
+  const guild = thread.guild;
+  const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.ThreadDelete, { targetId: thread.id }) : null;
   await app.logManager.log({
     event: 'thread_delete',
     guildId: thread.guildId,
     channelId: thread.parentId,
+    actorId,
     message: `Thread deleted: ${thread.name}`,
     details: { name: thread.name, id: thread.id },
   });

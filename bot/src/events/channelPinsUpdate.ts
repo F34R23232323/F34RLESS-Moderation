@@ -1,5 +1,6 @@
-import type { Channel, Message, TextBasedChannel } from 'discord.js';
+import { AuditLogEvent, type Channel, type Message, type TextBasedChannel } from 'discord.js';
 import type { App } from '../core/context';
+import { resolveAuditActor } from '../utils/auditLog';
 
 interface PinnedInfo {
   content: string;
@@ -46,12 +47,12 @@ export async function handleChannelPinsUpdate(app: App, channel: Channel, _time:
   if (prev) {
     for (const [id, info] of now) {
       if (!prev.has(id)) {
-        await logPinned(app, guildId, channel, channelName, 'Message pinned', info, id);
+        await logPinned(app, guildId, channel, channelName, 'Message pinned', info, id, true);
       }
     }
     for (const [id, info] of prev) {
       if (!now.has(id)) {
-        await logPinned(app, guildId, channel, channelName, 'Pinned message removed', info, id);
+        await logPinned(app, guildId, channel, channelName, 'Pinned message removed', info, id, false);
       }
     }
   }
@@ -67,11 +68,17 @@ async function logPinned(
   header: string,
   info: PinnedInfo,
   messageId: string,
+  pinned: boolean,
 ): Promise<void> {
+  const guild = app.client.guilds.cache.get(guildId);
+  const actorId = guild
+    ? await resolveAuditActor(app, guild, pinned ? AuditLogEvent.MessagePin : AuditLogEvent.MessageUnpin, { targetId: messageId })
+    : null;
   await app.logManager.log({
     event: 'channel_pins_update',
     guildId,
     channelId: channel.id,
+    actorId,
     targetId: info.authorId,
     message: [
       header,
@@ -80,7 +87,7 @@ async function logPinned(
       `Message ID: ${messageId}`,
       `Message author: ${info.authorName}`,
     ].join('\n'),
-    details: { channelId: channel.id, messageId, authorId: info.authorId, content: info.content.slice(0, 900), pinned: header === 'Message pinned' },
+    details: { channelId: channel.id, messageId, authorId: info.authorId, content: info.content.slice(0, 900), pinned },
   });
 }
 

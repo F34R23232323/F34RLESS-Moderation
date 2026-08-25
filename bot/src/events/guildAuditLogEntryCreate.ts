@@ -1,6 +1,7 @@
 import { AuditLogEvent } from 'discord.js';
 import type { Guild, GuildAuditLogsEntry, Integration, Webhook } from 'discord.js';
 import type { App } from '../core/context';
+import { rememberAuditEntry } from '../utils/auditLog';
 
 const INTEGRATION_ACTIONS = new Set<AuditLogEvent>([
   AuditLogEvent.IntegrationCreate,
@@ -17,6 +18,7 @@ const WEBHOOK_ACTIONS = new Set<AuditLogEvent>([
 export async function handleGuildAuditLogEntryCreate(app: App, entry: GuildAuditLogsEntry, guild: Guild): Promise<void> {
   try {
     const action = entry.action;
+    rememberAuditEntry(guild.id, entry);
     const isIntegration = INTEGRATION_ACTIONS.has(action);
     const isWebhook = WEBHOOK_ACTIONS.has(action);
     if (!isIntegration && !isWebhook) return;

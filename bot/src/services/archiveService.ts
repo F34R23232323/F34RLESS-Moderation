@@ -38,6 +38,7 @@ export interface ArchiveResult {
   code: string;
   link: string;
   messageCount: number;
+  deletedCount?: number;
 }
 
 export interface ArchiveChannelOptions {
@@ -97,10 +98,29 @@ export class ArchiveService {
   }
 
   public async archiveChannel(opts: ArchiveChannelOptions): Promise<ArchiveResult | null> {
-    const messages = await this.collectMessages(opts.channel, opts.amount, opts.userId ?? null, null);
-    if (messages.length === 0) return null;
-    const records = [];
-    for (const m of messages) records.push(await serializeMessageRecord(m));
+    const cap = Math.min(opts.amount, this.app.config.archives.max_amount);
+    const liveMessages = await this.collectMessages(opts.channel, cap, opts.userId ?? null, null);
+
+    const records: ArchiveRecordList = [];
+    const seen = new Set<string>();
+    for (const m of liveMessages) {
+      seen.add(m.id);
+      records.push(await serializeMessageRecord(m));
+    }
+
+    // Also catch messages that were deleted inside the archived window: they
+    // no longer exist in the channel, but snapshots are still in the DB. When
+    // nothing is left live, fall back to the most recently deleted snapshots.
+    const anchorMs = liveMessages.length > 0 ? liveMessages[liveMessages.length - 1].createdTimestamp : null;
+    const deleted = await this.collectDeletedSnapshots(opts.channel.id, anchorMs, opts.userId ?? null, cap);
+    for (const rec of deleted) {
+      if (seen.has(rec.messageId)) continue;
+      seen.add(rec.messageId);
+      records.push({ record: rec, status: 'deleted' });
+    }
+
+    if (records.length === 0) return null;
+    records.sort((a, b) => recordOf(a).createdAt - recordOf(b).createdAt);
     return this.createArchiveFromRecords(opts.guild, opts.channel.id, records, {
       kind: opts.kind ?? 'manual',
       userId: opts.userId ?? null,
@@ -235,6 +255,41 @@ export class ArchiveService {
     );
     const row = rows[0];
     if (!row) return null;
+    return this.snapshotRowToRecord(row, channelId, messageId);
+  }
+
+  /** Fetch snapshots of messages that were deleted in this channel, so manual
+   *  archives can include content that no longer exists in Discord. */
+  private async collectDeletedSnapshots(
+    channelId: string,
+    sinceMs: number | null,
+    userId: string | null,
+    cap: number,
+  ): Promise<SerializedMessage[]> {
+    try {
+      const params: unknown[] = [channelId];
+      let sql = `SELECT message_id, author_id, author_username, author_nickname, author_avatar, author_is_bot, content, embeds, components, stickers, referenced_message, attachments, created_at
+                 FROM message_snapshots
+                 WHERE channel_id = ? AND deleted_at IS NOT NULL`;
+      if (sinceMs !== null) {
+        sql += ' AND created_at >= ?';
+        params.push(new Date(sinceMs));
+      }
+      if (userId) {
+        sql += ' AND author_id = ?';
+        params.push(userId);
+      }
+      sql += ' ORDER BY created_at ASC LIMIT ?';
+      params.push(cap);
+      const [rows] = await this.app.db.query<RowDataPacket[]>(sql, params);
+      return rows.map((row) => this.snapshotRowToRecord(row, channelId, String(row.message_id)));
+    } catch (err) {
+      this.app.logger.warn('collectDeletedSnapshots failed:', err);
+      return [];
+    }
+  }
+
+  private snapshotRowToRecord(row: RowDataPacket, channelId: string, messageId: string): SerializedMessage {
     return {
       messageId,
       channelId,
@@ -478,6 +533,7 @@ export class ArchiveService {
     );
 
     const link = this.getPublicLink(code);
+    const deletedCount = normalized.filter((n) => n.status === 'deleted').length;
     await this.app.logManager.log({
       event: 'archive_created',
       guildId: guild.id,
@@ -490,6 +546,7 @@ export class ArchiveService {
         link,
         kind: opts.kind,
         messageCount: records.length,
+        deletedCount,
         mediaCount,
         totalBytes,
         channelId,
@@ -499,7 +556,7 @@ export class ArchiveService {
       },
     });
 
-    return { id: archiveId, code, link, messageCount: records.length };
+    return { id: archiveId, code, link, messageCount: records.length, deletedCount };
   }
 
   private async storeEmbedMedia(archiveId: number, embeds: StoredEmbed[], totalBytes: number): Promise<StoredEmbed[]> {
@@ -567,6 +624,10 @@ function parseJson<T>(raw: unknown, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+function recordOf(item: SerializedMessage | ArchiveRecordInput): SerializedMessage {
+  return 'record' in item ? item.record : item;
 }
 
 function parseJsonArray<T>(raw: unknown): T[] {

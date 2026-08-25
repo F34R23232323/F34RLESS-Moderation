@@ -1,6 +1,7 @@
-import type { Message, PartialMessage } from 'discord.js';
+import { AuditLogEvent, type Message, type PartialMessage } from 'discord.js';
 import type { App } from '../core/context';
 import { captureDeleted } from '../utils/snipe';
+import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleMessageDelete(app: App, message: Message | PartialMessage): Promise<void> {
   try {
@@ -14,13 +15,15 @@ export async function handleMessageDelete(app: App, message: Message | PartialMe
     if (message.guildId) {
       await app.messageLogs.onMessageDelete(message);
     }
+    const guild = message.guild ?? (message.guildId ? app.client.guilds.cache.get(message.guildId) ?? null : null);
+    const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.MessageDelete, { targetId: message.id }) : null;
     await app.logManager.log({
       event: 'message_delete',
       guildId: message.guildId ?? '0',
       channelId: message.channelId,
-      actorId: null,
+      actorId,
       targetId: message.author?.id ?? null,
-      message: `Message deleted in <#${message.channelId}> by <@${message.author?.id ?? 'unknown'}>`,
+      message: `Message deleted in <#${message.channelId}>${actorId ? ` by <@${actorId}>` : ''}`,
       details: {
         channelId: message.channelId,
         messageId: message.id,

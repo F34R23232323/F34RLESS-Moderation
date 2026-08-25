@@ -19,7 +19,7 @@ async function archiveFrom(
   amount: number,
   userId: string | null,
   actorId: string,
-): Promise<{ ok: boolean; link?: string; count?: number; error?: string }> {
+): Promise<{ ok: boolean; link?: string; count?: number; deletedCount?: number; error?: string }> {
   const cap = Math.min(amount, app.config.archives.max_amount);
   const result = await app.archives.archiveChannel({
     guild,
@@ -30,7 +30,7 @@ async function archiveFrom(
     kind: 'manual',
   });
   if (!result) return { ok: false, error: 'No messages found to archive.' };
-  return { ok: true, link: result.link, count: result.messageCount };
+  return { ok: true, link: result.link, count: result.messageCount, deletedCount: result.deletedCount ?? 0 };
 }
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
@@ -50,7 +50,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     await v2Reply(interaction, `Failed: ${result.error}`, { ephemeral: true });
     return;
   }
-  await v2Reply(interaction, `Archived ${result.count} message(s) in <#${channel.id}> — ${result.link}`, { ephemeral: true });
+  await v2Reply(interaction, `Archived ${result.count} message(s)${result.deletedCount ? ` (${result.deletedCount} deleted)` : ''} in <#${channel.id}> — ${result.link}`, { ephemeral: true });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -76,7 +76,9 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   }
   const result = await archiveFrom(app, guild, channel, amount, userId, message.author.id);
   const sent = await v2MessageReply(message, {
-    content: result.ok ? `Archived ${result.count} message(s) in <#${channel.id}> — ${result.link}` : `Failed: ${result.error}`,
+    content: result.ok
+      ? `Archived ${result.count} message(s)${result.deletedCount ? ` (${result.deletedCount} deleted)` : ''} in <#${channel.id}> — ${result.link}`
+      : `Failed: ${result.error}`,
   });
   setTimeout(() => sent.delete().catch(() => undefined), 15_000);
 }
