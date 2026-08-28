@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
+import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 
 const data = new SlashCommandBuilder()
   .setName('kick')
@@ -37,10 +38,21 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  const reason = args.slice(1).join(' ') || 'No reason provided';
-  if (!guild || !targetId) {
+  if (!guild) {
     await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>`' });
+    return;
+  }
+  const replyCtx = await resolveReplyContext(message);
+  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let reason = args.slice(1).join(' ') || 'No reason provided';
+  let evidence: CaseEvidenceItem[] | undefined;
+  if (!targetId && replyCtx) {
+    targetId = replyCtx.targetId;
+    reason = args.join(' ') || 'No reason provided';
+    evidence = replyCtx.evidence;
+  }
+  if (!targetId) {
+    await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>` — or reply to a message to kick its author.' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
@@ -53,7 +65,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: `Cannot kick: ${guard.reason}` });
     return;
   }
-  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
   await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 

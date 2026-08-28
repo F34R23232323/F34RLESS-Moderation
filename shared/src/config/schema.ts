@@ -70,6 +70,89 @@ export const punishmentDmTypeSchema = z
   })
   .strict();
 
+// Which Discord AutoMod action a native_automod response reacts to.
+// block_message          — message was blocked & deleted (never posted)
+// send_alert_message     — message was flagged, alert sent to the mod channel
+// timeout                — member was timed out
+// block_member_interaction — member interaction (e.g. button/select) was blocked
+// any                    — respond regardless of the action
+export const nativeAutomodActionSchema = z.enum([
+  'block_message',
+  'send_alert_message',
+  'timeout',
+  'block_member_interaction',
+  'any',
+]);
+export type NativeAutomodAction = z.infer<typeof nativeAutomodActionSchema>;
+
+// Per-rule response for Discord's native AutoMod. `format` selects the embed
+// builder:
+//   plain           — raw text message
+//   embed           — classic embed builder (CV1: title/description/color/
+//                     author/fields/footer/image/thumbnail)
+//   components_v2   — Components v2 container builder (CV2: header/text/footer/
+//                     accent color/media)
+// Message fields support placeholders: ${originmessagecontent} (the blocked
+// content), ${user}, ${user_mention}, ${channel}, ${guild}, ${rule_name}, etc.
+export const nativeAutomodResponseSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    // The Discord AutoMod rule ID (snowflake) this response belongs to.
+    rule_id: z.string().regex(/^\d{15,20}$/, 'Expected a Discord AutoMod rule ID (snowflake)'),
+    // The AutoMod action this response fires on. A single value or a list.
+    on: z
+      .union([nativeAutomodActionSchema, z.array(nativeAutomodActionSchema)])
+      .default('block_message'),
+    // Where to send the response. Defaults to the channel where the action
+    // happened when omitted.
+    channel_id: snowflake.optional(),
+    format: z.enum(['plain', 'embed', 'components_v2']).default('components_v2'),
+    content: z.string().optional(),
+    // Embed / CV2 builder fields (all support placeholders).
+    title: z.string().optional(),
+    description: z.string().optional(),
+    footer: z.string().optional(),
+    accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected a hex color like #ED4245').optional(),
+    image_url: z.string().url().optional(),
+    thumbnail_url: z.string().url().optional(),
+    author: z
+      .object({
+        name: z.string().min(1),
+        url: z.string().url().optional(),
+        icon_url: z.string().url().optional(),
+      })
+      .strict()
+      .optional(),
+    fields: z
+      .array(
+        z
+          .object({
+            name: z.string(),
+            value: z.string(),
+            inline: z.boolean().optional(),
+          })
+          .strict(),
+      )
+      .optional(),
+    // Buttons appended below the CV2 container (components_v2 format only).
+    buttons: z
+      .array(
+        z
+          .object({
+            label: z.string().min(1).max(80),
+            style: z.enum(['primary', 'secondary', 'success', 'danger', 'link']).optional(),
+            custom_id: z.string().optional(),
+            url: z.string().url().optional(),
+            disabled: z.boolean().optional(),
+          })
+          .strict(),
+      )
+      .optional(),
+    delete_after_seconds: z.number().int().min(0).default(0),
+  })
+  .strict();
+export type NativeAutomodResponseConfig = z.infer<typeof nativeAutomodResponseSchema>;
+
 const customEmbedFieldSchema = z
   .object({
     name: z.string(),
@@ -535,6 +618,21 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    // Discord's own (native) AutoMod responses. When a native AutoMod rule
+    // executes an action (e.g. a message gets blocked), the bot can post a
+    // configured response. Responses are keyed by AutoMod rule ID + the action
+    // that fired. Mentions are ALWAYS disabled on these responses (hardcoded).
+    native_automod: z
+      .object({
+        enabled: boolean.default(true),
+        responses: z.preprocess(
+          (v) => (v == null ? [] : v),
+          z.array(nativeAutomodResponseSchema).default([]),
+        ),
+      })
+      .strict()
+      .default({ enabled: true, responses: [] }),
+
     escalation: z
       .object({
         enabled: boolean.default(true),
@@ -948,6 +1046,7 @@ export const LOG_EVENT_NAMES = [
   'member_unwarn',
   'role_add',
   'role_remove',
+  'role_change',
   'nickname_change',
   'channel_create',
   'channel_update',

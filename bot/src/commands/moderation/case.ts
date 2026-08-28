@@ -4,6 +4,8 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
+import { formatEvidenceLines } from '../../utils/evidence';
+import { humanizeDuration, parseJson } from '../../../../shared/src/index';
 
 const data = new SlashCommandBuilder()
   .setName('case')
@@ -24,16 +26,49 @@ async function resolveCase(app: App, guildId: string, id: string): Promise<{ c: 
   return c ? { c } : null;
 }
 
-function caseViewLines(c: any): string {
-  return [
-    `**Case ${c.case_code}** (${c.status})`,
-    `Type: ${c.type}`,
-    `User: <@${c.user_id}>`,
+function relTime(date: Date | string | null | undefined): string | null {
+  if (!date) return null;
+  const ts = Math.floor(new Date(date).getTime() / 1000);
+  return Number.isFinite(ts) ? `<t:${ts}:R>` : null;
+}
+
+async function caseViewLines(app: App, guildId: string, c: any): Promise<string> {
+  const created = relTime(c.created_at);
+  const updated = relTime(c.updated_at);
+
+  const lines: string[] = [
+    `**Case ${c.case_code}** (#${c.case_number}) — ${String(c.status).toUpperCase()}`,
+    `Type: ${String(c.type).toUpperCase()}`,
+    `User: <@${c.user_id}> (\`${c.user_id}\`)`,
     `Moderator: ${c.moderator_id ? `<@${c.moderator_id}>` : 'system'}`,
     `Reason: ${c.reason}`,
-    c.duration_ms ? `Duration: ${c.duration_ms}ms` : '',
-    `Created: ${new Date(c.created_at).toISOString()}`,
-  ].filter(Boolean).join('\n');
+  ];
+  if (c.duration_ms) lines.push(`Duration: ${humanizeDuration(Number(c.duration_ms))}`);
+  if (created) lines.push(`Created: ${created}`);
+  if (updated && updated !== created) lines.push(`Last updated: ${updated}`);
+
+  const evidenceRaw = typeof c.evidence === 'string' ? parseJson(c.evidence, null) : c.evidence;
+  const evidence = formatEvidenceLines(evidenceRaw, guildId);
+  if (evidence) {
+    lines.push('', '**Evidence**');
+    lines.push(...evidence.split('\n').map((l) => `> ${l}`));
+  }
+
+  const linkedIdsRaw = typeof c.linked_case_ids === 'string' ? parseJson(c.linked_case_ids, []) : c.linked_case_ids;
+  const linkedIds: number[] = Array.isArray(linkedIdsRaw) ? linkedIdsRaw : [];
+  if (linkedIds.length > 0) {
+    const codes: string[] = [];
+    for (const id of linkedIds) {
+      const linked = await app.caseService.getCaseById(id).catch(() => null);
+      if (linked) codes.push(linked.case_code);
+    }
+    if (codes.length > 0) lines.push('', `**Linked cases:** ${codes.join(', ')}`);
+  }
+
+  const warnCount = await app.caseService.countWarnings(guildId, c.user_id);
+  lines.push('', `Active warnings for user: **${warnCount}**`);
+
+  return lines.join('\n');
 }
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
@@ -48,7 +83,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
       await v2Reply(interaction, 'Case not found.', { ephemeral: true });
       return;
     }
-    await v2Reply(interaction, caseViewLines(found.c));
+    await v2Reply(interaction, await caseViewLines(app, guild.id, found.c));
   } else if (sub === 'edit') {
     const found = await resolveCase(app, guild.id, interaction.options.getString('id', true));
     const reason = interaction.options.getString('reason', true);
@@ -98,7 +133,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const id = args[1];
   if (sub === 'view' && id) {
     const found = await resolveCase(app, guild.id, id);
-    await v2MessageReply(message, { content: found ? caseViewLines(found.c) : 'Case not found.' });
+    await v2MessageReply(message, { content: found ? await caseViewLines(app, guild.id, found.c) : 'Case not found.' });
     return;
   }
   if (sub === 'edit' && id && args[2]) {

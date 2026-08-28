@@ -150,7 +150,7 @@ export async function handleChannelUpdate(app: App, oldChannel: GuildChannel, ne
   if (permChanges.length > 0) changes['Permissions'] = permChanges.join('; ');
 
   if (Object.keys(changes).length === 0) return;
-  const actorId = await resolveAuditActor(app, newChannel.guild, AuditLogEvent.ChannelUpdate, { targetId: newChannel.id });
+  const actorId = await resolveAuditActor(app, newChannel.guild, AuditLogEvent.ChannelUpdate, { targetId: newChannel.id, retries: 2 });
   await app.logManager.log({
     event: 'channel_update',
     guildId: newChannel.guild.id,

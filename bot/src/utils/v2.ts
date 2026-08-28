@@ -238,6 +238,7 @@ export interface RichV2Options {
   text: string;
   footer?: string;
   mediaUrls?: string[];
+  buttons?: Array<{ customId?: string; label: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
 }
 
 export function buildRichV2(opts: RichV2Options): { components: unknown[]; flags: number } {
@@ -251,6 +252,20 @@ export function buildRichV2(opts: RichV2Options): { components: unknown[]; flags
     container
       .addSeparatorComponents(new SeparatorBuilder())
       .addTextDisplayComponents(new TextDisplayBuilder().setContent(opts.footer));
+  }
+
+  if (opts.buttons && opts.buttons.length > 0) {
+    const row = new ActionRowBuilder<ButtonBuilder>();
+    for (const b of opts.buttons.slice(0, 5)) {
+      const btn = new ButtonBuilder().setLabel(b.label).setDisabled(b.disabled ?? false);
+      if (b.url) {
+        btn.setStyle(b.style ?? ButtonStyle.Link).setURL(b.url);
+      } else {
+        btn.setStyle(b.style ?? ButtonStyle.Secondary).setCustomId(b.customId ?? `v2_${Date.now()}`);
+      }
+      row.addComponents(btn);
+    }
+    container.addActionRowComponents(row as never);
   }
 
   if (opts.mediaUrls && opts.mediaUrls.length > 0) {

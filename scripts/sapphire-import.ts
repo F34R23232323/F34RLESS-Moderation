@@ -31,7 +31,6 @@ const FILES = {
   logging: 'loggingData-1466990155020898413.json',
   commands: 'commandsData-1466990155020898413.json',
   moderation: 'moderationData-1466990155020898413.json',
-  messages: 'messagesData-1466990155020898413.json',
 };
 
 function readJson<T>(name: string): T {
@@ -118,15 +117,18 @@ function buildChain(actions: SapAction[], ruleName: string, escalate = true): Im
     if (a.type === 'delete') {
       chain.push({ type: 'delete_message' });
     } else if (a.type === 'message') {
-      const v = a.value as { name?: string; deleteAfter?: number };
-      const deleteAfter = v?.deleteAfter ? Math.round(v.deleteAfter / 1000) : 30;
+      // Long member-facing message needs time to read — always 60s auto-delete.
+      const deleteAfter = 60;
       chain.push({
         type: 'send_channel_message',
         format: 'components_v2',
-        content: `Your message was removed in {channel}.`,
+        content: 'Your message was removed in {channel}.',
         title: 'Message Removed',
-        description: `A message you posted was removed by the moderation bot.\n\nReason: {reason}\nRule: {rule}\nChannel: {channel}\nUser: {user}`,
-        footer: 'If you believe this was a mistake, contact staff.',
+        description:
+          "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\n\n" +
+          "That's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\n" +
+          "If you think this was a mistake, just message any staff member and we'll happily take another look.",
+        footer: 'Thanks for helping keep {guild} friendly and safe.',
         accent_color: '#ED4245',
         delete_after_seconds: deleteAfter,
       });
@@ -180,161 +182,166 @@ function normalizePattern(raw: string): { pattern: string; needsS: boolean; need
   return { pattern, needsS, needsM, needsI };
 }
 
-const LOG_MAP: Array<[RegExp, string]> = [
-  [/^channelcreate/, 'channel_create'],
-  [/^channeldelete/, 'channel_delete'],
-  [/^channel/, 'channel_update'],
-  [/^messageupdate/, 'message_edit'],
-  [/^messagedelete/, 'message_delete'],
-  [/^memberjoin/, 'member_join'],
-  [/^memberleave/, 'member_leave'],
-  [/^memberban|^memberunban/, 'member_ban'],
-  [/^memberunban/, 'member_unban'],
-  [/^memberkick/, 'member_kick'],
-  [/^membertimeout/, 'member_timeout'],
-  [/^voicestate|^voice/, 'voice_state_update'],
-  [/^invitecreate/, 'invite_create'],
-  [/^invitedelete/, 'invite_delete'],
-  [/^nickname/, 'nickname_change'],
-  [/^moderationaction|punish|case/, 'moderation_action'],
-  [/^automodtrigger/, 'automod_trigger'],
-  [/^commandusage/, 'command_usage'],
-  [/^error/, 'error_event'],
-  [/^ratelimit/, 'rate_limit_event'],
-  [/^report/, 'report_created'],
-  [/^appeal/, 'appeal_created'],
-];
+const LOG_MAP: Record<string, string> = {
+  // channels
+  channelcreate: 'channel_create',
+  channeldelete: 'channel_delete',
+  channelpinsupdate: 'channel_pins_update',
+  channeltopicupdate: 'channel_update',
+  channelnameupdate: 'channel_update',
+  channelnsfwupdate: 'channel_update',
+  channelparentupdate: 'channel_update',
+  channelpermissionsupdate: 'channel_update',
+  channeltypeupdate: 'channel_update',
+  channelbitrateupdate: 'channel_update',
+  channeluserlimitupdate: 'channel_update',
+  channelslowmodeupdate: 'channel_update',
+  channelrtcregionupdate: 'channel_update',
+  channelvideoqualityupdate: 'channel_update',
+  channeldefaultarchivedurationupdate: 'channel_update',
+  channeldefaultthreadslowmodeupdate: 'channel_update',
+  channeldefaultreactionemojiupdate: 'channel_update',
+  channeldefaultsortorderupdate: 'channel_update',
+  channelforumtagsupdate: 'channel_update',
+  channelforumlayoutupdate: 'channel_update',
+  channelvoicestatusupdate: 'channel_update',
+  // messages
+  messagedelete: 'message_delete',
+  messagebulkdelete: 'message_bulk_delete',
+  messageedit: 'message_edit',
+  messagepublish: 'message_publish',
+  messagesentusingcommand: 'command_usage',
+  // members
+  memberjoin: 'member_join',
+  memberleave: 'member_leave',
+  banadd: 'member_ban',
+  banremove: 'member_unban',
+  kickadd: 'member_kick',
+  kickremove: 'member_unban',
+  muteadd: 'member_timeout',
+  muteremove: 'member_unmute',
+  warnadd: 'member_warn',
+  warnremove: 'member_unwarn',
+  userrolesadd: 'role_add',
+  userrolesremove: 'role_remove',
+  userrolesupdate: 'role_update',
+  useravatarupdate: 'member_avatar_update',
+  usernameupdate: 'member_username_update',
+  // roles
+  rolecreate: 'role_create',
+  roledelete: 'role_delete',
+  rolecolorupdate: 'role_update',
+  rolehoistupdate: 'role_update',
+  rolementionableupdate: 'role_update',
+  rolenameupdate: 'role_update',
+  rolepermissionsupdate: 'role_update',
+  roleiconupdate: 'role_update',
+  // emojis / stickers / soundboard
+  emojicreate: 'emoji_create',
+  emojidelete: 'emoji_delete',
+  emojinameupdate: 'emoji_update',
+  emojirolesupdate: 'emoji_update',
+  stickercreate: 'sticker_create',
+  stickerdelete: 'sticker_delete',
+  stickername: 'sticker_update',
+  stickerdescriptionupdate: 'sticker_update',
+  stickerrelatedemojiupdate: 'sticker_update',
+  soundboardsoundupload: 'soundboard_update',
+  soundboardsoundnameupdate: 'soundboard_update',
+  soundboardsoundvolumeupdate: 'soundboard_update',
+  soundboardsoundemojiupdate: 'soundboard_update',
+  soundboardsounddelete: 'soundboard_update',
+  // threads
+  threadcreate: 'thread_create',
+  threaddelete: 'thread_delete',
+  threadnameupdate: 'thread_update',
+  threadslowmodeupdate: 'thread_update',
+  threadarchivedurationupdate: 'thread_update',
+  threadarchive: 'thread_update',
+  threadunarchive: 'thread_update',
+  threadlock: 'thread_update',
+  threadunlock: 'thread_update',
+  // invites
+  invitecreate: 'invite_create',
+  invitedelete: 'invite_delete',
+  invitepost: 'invite_create',
+  // polls
+  pollcreate: 'poll_create',
+  polldelete: 'poll_delete',
+  pollfinalize: 'poll_finalize',
+  pollvotesadd: 'poll_votes',
+  pollvotesremove: 'poll_votes',
+  // scheduled events / stages
+  eventcreate: 'scheduled_event',
+  eventdelete: 'scheduled_event',
+  eventlocationupdate: 'scheduled_event',
+  eventdescriptionupdate: 'scheduled_event',
+  eventnameupdate: 'scheduled_event',
+  eventprivacylevelupdate: 'scheduled_event',
+  eventstarttimeupdate: 'scheduled_event',
+  eventendtimeupdate: 'scheduled_event',
+  eventstatusupdate: 'scheduled_event',
+  eventimageupdate: 'scheduled_event',
+  eventusersubscribe: 'scheduled_event',
+  eventuserunsubscribe: 'scheduled_event',
+  stagestart: 'stage_event',
+  stageend: 'stage_event',
+  stagetopicupdate: 'stage_event',
+  stageprivacyupdate: 'stage_event',
+  // voice
+  voicechannelfull: 'voice_state_update',
+  voiceuserjoin: 'voice_state_update',
+  voiceuserswitch: 'voice_state_update',
+  voiceuserleave: 'voice_state_update',
+  voiceusermove: 'voice_state_update',
+  voiceuserkick: 'voice_state_update',
+  // webhooks / apps
+  webhookcreate: 'webhook_update',
+  webhookavatarupdate: 'webhook_update',
+  webhooknameupdate: 'webhook_update',
+  webhookchannelupdate: 'webhook_update',
+  webhookdelete: 'webhook_update',
+  // guild
+  guildafkchannelupdate: 'guild_update',
+  guildafktimeoutupdate: 'guild_update',
+  guilddiscoverysplashupdate: 'guild_update',
+  guildmessagenotificationsupdate: 'guild_update',
+  guildbannerupdate: 'guild_update',
+  guildmfalevelupdate: 'guild_update',
+  guildiconupdate: 'guild_update',
+  guildfeaturesupdate: 'guild_update',
+  guildcontentfilterlevelupdate: 'guild_update',
+  guildpublicupdateschannelupdate: 'guild_update',
+  guildboostprogressbartoggle: 'guild_update',
+  guildboostlevelupdate: 'member_boost',
+  guildpartneredupdate: 'guild_update',
+  // moderation / automod
+  automoderation: 'automod_trigger',
+  casedelete: 'case_edit',
+  casemassdelete: 'case_edit',
+  caseupdate: 'case_edit',
+  usernoteadd: 'note_add',
+  usernoteremove: 'note_remove',
+  reportcreate: 'report_created',
+  reportsignore: 'report_resolved',
+  reportsaccept: 'report_resolved',
+  discordautomodrulecreate: 'automod_rule_update',
+  discordautomodruledelete: 'automod_rule_update',
+  discordautomodruletoggle: 'automod_rule_update',
+  discordautomodrulenameupdate: 'automod_rule_update',
+  discordautomodruleactionsupdate: 'automod_rule_update',
+  discordautomodrulecontentupdate: 'automod_rule_update',
+  discordautomodrulerolesupdate: 'automod_rule_update',
+  discordautomodrulechannelsupdate: 'automod_rule_update',
+  discordautomodrulewhitelistupdate: 'automod_rule_update',
+};
 
 function mapLogEvent(sapEvent: string): string | null {
   const lower = sapEvent.toLowerCase();
-  for (const [re, mapped] of LOG_MAP) {
-    if (re.test(lower)) return mapped;
-  }
+  const mapped = LOG_MAP[lower];
+  if (mapped) return mapped;
   if ((LOG_EVENT_NAMES as readonly string[]).includes(sapEvent)) return sapEvent;
   return null;
-}
-
-// ---- custom commands helpers ----
-const BUILTIN_SLASH_NAMES = new Set([
-  'afk', 'antiraid', 'appeal', 'ban', 'base64', 'birthday', 'botinfo', 'calculator', 'case',
-  'caseclose', 'cases', 'color', 'config', 'customcommand', 'decode', 'disarm', 'embed', 'encode',
-  'firstmessage', 'giveaway', 'hash', 'help', 'kick', 'leaderboard', 'level', 'lock', 'lookup',
-  'massban', 'md5', 'membercount', 'modstats', 'mute', 'nick', 'note', 'permissions', 'ping',
-  'poll', 'prefix', 'purge', 'qrcode', 'quarantine', 'remindme', 'report', 'restore', 'roles',
-  'schedule', 'serverinfo', 'sha1', 'sha256', 'snapshot', 'softban', 'suggest', 'temprole',
-  'ticket', 'timeout', 'timestamp', 'translate', 'trigger', 'unban', 'unlock', 'unmute',
-  'unquarantine', 'uptime', 'userinfo', 'verify', 'warn', 'warns', 'weather',
-]);
-
-function hexColorToStr(num: unknown): string | undefined {
-  if (typeof num !== 'number') return undefined;
-  return '#' + num.toString(16).padStart(6, '0');
-}
-
-function joinValue(v: unknown): string | undefined {
-  if (v === null || v === undefined) return undefined;
-  if (Array.isArray(v)) return v.map((x) => String(x)).join('\n');
-  return String(v);
-}
-
-function normalizePlaceholders(s: string): string {
-  return s.replace(/\$\{/g, '{');
-}
-
-function emojiToString(emoji: unknown): string | undefined {
-  if (typeof emoji === 'string') return emoji;
-  if (emoji && typeof emoji === 'object') {
-    const e = emoji as { id?: string; name?: string; animated?: boolean };
-    if (e.id) return `<${e.animated ? 'a' : ''}:${e.name ?? 'emoji'}:${e.id}>`;
-    return e.name;
-  }
-  return undefined;
-}
-
-function convertSapphireComponents(comps: unknown): any[] | undefined {
-  if (!Array.isArray(comps)) return undefined;
-  const rows: any[] = [];
-  for (const row of comps) {
-    if (!row || !Array.isArray(row.components)) continue;
-    const outComps: any[] = [];
-    for (const c of row.components) {
-      if (c?.type === 2) {
-        const styleMap: Record<number, string> = { 1: 'primary', 2: 'secondary', 3: 'success', 4: 'danger', 5: 'link' };
-        const b: Record<string, unknown> = { type: 'button', id: String(c.customId ?? `b${outComps.length}`), label: String(c.label ?? '') };
-        b.style = styleMap[c.style] ?? 'secondary';
-        if (c.url) b.url = String(c.url);
-        if (c.customId && !c.url) b.custom_id = String(c.customId);
-        const emoji = emojiToString(c.emoji);
-        if (emoji) b.emoji = emoji;
-        if (c.disabled) b.disabled = true;
-        outComps.push(b);
-      } else if (c?.type === 3) {
-        const opts = ((c.options ?? []) as any[]).map((o) => {
-          const ob: Record<string, unknown> = { label: String(o.label ?? ''), value: String(o.value ?? o.label ?? '') };
-          if (o.description) ob.description = String(o.description);
-          const emoji = emojiToString(o.emoji);
-          if (emoji) ob.emoji = emoji;
-          return ob;
-        });
-        outComps.push({
-          type: 'select',
-          id: String(c.customId ?? `s${outComps.length}`),
-          placeholder: String(c.placeholder ?? 'Select an option'),
-          min_values: c.minValues ?? 1,
-          max_values: c.maxValues ?? 1,
-          custom_id: c.customId ? String(c.customId) : undefined,
-          options: opts,
-        });
-      }
-    }
-    if (outComps.length > 0) rows.push({ components: outComps });
-  }
-  return rows.length > 0 ? rows : undefined;
-}
-
-function convertTemplateToPayload(template: any): Record<string, unknown> {
-  const json = template && typeof template.json === 'object' ? template.json : template ?? {};
-  const payload: Record<string, unknown> = {};
-  if (json.content) payload.content = normalizePlaceholders(String(json.content));
-
-  const embeds: any[] = [];
-  for (const e of json.embeds ?? []) {
-    const out: Record<string, unknown> = {};
-    if (e.title) out.title = normalizePlaceholders(String(e.title));
-    const desc = joinValue(e.description);
-    if (desc) out.description = normalizePlaceholders(desc);
-    const color = hexColorToStr(e.color);
-    if (color) out.color = color;
-    if (e.url) out.url = String(e.url);
-    if (e.timestamp) out.timestamp = true;
-    if (e.image?.url) out.image = normalizePlaceholders(String(e.image.url));
-    if (e.thumbnail?.url) out.thumbnail = normalizePlaceholders(String(e.thumbnail.url));
-    if (e.author) {
-      const author: Record<string, unknown> = {};
-      if (e.author.name) author.name = normalizePlaceholders(String(e.author.name));
-      if (e.author.url) author.url = String(e.author.url);
-      if (e.author.icon_url) author.icon_url = normalizePlaceholders(String(e.author.icon_url));
-      out.author = author;
-    }
-    if (Array.isArray(e.fields) && e.fields.length > 0) {
-      out.fields = e.fields.map((f: any) => ({
-        name: normalizePlaceholders(String(f.name)),
-        value: normalizePlaceholders(joinValue(f.value) ?? ''),
-        ...(f.inline ? { inline: true } : {}),
-      }));
-    }
-    if (e.footer) {
-      const footer: Record<string, unknown> = { text: normalizePlaceholders(String(e.footer.text ?? '')) };
-      if (e.footer.icon_url) footer.icon_url = normalizePlaceholders(String(e.footer.icon_url));
-      out.footer = footer;
-    }
-    embeds.push(out);
-  }
-  if (embeds.length > 0) payload.embeds = embeds;
-
-  const components = convertSapphireComponents(json.components);
-  if (components && components.length > 0) payload.components = components;
-  return payload;
 }
 
 async function main(): Promise<void> {
@@ -344,7 +351,6 @@ async function main(): Promise<void> {
   const logging = readJson<any>(FILES.logging);
   const commands = readJson<any>(FILES.commands);
   const moderation = readJson<any>(FILES.moderation);
-  const messagesData = readJson<any>(FILES.messages);
 
   const configPath = path.resolve(process.cwd(), 'config.yml');
   const existing = YAML.parse(fs.readFileSync(configPath, 'utf8')) as Record<string, any>;
@@ -473,7 +479,7 @@ async function main(): Promise<void> {
     am.modules.invites.action_chain = inviteChain.chain;
   }
 
-  for (const moduleName of ['image_spam', 'executable_files', 'mass_images', 'emoji_spam', 'line_spam', 'poll_spam', 'duplicate_spam'] as const) {
+  for (const moduleName of ['image_spam', 'executable_files', 'mass_images', 'emoji_spam', 'line_spam', 'poll_spam'] as const) {
     am.modules[moduleName].enabled = false;
   }
 
@@ -497,44 +503,26 @@ async function main(): Promise<void> {
     const groupChain = buildChain(group.actions?.[0]?.actions ?? [], group.name);
     for (const note of groupChain.notes) importNotes.push(`[${group.name}] ${note}`);
 
-    let combinedOk = false;
-    try {
-      const combined = `(?:${patterns.join(')|(?:')})`;
-      if (compileRule(combined, flags).ok) {
-        regexRules.push({
-          name: group.name,
-          pattern: combined,
-          flags,
-          scope: 'message',
-          enabled: true,
-          immune_roles: group.roleIds ?? [],
-          action_chain: groupChain.chain,
-        });
-        combinedOk = true;
+    // One rule per word group, holding the full list of patterns.
+    const validPatterns: string[] = [];
+    for (const p of patterns) {
+      const compiled = compileRule(p, flags);
+      if (!compiled.ok) {
+        importNotes.push(`[${group.name}] skipped pattern that does not compile: ${p} (${compiled.error})`);
+        continue;
       }
-    } catch {
-      /* fall through to per-pattern */
+      validPatterns.push(p);
     }
-
-    if (!combinedOk) {
-      let i = 0;
-      for (const p of patterns) {
-        const compiled = compileRule(p, flags);
-        if (!compiled.ok) {
-          importNotes.push(`[${group.name}] skipped pattern that does not compile: ${p} (${compiled.error})`);
-          continue;
-        }
-        regexRules.push({
-          name: `${group.name}-${++i}`,
-          pattern: p,
-          flags,
-          scope: 'message',
-          enabled: true,
-          immune_roles: group.roleIds ?? [],
-          action_chain: groupChain.chain,
-        });
-      }
-    }
+    if (validPatterns.length === 0) continue;
+    regexRules.push({
+      name: group.name,
+      patterns: validPatterns,
+      flags,
+      scope: 'message',
+      enabled: true,
+      immune_roles: group.roleIds ?? [],
+      action_chain: groupChain.chain,
+    });
   }
   cfg.regex_engine.enabled = true;
   cfg.regex_engine.rules = regexRules;
@@ -589,16 +577,29 @@ async function main(): Promise<void> {
   };
 
   // ---- role connections ----
-  const connections = (roles.connections ?? []) as Array<{ id: string; conditions: SapCondition[] }>;
+  // Sapphire export shape: { connections: [{ id: mainRole, condType: 1|2,
+  // conditions: [{ type: 1=has | 0=doesn't-have, value: roleId }] }] }.
+  // condType is the per-connection logic: 2 = any (OR), 1 = all (AND).
+  const connections = (roles.connections ?? []) as Array<{
+    id: string;
+    condType?: number;
+    conditions: SapCondition[];
+  }>;
   const rc: any[] = [];
   for (const conn of connections) {
-    for (const cond of conn.conditions) {
-      if (cond.type === 1 && cond.value) {
-        rc.push({ enabled: true, if_has_role: cond.value, held_for_seconds: 0, then_add: [conn.id], then_remove: [] });
-      }
-    }
+    const conditions = (conn.conditions ?? [])
+      .filter((c) => c.value)
+      .map((c) => ({ has_role: c.type !== 0, role_id: c.value }));
+    if (conditions.length === 0) continue;
+    rc.push({
+      enabled: true,
+      main_role: conn.id,
+      logic: conn.condType === 2 ? 'any' : 'all',
+      held_for_seconds: 0,
+      conditions,
+    });
   }
-  cfg.role_connections = rc;
+  cfg.role_connections = { enabled: roles.enabled ?? true, sync_interval_minutes: 5, connections: rc };
 
   // ---- channel locking preset ----
   const lockCfg = moderation.channelLock;
@@ -633,73 +634,15 @@ async function main(): Promise<void> {
   }
   cfg.logging = logMap;
 
-  // ---- custom commands (config-driven) ----
-  const sapCustomCommands = (commands.customCommands ?? []) as any[];
-  const templateByName = new Map<string, any>();
-  for (const t of (messagesData.templates ?? []) as any[]) templateByName.set(String(t.name), t);
-  for (const m of (messagesData.messages ?? []) as any[]) {
-    if (m?.name && !templateByName.has(String(m.name))) templateByName.set(String(m.name), m);
+  // Generic moderation actions (temp-role, etc.) need a route too; default to the
+  // kick/mod-actions channel if Sapphire didn't configure a dedicated one.
+  if (!logMap['moderation_action']) {
+    const kick = logMap['member_kick'] as { channel_id?: string } | undefined;
+    const warn = logMap['member_warn'] as { channel_id?: string } | undefined;
+    const modChannel = kick?.channel_id ?? warn?.channel_id ?? undefined;
+    if (modChannel) logMap['moderation_action'] = { enabled: true, channel_id: modChannel };
   }
-
-  const ccMap: Record<string, any> = cfg.custom_commands ?? {};
-  for (const sc of sapCustomCommands) {
-    const name = String(sc.name ?? '').toLowerCase().trim();
-    if (!name) continue;
-    const entry: Record<string, unknown> = { ...(ccMap[name] ?? {}) };
-    entry.enabled = sc.enabled !== false;
-    entry.slash = !BUILTIN_SLASH_NAMES.has(name);
-    entry.prefix = true;
-    if (sc.restrictions) {
-      const perms = mapPerms(sc.restrictions.permissions);
-      if (perms.length > 0) entry.permissions = perms;
-      if (Array.isArray(sc.restrictions.roleIds) && sc.restrictions.roleIds.length > 0) {
-        entry.allowed_roles = sc.restrictions.roleIds;
-      }
-      if (Array.isArray(sc.restrictions.channelIds) && sc.restrictions.channelIds.length > 0) {
-        entry.channel_ids = sc.restrictions.channelIds;
-      }
-    }
-    if (Array.isArray(sc.aliases) && sc.aliases.length > 0) {
-      entry.aliases = (sc.aliases as string[]).map((a) => a.toLowerCase());
-    }
-    if (typeof sc.ephemeral === 'boolean') entry.ephemeral = sc.ephemeral;
-    if (sc.deleteInput !== undefined) {
-      entry.delete_input = sc.deleteInput === false ? false : sc.deleteInput === true ? 0 : Math.max(0, Number(sc.deleteInput) || 0);
-    }
-    if (sc.deleteOutput !== undefined) {
-      entry.delete_output = sc.deleteOutput === false ? false : sc.deleteOutput === true ? 0 : Math.max(0, Number(sc.deleteOutput) || 0);
-    }
-    if (typeof sc.suppressMessageReply === 'boolean') entry.suppress_reply = sc.suppressMessageReply;
-    if (Array.isArray(sc.cooldown) && sc.cooldown.length > 0) {
-      const n = Number(sc.cooldown[0]);
-      if (Number.isFinite(n) && n > 0) entry.cooldown_seconds = n;
-    }
-
-    const actions: any[] = [];
-    for (const group of sc.actions ?? []) {
-      for (const a of group ?? []) {
-        if (a?.type === 'sendmessage') {
-          const template = templateByName.get(String(a.value));
-          if (template) {
-            actions.push({ type: 'send_message', ...convertTemplateToPayload(template) });
-          } else {
-            importNotes.push(`[custom:${name}] no template found for sendmessage value "${a.value}"`);
-          }
-        } else if (a?.type === 'delete') {
-          actions.push({ type: 'delete_message' });
-        } else {
-          importNotes.push(`[custom:${name}] skipped unknown action type "${a?.type}"`);
-        }
-      }
-    }
-    if (actions.length === 0) {
-      importNotes.push(`[custom:${name}] produced no actions — skipped`);
-      continue;
-    }
-    entry.actions = actions;
-    ccMap[name] = entry;
-  }
-  cfg.custom_commands = ccMap;
+  cfg.logging = logMap;
 
   fs.writeFileSync(configPath, YAML.stringify(cfg, { indent: 2, lineWidth: 0 }), 'utf8');
 
@@ -716,7 +659,7 @@ async function main(): Promise<void> {
   }
 
   console.log(`Wrote ${configPath}`);
-  console.log(`Imported: ${groups.length} word groups -> ${regexRules.length} regex rules, ${rc.length} role connections, ${Object.keys(logMap).length} log routes, ${Object.keys(cmdMap).length} command entries, ${Object.keys(ccMap).length} custom commands`);
+  console.log(`Imported: ${groups.length} word groups -> ${regexRules.length} regex rules, ${rc.length} role connections, ${Object.keys(logMap).length} log routes, ${Object.keys(cmdMap).length} command entries`);
   console.log(`Unmapped Sapphire log events: ${unmapped}`);
   if (importNotes.length > 0) {
     console.log('Import notes:');

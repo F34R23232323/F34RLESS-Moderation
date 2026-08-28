@@ -10,34 +10,28 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
     const oldRoles = new Set(oldMember.roles.cache.keys());
     const newRoles = new Set(newMember.roles.cache.keys());
 
-    const rolesChanged = oldRoles.size !== newRoles.size || [...newRoles].some((id) => !oldRoles.has(id));
+    const addedRoles = [...newRoles].filter((id) => !oldRoles.has(id));
+    const removedRoles = [...oldRoles].filter((id) => !newRoles.has(id));
+    const rolesChanged = addedRoles.length > 0 || removedRoles.length > 0;
     const roleActorId = rolesChanged
-      ? await resolveAuditActor(app, guild, AuditLogEvent.MemberRoleUpdate, { targetId: newMember.id })
+      ? await resolveAuditActor(app, guild, AuditLogEvent.MemberRoleUpdate, { targetId: newMember.id, retries: 2 })
       : null;
 
-    for (const roleId of newRoles) {
-      if (!oldRoles.has(roleId)) {
-        await app.logManager.log({
-          event: 'role_add',
-          guildId: guild.id,
-          actorId: roleActorId,
-          targetId: newMember.id,
-          message: `<@${newMember.id}> was given <@&${roleId}>`,
-          details: { roleId },
-        });
-      }
-    }
-    for (const roleId of oldRoles) {
-      if (!newRoles.has(roleId)) {
-        await app.logManager.log({
-          event: 'role_remove',
-          guildId: guild.id,
-          actorId: roleActorId,
-          targetId: newMember.id,
-          message: `<@${newMember.id}> lost <@&${roleId}>`,
-          details: { roleId },
-        });
-      }
+    if (rolesChanged) {
+      const both = addedRoles.length > 0 && removedRoles.length > 0;
+      const event = both ? 'role_change' : addedRoles.length > 0 ? 'role_add' : 'role_remove';
+      const verb = both ? 'roles updated' : addedRoles.length > 0 ? 'was given roles' : 'lost roles';
+      await app.logManager.log({
+        event,
+        guildId: guild.id,
+        actorId: roleActorId,
+        targetId: newMember.id,
+        message: `<@${newMember.id}> ${verb}`,
+        details: {
+          ...(addedRoles.length > 0 ? { added: addedRoles } : {}),
+          ...(removedRoles.length > 0 ? { removed: removedRoles } : {}),
+        },
+      });
     }
 
     if (oldMember.nickname !== newMember.nickname) {

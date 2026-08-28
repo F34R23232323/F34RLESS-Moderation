@@ -17,6 +17,7 @@ import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, stri
   member_boost: 'Server Boosted',
   role_add: 'Role Added',
   role_remove: 'Role Removed',
+  role_change: 'Roles Updated',
   nickname_change: 'Nickname Changed',
   channel_create: 'Channel Created',
   channel_update: 'Channel Updated',
@@ -73,6 +74,8 @@ const LABELS: Record<string, string> = {
   parentId: 'Parent Channel',
   messageId: 'Message ID',
   roleId: 'Role',
+  added: 'Roles Added',
+  removed: 'Roles Removed',
   reason: 'Reason',
   blacklistReason: 'Reason',
   newReason: 'New Reason',
@@ -118,6 +121,7 @@ const LABELS: Record<string, string> = {
   accountAgeDays: 'Account Age',
   accountType: 'Account Type',
   attachments: 'Attachments',
+  evidence: 'Evidence',
   action: 'Action',
   banned: 'Banned',
   failed: 'Failed',
@@ -151,6 +155,8 @@ const LABELS: Record<string, string> = {
 const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'targetUser', 'inviter', 'actorId']);
 const CHANNEL_ID_KEYS = new Set(['channelId', 'parentId', 'inviteChannel']);
 const ROLE_ID_KEYS = new Set(['roleId']);
+/** Keys whose array values are role snowflakes — rendered as role mentions. */
+const ROLE_ID_ARRAY_KEYS = new Set(['added', 'removed']);
 
 const SNOWFLAKE_RE = /^\d{17,20}$/;
 
@@ -178,6 +184,11 @@ export function formatDetails(details: unknown, guild: Guild | null, depth = 0):
 
     if (Array.isArray(value)) {
       if (value.length === 0) continue;
+      const label = LABELS[key] ?? key;
+      if (ROLE_ID_ARRAY_KEYS.has(key) && value.every((v) => SNOWFLAKE_RE.test(String(v)))) {
+        lines.push(`**${label}:** ${value.map((v) => `<@&${v}>`).join(', ')}`);
+        continue;
+      }
       const joined = value.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ');
       lines.push(`**${label}:** ${truncate(joined)}`);
       continue;
@@ -228,6 +239,9 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   member_unmute: 0x57f287,
   member_warn: 0xfee75c,
   member_unwarn: 0x57f287,
+  role_add: 0x57f287,
+  role_remove: 0xed4245,
+  role_change: 0x5865f2,
   moderation_action: 0xed4245,
   automod_trigger: 0xeb459e,
   error_event: 0xed4245,

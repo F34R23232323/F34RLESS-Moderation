@@ -6,6 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { parseDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
+import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 
 const data = new SlashCommandBuilder()
   .setName('warn')
@@ -39,11 +40,22 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  const reason = args.slice(1).join(' ') || 'No reason provided';
   const guild = message.guild;
-  if (!guild || !targetId) {
+  if (!guild) {
     await v2MessageReply(message, { content: 'Usage: `!warn <user> <reason>`' });
+    return;
+  }
+  const replyCtx = await resolveReplyContext(message);
+  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let reason = args.slice(1).join(' ') || 'No reason provided';
+  let evidence: CaseEvidenceItem[] | undefined;
+  if (!targetId && replyCtx) {
+    targetId = replyCtx.targetId;
+    reason = args.join(' ') || 'No reason provided';
+    evidence = replyCtx.evidence;
+  }
+  if (!targetId) {
+    await v2MessageReply(message, { content: 'Usage: `!warn <user> <reason>` — or reply to a message to warn its author.' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
@@ -56,7 +68,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: `Cannot warn: ${guard.reason}` });
     return;
   }
-  const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
   if (!result.ok) {
     await v2MessageReply(message, { content: `Failed: ${result.error}` });
     return;

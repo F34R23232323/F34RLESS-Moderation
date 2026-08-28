@@ -53,6 +53,11 @@ export interface ResolveAuditActorOptions {
   windowMs?: number;
   /** How many entries to fetch on the API fallback. Default 5. */
   limit?: number;
+  /** Extra resolution attempts after the first (audit entries can arrive a
+   *  moment after the gateway event that triggered them). Default 0. */
+  retries?: number;
+  /** Delay between retries in ms. Default 1500. */
+  retryDelayMs?: number;
 }
 
 /**
@@ -62,6 +67,23 @@ export interface ResolveAuditActorOptions {
  * actions that Discord does not audit-log).
  */
 export async function resolveAuditActor(
+  app: App,
+  guild: Guild,
+  type: AuditLogEvent,
+  opts: ResolveAuditActorOptions = {},
+): Promise<string | null> {
+  const attempts = opts.retries ?? 0;
+  for (let attempt = 0; attempt <= attempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, opts.retryDelayMs ?? 1500));
+    }
+    const actor = await resolveAuditActorOnce(app, guild, type, opts);
+    if (actor) return actor;
+  }
+  return null;
+}
+
+async function resolveAuditActorOnce(
   app: App,
   guild: Guild,
   type: AuditLogEvent,

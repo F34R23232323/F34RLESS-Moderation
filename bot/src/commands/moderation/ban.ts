@@ -6,6 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
+import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 
 const data = new SlashCommandBuilder()
   .setName('ban')
@@ -53,11 +54,23 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  const durationStr = args[1];
-  const reason = args.slice(2).join(' ') || 'No reason provided';
-  if (!guild || !targetId) {
+  if (!guild) {
     await v2MessageReply(message, { content: 'Usage: `!ban <user> [duration] <reason>`' });
+    return;
+  }
+  const replyCtx = await resolveReplyContext(message);
+  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let durationStr = args[1];
+  let reason = args.slice(2).join(' ') || 'No reason provided';
+  let evidence: CaseEvidenceItem[] | undefined;
+  if (!targetId && replyCtx) {
+    targetId = replyCtx.targetId;
+    durationStr = args[0];
+    reason = args.slice(1).join(' ') || 'No reason provided';
+    evidence = replyCtx.evidence;
+  }
+  if (!targetId) {
+    await v2MessageReply(message, { content: 'Usage: `!ban <user> [duration] <reason>` — or reply to a message to ban its author.' });
     return;
   }
   const durationMs = durationStr ? (parseDuration(durationStr)?.milliseconds ?? 0) : 0;
@@ -66,6 +79,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     moderatorId: message.author.id,
     archiveChannelId: message.channel?.id ?? null,
     durationMs: durationMs > 0 ? durationMs : undefined,
+    evidence,
   });
   const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
   await v2MessageReply(message, { content: result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `Failed: ${result.error}` });

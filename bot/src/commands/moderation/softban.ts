@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
+import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 
 const data = new SlashCommandBuilder()
   .setName('softban')
@@ -42,13 +43,24 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  const reason = args.slice(1).join(' ') || 'No reason provided';
-  if (!guild || !targetId) {
+  if (!guild) {
     await v2MessageReply(message, { content: 'Usage: `!softban <user> <reason>`' });
     return;
   }
-  const result = await app.punishmentManager.softban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  const replyCtx = await resolveReplyContext(message);
+  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let reason = args.slice(1).join(' ') || 'No reason provided';
+  let evidence: CaseEvidenceItem[] | undefined;
+  if (!targetId && replyCtx) {
+    targetId = replyCtx.targetId;
+    reason = args.join(' ') || 'No reason provided';
+    evidence = replyCtx.evidence;
+  }
+  if (!targetId) {
+    await v2MessageReply(message, { content: 'Usage: `!softban <user> <reason>` — or reply to a message to softban its author.' });
+    return;
+  }
+  const result = await app.punishmentManager.softban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
   await v2MessageReply(message, { content: result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 

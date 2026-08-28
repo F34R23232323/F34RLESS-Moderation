@@ -6,6 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { parseDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
+import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 
 const data = new SlashCommandBuilder()
   .setName('timeout')
@@ -44,11 +45,23 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
-  const durationStr = args[1];
-  const reason = args.slice(2).join(' ') || 'No reason provided';
-  if (!guild || !targetId || !durationStr) {
+  if (!guild) {
     await v2MessageReply(message, { content: 'Usage: `!timeout <user> <duration> <reason>`' });
+    return;
+  }
+  const replyCtx = await resolveReplyContext(message);
+  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let durationStr = args[1];
+  let reason = args.slice(2).join(' ') || 'No reason provided';
+  let evidence: CaseEvidenceItem[] | undefined;
+  if (!targetId && replyCtx) {
+    targetId = replyCtx.targetId;
+    durationStr = args[0];
+    reason = args.slice(1).join(' ') || 'No reason provided';
+    evidence = replyCtx.evidence;
+  }
+  if (!targetId || !durationStr) {
+    await v2MessageReply(message, { content: 'Usage: `!timeout <user> <duration> <reason>` — or reply to a message to time out its author.' });
     return;
   }
   const member = await guild.members.fetch(targetId).catch(() => null);
@@ -61,7 +74,7 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: 'Provide a valid duration.' });
     return;
   }
-  const result = await app.punishmentManager.timeout(member, duration.milliseconds, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null });
+  const result = await app.punishmentManager.timeout(member, duration.milliseconds, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
   await v2MessageReply(message, { content: result.ok ? `Timed out <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
 }
 

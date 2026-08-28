@@ -4,6 +4,7 @@ import type { Guild, GuildBasedChannel } from 'discord.js';
 import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
 import { isLogIgnored, type LogIgnoreContext } from '../../../shared/src/index';
+import type { LoggingEntryConfig } from '../../../shared/src/index';
 import { v2Send } from '../utils/v2';
 import { buildRichV2 } from '../utils/v2';
 import { friendlyEventName, formatDetails, logAccent } from './logFormatter';
@@ -34,6 +35,14 @@ export class LogManager extends EventEmitter {
     this.db = db;
   }
 
+  /** Per-event log config, with fallbacks for combined events so existing
+   *  configs keep working (role_change reuses the role_add channel/ignore). */
+  private eventConfig(event: string): LoggingEntryConfig | undefined {
+    const app = this.app;
+    if (!app) return undefined;
+    return app.config.logging[event] ?? (event === 'role_change' ? app.config.logging.role_add : undefined);
+  }
+
   /**
    * Decide whether an event should be suppressed by the global logging_ignore
    * or the event's own ignore block. Roles are only resolved when some ignore
@@ -47,7 +56,7 @@ export class LogManager extends EventEmitter {
     const app = this.app;
     if (!app) return false;
     const global = app.config.logging_ignore;
-    const perEvent = app.config.logging[event]?.ignore;
+    const perEvent = this.eventConfig(event)?.ignore;
     if (!global && !perEvent) return false;
 
     const guild = app.client.guilds.cache.get(guildId);
@@ -131,7 +140,7 @@ export class LogManager extends EventEmitter {
   private async routeToDiscord(input: LogInput): Promise<void> {
     const app = this.app;
     if (!app) return;
-    const cfg = app.config.logging[input.event];
+    const cfg = this.eventConfig(input.event);
     if (!cfg || !cfg.enabled) return;
     const guild = app.client.guilds.cache.get(input.guildId);
     if (!guild) return;

@@ -572,6 +572,60 @@ regex_engine:
     #     - type: ban
 
 # -----------------------------------------------------------------------------
+# Discord NATIVE AutoMod responses.
+# When Discord's own AutoMod (keyword filter, spam protection, etc.) executes an
+# action, the bot can post a configured response. Responses are keyed by the
+# AutoMod rule ID (snowflake) and the action it fired on.
+#
+#   on: block_message            # block_message | send_alert_message | timeout
+#                                # block_member_interaction | any (or a list)
+#
+# Formats (choose the embed builder):
+#   plain          — raw text message
+#   embed          — classic embed builder (CV1: title/description/color/author/
+#                    fields/footer/image/thumbnail)
+#   components_v2  — Components v2 container builder (CV2: header/text/footer/
+#                    accent color/media)
+#
+# Placeholders usable in content/title/description/fields/footer:
+#   \${originmessagecontent}  the blocked message content
+#   \${matchedcontent}        the matched keyword / content that triggered
+#   \${matchedkeyword}        the matched keyword (when available)
+#   {user} {user_mention} {userping} {user_tag} {user_id}
+#   {channel} {channel_name} {channel_id}
+#   {guild} {rule_name} {rule_id} {rule_trigger} {action} {nowtimestamp}
+#
+# IMPORTANT: mentions are disabled on ALL of these responses (hardcoded) — the
+# bot will never ping the user, roles, channels, or @everyone here.
+# -----------------------------------------------------------------------------
+native_automod:
+  enabled: true
+  responses:
+    # - rule_id: "000000000000000000"        # the Discord AutoMod rule ID
+    #   on: block_message
+    #   format: components_v2                # plain | embed | components_v2
+    #   content: "Your message was removed in {channel}."
+    #   title: "Message Blocked"
+    #   description: "Hey {user}, your message was blocked by AutoMod.\\n\\nBlocked content:\\n> \${originmessagecontent}"
+    #   footer: "If you think this was a mistake, contact a staff member."
+    #   accent_color: "#ED4245"
+    #   delete_after_seconds: 60
+    # - rule_id: "000000000000000000"        # classic embed (CV1) example
+    #   on: [block_message, send_alert_message]
+    #   format: embed
+    #   title: "Message Flagged"
+    #   description: "Hey {user_mention}, your message was flagged."
+    #   accent_color: "#F0B232"
+    #   fields:
+    #     - name: "Blocked content"
+    #       value: "> \${originmessagecontent}"
+    #       inline: false
+    #     - name: "Rule"
+    #       value: "\${rule_name}"
+    #       inline: true
+    #   footer: "Rule ID: \${rule_id}"
+
+# -----------------------------------------------------------------------------
 # Punishment DMs. Global toggle + per-type toggle/template.
 # Placeholders: {guild} {reason} {moderator} {duration} {case_id}
 #               {appeal_instructions}

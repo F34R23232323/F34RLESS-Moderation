@@ -4,6 +4,7 @@ import type { App } from '../core/context';
 import type { PunishmentType } from '../../../shared/src/index';
 import { humanizeDuration } from '../../../shared/src/index';
 import type { CaseRow } from './caseService';
+import { formatEvidenceLines } from '../utils/evidence';
 
 export interface PunishOptions {
   reason?: string;
@@ -124,6 +125,12 @@ export class PunishmentManager {
     }
   }
 
+  /** Evidence lines for the Discord log embed (mirrors automod trigger logs). */
+  private evidenceDetails(guildId: string, evidence: unknown[] | undefined): { evidence?: string } {
+    const lines = formatEvidenceLines(evidence, guildId);
+    return lines ? { evidence: lines } : {};
+  }
+
   public async warn(target: GuildMember | User, options: PunishOptions): Promise<PunishResult> {
     const guild = target instanceof GuildMember ? target.guild : (await this.resolveGuild());
     if (!guild) return { ok: false, error: 'guild not resolved', dmSent: false };
@@ -164,7 +171,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Warned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'warn', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
+      details: { type: 'warn', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
     });
 
     await this.app.warningEscalation.check(guild.id, target.id);
@@ -208,7 +215,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink },
+      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(target.guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -270,7 +277,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Kicked <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'kick', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
+      details: { type: 'kick', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(target.guild.id, options.evidence) },
     });
     return { ok: true, case: caseRow, dmSent };
   }
@@ -318,7 +325,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, archiveLink },
+      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -390,7 +397,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Softbanned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'softban', caseCode: caseRow.case_code, reason: options.reason, archiveLink },
+      details: { type: 'softban', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };

@@ -24,6 +24,16 @@ export interface ResolveOptions {
 
 const IMAGE_RE = /\.(png|jpe?g|gif|webp)(\?.*)?$/i;
 
+function mergeReportReasons(existing: unknown, next: string | undefined): string | null {
+  if (!next?.trim()) return existing ? String(existing) : null;
+  const existingText = existing ? String(existing) : '';
+  const existingLines = existingText.split('\n').map((l) => l.trim());
+  if (!existingLines.includes(next.trim())) {
+    return existingText ? `${existingText}\n${next.trim()}` : next.trim();
+  }
+  return existingText || next.trim();
+}
+
 export class ReportingService {
   private readonly app: App;
 
@@ -35,10 +45,12 @@ export class ReportingService {
     const cfg = this.app.config.reports;
     if (!cfg.enabled) return { id: 0, merged: false };
 
-    const existing = await this.findDuplicate(input);
+const existing = await this.findDuplicate(input);
     if (existing) {
-      await this.app.db.execute('UPDATE reports SET reporter_count = reporter_count + 1 WHERE id = ?', [existing.id]);
-      await this.postReportCard(existing.id, input.guildId);
+      const [reasonRows] = await this.app.db.query<RowDataPacket[]>('SELECT reason FROM reports WHERE id = ?', [existing.id]);
+      const mergedReason = mergeReportReasons(reasonRows[0]?.reason, input.reason);
+      await this.app.db.execute('UPDATE reports SET reporter_count = reporter_count + 1, reason = ? WHERE id = ?', [mergedReason, existing.id]);
+      await this.updateReportCard(existing.id, input.guildId);
       return { id: existing.id, merged: true };
     }
 
@@ -95,21 +107,27 @@ export class ReportingService {
     return (rows[0] as { id: number }) ?? null;
   }
 
-  private async postReportCard(reportId: number, guildId: string): Promise<void> {
-    const app = this.app;
-    const cfg = app.config.reports;
-    const [rows] = await app.db.query<RowDataPacket[]>(
+private async loadReport(reportId: number): Promise<RowDataPacket | null> {
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
       'SELECT * FROM reports WHERE id = ?',
       [reportId],
     );
-    const report = rows[0];
-    if (!report) return;
-    const guild = app.client.guilds.cache.get(guildId);
-    if (!guild) return;
-    const channel = cfg.channel_id && guild.channels.cache.get(cfg.channel_id);
-    if (!channel || !('send' in channel)) return;
+    return rows[0] ?? null;
+  }
 
-    const pingRoleId = (cfg as { ping_role_id?: string }).ping_role_id;
+  private async buildCard(
+    reportId: number,
+    guildId: string,
+  ): Promise<{ report: RowDataPacket; channel: any; card: ReturnType<typeof buildReportCard> } | null> {
+    const app = this.app;
+    const cfg = app.config.reports;
+    const report = await this.loadReport(reportId);
+    if (!report) return null;
+    const guild = app.client.guilds.cache.get(guildId);
+    if (!guild) return null;
+    const channel = cfg.channel_id && guild.channels.cache.get(cfg.channel_id);
+    if (!channel || !('send' in channel)) return null;
+
     const attachments = parseJson(report.attachment_urls, []) as string[];
     const imageUrl = attachments.find((a) => IMAGE_RE.test(a)) ?? null;
 
@@ -152,6 +170,7 @@ export class ReportingService {
     const reporter = await app.client.users.fetch(String(report.reporter_id)).catch(() => null);
     const reporterTag = reporter?.tag ?? reporter?.username ?? String(report.reporter_id);
 
+    const pingRoleId = (cfg as { ping_role_id?: string }).ping_role_id;
     const card = buildReportCard({
       status: 'open',
       reportId,
@@ -174,11 +193,34 @@ export class ReportingService {
       pingRoleId: pingRoleId ?? null,
     });
 
+    return { report, channel, card };
+  }
+
+  private async postReportCard(reportId: number, guildId: string): Promise<void> {
+    const built = await this.buildCard(reportId, guildId);
+    if (!built) return;
+    const { report, channel, card } = built;
+
     await (channel as any).send(card).then(async (sent: any) => {
       if (sent?.id) {
-        await app.db.execute('UPDATE reports SET channel_message_id = ? WHERE id = ?', [sent.id, reportId]);
+        await this.app.db.execute('UPDATE reports SET channel_message_id = ? WHERE id = ?', [sent.id, reportId]);
       }
     }).catch(() => undefined);
+  }
+
+  /** Re-render an existing report card in place so merged reports stay as 1 embed. */
+  private async updateReportCard(reportId: number, guildId: string): Promise<void> {
+    const built = await this.buildCard(reportId, guildId);
+    if (!built) return;
+    const { report, channel, card } = built;
+
+    const messageId = report.channel_message_id ? String(report.channel_message_id) : null;
+    if (messageId && 'messages' in channel) {
+      const edited = await (channel as any).messages.edit(messageId, { ...card, allowedMentions: { parse: [] } }).catch(() => null);
+      if (edited) return;
+    }
+    // Card was deleted or never stored — fall back to posting a fresh one.
+    await this.postReportCard(reportId, guildId);
   }
 
   public async getReporterCredibility(guildId: string, userId: string): Promise<{ actioned: number; ignored: number; false: number }> {

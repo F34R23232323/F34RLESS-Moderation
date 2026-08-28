@@ -38,13 +38,13 @@ A production-grade Discord moderation bot with a React web dashboard, backed by 
 
    ```
    npm run dev:bot            # terminal 1
-   npm run dev:dashboard      # terminal 2 (API + WS on :3000)
+   npm run dev:dashboard      # terminal 2 (API + WS on :4693)
    npm run dev:web            # terminal 3 (Vite on :5173, proxies /api and /ws)
    ```
 
    Point MySQL at your own server via the `MYSQL_*` env vars or a full `DATABASE_URL`.
 
-5. Visit the dashboard: `http://localhost:3000` (or the Vite dev URL on :5173). Sign in
+5. Visit the dashboard: `http://localhost:4693` (or the Vite dev URL on :5173). Sign in
    with Discord — access is gated to the `OWNER_USER_ID` / `config.yml -> dashboard.owner_user_id`.
 
 > Slash commands register on boot. For instant per-guild registration set
@@ -82,6 +82,7 @@ Sections (see the file for full detail):
 | `commands` | per-command enabled/slash/prefix/cooldown/permissions/immune-roles/aliases |
 | `command_defaults` | default cooldown for commands not listed |
 | `logging` | event -> channel/thread routing (message edits, bans, role changes, voice, invites, moderation, automod, command usage, errors, rate limits, reports, appeals) |
+| `logging_ignore` | global log exclusions by channel / category / user / role (+ per-event `ignore` blocks inside `logging`) |
 | `warnings` | escalation ladder (e.g. 2 -> mute 14d, 4 -> ban) + warning decay |
 | `reports` | reporting cooldown, channel, action roles, archive, duplicate merging, false-report deterrent |
 | `automod` | 10 content modules (spam, cross-channel, links, images, executables, mass images, invites via API resolution, emoji, lines, polls) with per-module thresholds, action chains, throttling, shadow mode |
@@ -91,7 +92,7 @@ Sections (see the file for full detail):
 | `punishment_dms` | per-type DM templates (plain/embed/Components V2), before/after ordering, anonymity |
 | `escalation` | trigger-count -> punishment mapping (per rule or global) |
 | `join_roles` / `welcome` / `goodbye` / `booster` | join roles and greeting messages |
-| `role_connections` | role X present -> add/remove role Y, optional held-for duration |
+| `role_connections` | Sapphire-style auto role management: a main role assigned/removed from role conditions (`has`/`doesn't have` + AND/OR logic), re-synced on role changes and every N minutes |
 | `channel_locking` | named lock presets with byte-for-byte unlock (snapshot restore) + cron schedules |
 | `anti_raid`, `sticky_*`, `slowmode_scheduler`, `invite_tracking` | server hardening |
 | `tickets`, `modmail`, `verification_gate`, `quarantine`, `blacklist`, `alt_detection` | security modules |
@@ -156,6 +157,7 @@ category). Events load from `bot/src/events/**`. Buttons/selects/modals register
 - Case browser with search + void action
 - Active punishment list with countdown and revoke
 - Regex tester against the production engine, with match highlighting
+- Role Connections simulator (build conditions, test against a member's roles, copy the config.yml block)
 - Timestamp generator (matches the bot's `/timestamp` command)
 - Config editor with validation-before-save, download/upload, and audit trail
 - Command analytics page
