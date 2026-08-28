@@ -1603,22 +1603,22 @@ regex_engine:
         - type: run_escalation_check
     - name: Drugs
       patterns:
-        - (sell(ing)?|buy(ing)?|looking\s+for|need(ing|ed|s)?|want(ing)?|source\s+for)\s+(weed|coc[aai]+ne|coke|heroin|meth|mdma|ecstasy|ket(amine)?|xans?|percs?|lean|dmt|lsd|shrooms|fent(anyl)?|crack|molly|acid|shards?|ice|dabs?|wax|edibles?|gummies?|blunts?|buds?|flower|oil|vape\s*carts?)\b
-        - \b(dm|hmu|hit\s+me\s+up|message|text|pm)\s+(me\s+)?(for|about|on)?\s*(weed|pills?|xans?|percs?|molly|lean|drugs?|acid|shrooms|m3th|meth|cocaine|coke|edibles?|bud|wax|dabs?)\b
+        - ((sell(s|ing)?|buy(s|ing)?|looking\s+for)\s+(some\s+)?(weed|coc[aai]+ne|heroin|meth|mdma|ecstasy|ket(amine)?|xans?|percs?|dmt|lsd|shrooms|fent(anyl)?|crack|acid|dabs?|blunts?|bud|lean(?!\s+(?:beef|meat|pork|chicken|turkey|ground|mince)))|(need(ing|ed|s)?|want(ing)?)\s+(some\s+)?(weed|coc[aai]+ne|heroin|meth|mdma|ecstasy|ket(amine)?|xans?|percs?|dmt|lsd|shrooms|fent(anyl)?|crack|blunts?|bud)|source\s+for\s+(weed|coc[aai]+ne|coke|heroin|meth|mdma|ecstasy|ket(amine)?|xans?|percs?|dmt|lsd|shrooms|fent(anyl)?|crack|acid|blunts?|bud))\b
+        - \b(dm|hmu|hit\s+me\s+up|message|text|pm)\s+(me\s+)?(for|about|on)?\s*(weed|pills?|xans?|percs?|molly|lean|drugs?|acid|shrooms|m3th|meth|cocaine|coke)\b
         - \b(weed|pills?|xans?|percs?|molly|lean|drugs?|acid|shrooms|m3th|meth|coke|cocaine)\s*(dm|hmu|pm)\s*(me)?\b
-        - \b(plug|dealer|connect|source|guy|supplier)\b.{0,30}\b(dm|hmu|hit\s+me\s+up|available|selling|for\s+sale|need|price)\b
-        - \b(dm|hmu|hit\s+me\s+up)\b.{0,30}\b(plug|dealer|source|guy)\b
-        - (?!.{0,25}\b(?:flour|sugar|salt|butter|meat|cheese|eggs|milk|oil|water)\b)(price|prices?|rates?|cost|how\s+much)\s+(for\s+|per\s+)?(an?\s+)?(ounce|oz|q\b|zip|half|gram|g\b|eighth|quad)?\s*(of\s+)?(weed|bud|flower|dabs?|wax|shrooms|acid|pills?|lean|molly|coke|cocaine)?\b
-        - (ship(ping)?|mail(ing)?|deliver(ing|y)?|dispatch(ing)?)\s+(drugs?|weed|coke|pills?|molly|xans?|percs?|lean)\b
-        - (420|plug|dealer)\s+(needed|available|selling|for\s+sale)
+        - \b(?!.{0,30}\b(?:car|cars|vehicle|auto|dealership|spark|electrical|electronic|parts)\b)(plug|dealer)\b.{0,30}\b(dm|hmu|hit\s+me\s+up|available|selling|for\s+sale|price)\b
+        - \b(dm|hmu|hit\s+me\s+up)\b.{0,30}\b(plug|dealer)\b
+        - (?!.{0,25}\b(?:flour|sugar|salt|butter|meat|cheese|eggs|milk|oil|water)\b)(?:price|prices?|rates?|cost|how\s+much)\s+(?:for\s+|per\s+|of\s+|is\s+)?(?:an?\s+)?(?:(?:ounce|oz|zip|half|gram|eighth|q)\b(?:\s+of\s+(?:weed|bud|flower|dabs?|wax|shrooms|acid|pills?|lean|molly|coke|cocaine))?(?!\s+of\b)|(?:weed|bud|flower|dabs?|wax|shrooms|acid|pills?|lean|molly|coke|cocaine))\b
+        - ((ship(ping)?|mail(ing)?|dispatch(ing)?)\s+(drugs?|weed|coke|pills?|molly|xans?|percs?|lean)|deliver(ing|y)?\s+(drugs?|weed|pills?|molly|xans?|percs?|lean))\b
+        - (420|plug)\s+(needed|available|selling|for\s+sale)
         - \b420[\s-]?plug\b
-        - \b(?:need|looking\s+for|want|hmu|dm)\b(?!.{0,30}\b(?:pc|computer|phone|charger|cable|socket|laptop|router|adapter)\b).{0,30}\b(?:plug|dealer|source|guy|connect|supplier)\b
+        - \b(?:need|looking\s+for|want|hmu|dm)\b(?!.{0,30}\b(?:pc|computer|phone|charger|cable|socket|laptop|router|adapter|car|vehicle|engine|spark|sink|bath|tub|drain|power|outlet|wall|extension|headphones?|earphones?|usb)\b).{0,30}\b(?:plug|dealer)\b
         - (trap\s+house|trap\s+phone|re-?up)\b
         - \b(c[o0]ke|d[o0]pe|h[e3]r[o0][i1]n|m[e3]th)\s*(lines?|shots?|hit)\b
         - \b(x[a4]n[a@]x|p[e3]rc[o0]c[e3]t|adderall|vyv[a@]ns[e3]|sub[o0]x[o0]ne)\s*(for\s+sale|dm|hmu|need|buy|sell|price|pills?)\b
         - \b(mushr[o0][o0]ms?|lsd|acid|dmt|shrooms?)\s*(for\s+sale|dm|hmu|need|buy|sell|tabs?|price)\b
-        - \b(edibles?|gummies?|dabs?|wax|shards?|blunts?|joints?|bowls?)\s*(for\s+sale|dm|hmu|need|buy|sell|price|plugs?)\b
-        - \b(molly|lean|xans?|percs?|weed|coke|cocaine|pills?|m3th|meth|acid|shrooms|edibles?|dabs?|wax|bud)\s+(for\s+sale|available|cheap|in\s+stock|needed|wanted)\b
+        - \b(edibles?|gummies?|dabs?|wax|shards?|blunts?)\s*(for\s+sale|dm|hmu|buy|sell|price)\b
+        - \b(molly|lean|xans?|percs?|weed|coke|cocaine|pills?|m3th|meth|acid|shrooms|edibles?|dabs?)\s+(for\s+sale|available|cheap|in\s+stock|needed|wanted)\b
       flags: gi
       scope: message
       enabled: true
@@ -2407,6 +2407,59 @@ punishment_dms:
         Reason: {reason}
 
         If you have any questions, {appeal_instructions}.
+# -----------------------------------------------------------------------------
+# Discord NATIVE AutoMod responses.
+# When Discord's own AutoMod executes an action (e.g. blocks a message) the bot
+# posts a configured response. Keyed by AutoMod rule ID + the action it fired on.
+#
+#   on: block_message            # block_message | send_alert_message | timeout
+#                                # block_member_interaction | any (or a list)
+#   format: plain | embed | components_v2
+#                                # embed = CV1 classic embed builder
+#                                # components_v2 = CV2 container builder
+#
+# Placeholders: ${originmessagecontent} (blocked content), ${matchedcontent},
+# ${matchedkeyword}, ${user}, ${user_mention} / ${userping}, ${user_tag},
+# ${user_id}, ${channel}, ${channel_name}, ${channel_id}, ${guild}, ${rule_name},
+# ${rule_id}, ${rule_trigger}, ${action}, ${nowtimestamp}.
+#
+# Mentions are disabled on ALL responses here (hardcoded) - never pings.
+# -----------------------------------------------------------------------------
+native_automod:
+  enabled: true
+  responses:
+    - rule_id: "1528109018227150969"        # ping f34rless.dev for attention
+      on: block_message
+      format: components_v2
+      title: "${username} said"
+      description: |-
+        Please refrain from pinging f34rless.dev for attention. They are currently occupied and will respond to your inquiry as soon as they are available.
+
+        **Message Content:**
+        > ${originmessagecontent}
+      fields:
+        - name: "Moderation Notice"
+          value: "Your message has been logged. Please be advised that continued pinging may result in moderation actions, typically resulting in warnings or mutes, or a ban in serious cases."
+      footer: "Please do not ping f34rless.dev for attention. They will answer as soon as possible."
+      accent_color: "#6B6B6B"
+      image_url: "https://images.noxxbot.com/de4VYqFQlkB4B2VeEy660erui59mCEeGl02"
+      buttons:
+        - label: "Why?"
+          style: secondary
+          custom_id: "whypingbf34r"
+    # - rule_id: "000000000000000000"        # the Discord AutoMod rule ID
+    #   on: block_message
+    #   format: components_v2
+    #   content: "Your message was removed in {channel}."
+    #   title: "Message Blocked"
+    #   description: |-
+    #     Hey {user}, your message was blocked by AutoMod.
+    #
+    #     Blocked content:
+    #     > ${originmessagecontent}
+    #   footer: "If you think this was a mistake, contact a staff member."
+    #   accent_color: "#ED4245"
+    #   delete_after_seconds: 60
 escalation:
   enabled: true
   window_seconds: 3600
