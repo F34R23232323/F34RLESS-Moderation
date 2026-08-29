@@ -30,6 +30,7 @@ import type { MessageContentCache } from '../utils/messageCache';
 import type { CustomCommandRunner } from './customCommandRunner';
 import type { MusicService } from '../music/MusicService';
 import type { AppealService } from '../services/appealService';
+import type { NsfwModerationService } from '../nsfw/service';
 
 export interface App {
   config: BotConfig;
@@ -71,6 +72,7 @@ export interface App {
   roleConnections: RoleConnectionsService;
   music: MusicService;
   appeals: AppealService;
+  nsfw: NsfwModerationService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;

@@ -64,12 +64,22 @@ export async function readSession(ctx: DashboardContext, cookie: string | undefi
   if (!cookie) return null;
   const [token, mac] = cookie.split('.');
   if (!token || !mac || sign(token, ctx.sessionSecret) !== mac) return null;
-  const [rows] = await ctx.db.query<RowDataPacket[]>(
-    'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
-    [token],
-  );
-  const session = rows[0] as { user_id: string; revoked: number; expires_at: Date } | undefined;
-  if (!session || session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) return null;
+  const query = async (): Promise<RowDataPacket[]> => {
+    const [rows] = await ctx.db.query<RowDataPacket[]>(
+      'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
+      [token],
+    );
+    return rows;
+  };
+  // Never let a slow/queued DB query hang the entire dashboard.
+  const timer = new Promise<null>((resolve) => {
+    const t = setTimeout(() => resolve(null), 5_000);
+    t.unref?.();
+  });
+  const result = await Promise.race<RowDataPacket[] | null>([query(), timer]);
+  if (!result || result.length === 0) return null;
+  const session = result[0] as unknown as { user_id: string; revoked: number; expires_at: Date };
+  if (session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) return null;
   return { userId: session.user_id, sessionToken: token, revoked: false };
 }
 

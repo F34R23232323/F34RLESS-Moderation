@@ -7,6 +7,7 @@ import { resolveUserOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
+import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
 
 const data = new SlashCommandBuilder()
   .setName('ban')
@@ -17,7 +18,7 @@ const data = new SlashCommandBuilder()
   .addIntegerOption((o) => o.setName('delete_days').setDescription('Days of messages to delete').setMinValue(0).setMaxValue(7).setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const user = await resolveUserOption(interaction, app);
@@ -37,19 +38,14 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const durationStr = interaction.options.getString('duration');
   const durationMs = durationStr ? (parseDuration(durationStr)?.milliseconds ?? 0) : 0;
   const deleteDays = interaction.options.getInteger('delete_days') ?? 0;
-  const result = await app.punishmentManager.ban(user as never, {
-    reason,
-    moderatorId: interaction.user.id,
-    archiveChannelId: interaction.channel?.id ?? null,
-    durationMs: durationMs > 0 ? durationMs : undefined,
-    deleteMessageDays: deleteDays,
+
+  const actionId = storePendingAction({
+    action: 'ban', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId,
+    reason, durationMs: durationMs > 0 ? durationMs : undefined, deleteDays: deleteDays || undefined,
+    actorId: interaction.user.id, expiresAt: Date.now() + 60_000,
   });
-  if (!result.ok) {
-    await v2Reply(interaction, `Failed: ${result.error}`, { ephemeral: true });
-    return;
-  }
-  const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
-  await v2Reply(interaction, `Banned <@${user.id}>${dur} — case ${result.case!.case_code}.`);
+  const { components, flags } = buildConfirmEmbed('Ban', user.id, reason, durationMs > 0 ? durationMs : undefined);
+  await interaction.editReply({ content: '', components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -74,15 +70,28 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     return;
   }
   const durationMs = durationStr ? (parseDuration(durationStr)?.milliseconds ?? 0) : 0;
-  const result = await app.punishmentManager.ban(targetId as never, {
-    reason,
-    moderatorId: message.author.id,
-    archiveChannelId: message.channel?.id ?? null,
-    durationMs: durationMs > 0 ? durationMs : undefined,
-    evidence,
+
+  const actionId = storePendingAction({
+    action: 'ban', targetUserId: targetId, guildId: guild.id, channelId: message.channelId,
+    reason, durationMs: durationMs > 0 ? durationMs : undefined,
+    actorId: message.author.id, expiresAt: Date.now() + 60_000,
   });
-  const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
-  await v2MessageReply(message, { content: result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  const durLine = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
+  const sent = await v2MessageReply(message, { content: `⚠️ **Confirm ban** <@${targetId}>${durLine} — reason: ${reason}\nReact with ✅ to confirm, ❌ to cancel.` });
+  await sent.react('✅').catch(() => undefined);
+  await sent.react('❌').catch(() => undefined);
+
+  const collector = sent.createReactionCollector({
+    filter: (r, u) => (r.emoji.name === '✅' || r.emoji.name === '❌') && u.id === message.author.id,
+    time: 30_000, max: 1,
+  });
+  collector.on('end', async (collected) => {
+    await sent.delete().catch(() => undefined);
+    if (collected.first()?.emoji.name !== '✅') { await v2MessageReply(message, { content: 'Ban cancelled.' }); return; }
+    const result = await app.punishmentManager.ban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, durationMs: durationMs > 0 ? durationMs : undefined, evidence });
+    const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
+    await v2MessageReply(message, { content: result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  });
 }
 
 const command: BotCommand = {

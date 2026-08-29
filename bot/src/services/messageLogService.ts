@@ -65,6 +65,19 @@ export class MessageLogService {
   /** Called on every message: queues a snapshot for the next bulk insert (no per-message DB write). */
   public async capture(message: Message): Promise<void> {
     if (!this.enabled || !message.inGuild()) return;
+    if (message.author.bot) return;
+
+    // GDPR: skip if user has opted out of snapshot collection
+    try {
+      const [rows] = await this.app.db.query<RowDataPacket[]>(
+        'SELECT opt_out_snapshots FROM user_privacy WHERE user_id = ? AND opt_out_snapshots = 1',
+        [message.author.id],
+      );
+      if (rows.length > 0) return;
+    } catch {
+      // user_privacy table may not exist yet — continue gracefully
+    }
+
     try {
       const rec = await serializeMessageRecord(message, { skipReference: true });
       if (this.memCache.size >= CACHE_MAX) this.pruneCache();

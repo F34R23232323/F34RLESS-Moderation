@@ -437,6 +437,26 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    // Self-hosted NSFW image moderation (NSFWJS MobileNetV2, in-process).
+    nsfw_moderation: z
+      .object({
+        enabled: boolean.default(false),
+        // Empty = every guild; otherwise only these guilds are scanned.
+        guilds: snowflakeArray,
+        ignored_channels: snowflakeArray,
+        exempt_roles: snowflakeArray,
+        max_attachment_bytes: z.number().int().min(1024).max(50 * 1024 * 1024).default(10 * 1024 * 1024),
+        download_timeout_ms: z.number().int().min(1000).max(120000).default(15000),
+        queue_capacity: z.number().int().min(1).max(500).default(25),
+        worker_concurrency: z.number().int().min(1).max(10).default(1),
+        review_threshold: z.number().min(0).max(1).default(0.6),
+        delete_threshold: z.number().min(0).max(1).default(0.8),
+        ignored_categories: z.array(z.string().min(1)).default([]),
+        log_only: boolean.default(false),
+      })
+      .strict()
+      .default({}),
+
     // Public appeals portal. The global block applies to every guild unless a
     // per-guild override exists under `guild_overrides` (any key omitted there
     // falls back to the global value).
@@ -520,6 +540,15 @@ export const configSchema = z
                 similarity_threshold: z.number().min(0).max(1).default(0.8),
               })
               .strict(),
+            mass_ping: z
+              .object({
+                ...automodModuleBase,
+                max_mentions: z.number().int().min(1).default(5),
+                spam_threshold: z.number().int().min(2).default(3),
+                spam_window_seconds: z.number().int().min(1).default(60),
+              })
+              .strict()
+              .default(() => ({ enabled: false, action_chain: [...DEFAULT_WARN_CHAIN], immune_roles: [], channel_ignore_list: [], suppress_repeat_response_seconds: 30, suppressed_response_mode: 'silent' as const, shadow_mode: false, max_mentions: 5, spam_threshold: 3, spam_window_seconds: 60 })),
           })
           .strict(),
         risk_scoring: z
@@ -1024,6 +1053,7 @@ export type BotConfig = z.infer<typeof configSchema>;
 export type AutomodModuleConfig = z.infer<typeof configSchema.shape.automod.shape.modules.shape.spam>;
 export type CommandConfig = z.infer<typeof commandSchema>;
 export type LoggingEntryConfig = z.infer<typeof loggingEntrySchema>;
+export type NsfwModerationConfig = z.infer<typeof configSchema.shape.nsfw_moderation>;
 export type EscalationActionConfig = z.infer<typeof escalationActionSchema>;
 export type PunishmentDmTypeConfig = z.infer<typeof punishmentDmTypeSchema>;
 
@@ -1047,6 +1077,9 @@ export const LOG_EVENT_NAMES = [
   'role_add',
   'role_remove',
   'role_change',
+  'role_update',
+  'role_create',
+  'role_delete',
   'nickname_change',
   'channel_create',
   'channel_update',

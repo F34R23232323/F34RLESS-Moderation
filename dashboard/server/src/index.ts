@@ -15,6 +15,7 @@ import { createArchivePublicRouter } from './routes/archivePublic';
 import { createMessageLogRouter } from './routes/messageLog';
 import { createRoleConnectionsRouter } from './routes/roleConnections';
 import { createAppealsRouter } from './routes/appeals';
+import { createGdprRouter } from './routes/gdpr';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -65,6 +66,9 @@ async function main(): Promise<void> {
 
   // Public appeals portal API (self-authenticated: session + membership + CSRF).
   app.use('/api/appeals', createAppealsRouter(ctx));
+
+  // Public GDPR API (session-authenticated: any Discord user can manage their data).
+  app.use('/api/gdpr', createGdprRouter(ctx));
 
   const protectedApi = express.Router();
   protectedApi.use(requireAuth(ctx));

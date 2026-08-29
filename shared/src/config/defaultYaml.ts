@@ -126,7 +126,8 @@ command_defaults:
 # independently. Event name -> config.
 # Events: message_edit, message_delete, message_bulk_delete, member_join,
 # member_leave, member_ban, member_unban, member_kick, member_timeout,
-# role_add, role_remove, nickname_change, channel_create, channel_update,
+# role_add, role_remove, role_change, role_update, role_create, role_delete,
+# nickname_change, channel_create, channel_update,
 # channel_delete, voice_state_update, invite_create, invite_delete,
 # moderation_action, automod_trigger, command_usage, error_event,
 # rate_limit_event, report_created, report_resolved, case_edit,
@@ -153,6 +154,9 @@ logging:
   member_ban: { enabled: true, channel_id: "000000000000000000" }
   message_delete: { enabled: true, channel_id: "000000000000000000" }
   message_edit: { enabled: true, channel_id: "000000000000000000" }
+  role_update: { enabled: true, channel_id: "000000000000000000" }
+  role_create: { enabled: true, channel_id: "000000000000000000" }
+  role_delete: { enabled: true, channel_id: "000000000000000000" }
   moderation_action: { enabled: true, channel_id: "000000000000000000" }
   command_usage: { enabled: false, channel_id: "000000000000000000" }
   # Applications (OAuth2 apps / bots) added to or removed from the server.
@@ -204,6 +208,36 @@ reports:
     channel_id: "000000000000000000"    # component-stripped archive
   merge_window_seconds: 300             # duplicate reports merged within this window
   false_report_warning_enabled: false   # staff-marked bad-faith reports feed warnings
+
+# -----------------------------------------------------------------------------
+# Self-hosted NSFW image moderation (NSFWJS MobileNetV2, runs in-process).
+# Scans image attachments; flagged messages are reported through the existing
+# report system (reports.channel_id) and optionally deleted.
+#   enabled:              master switch (model is downloaded at boot when on)
+#   guilds:               empty = every guild, otherwise only these guild IDs
+#   ignored_channels:     channels never scanned
+#   exempt_roles:         members holding these roles are never scanned
+#   max_attachment_bytes: download size cap (default 10 MB)
+#   download_timeout_ms:  per-download cap (default 15s)
+#   queue_capacity:       max queued image jobs (default 25)
+#   worker_concurrency:   simultaneous inferences (default 1)
+#   review_threshold:     explicit (Porn + Hentai) score that triggers a report
+#   delete_threshold:     explicit score that triggers deletion + report
+#   log_only:             test mode — never deletes, reports marked TEST MODE
+# -----------------------------------------------------------------------------
+nsfw_moderation:
+  enabled: false
+  guilds: []
+  ignored_channels: []
+  exempt_roles: []
+  max_attachment_bytes: 10485760
+  download_timeout_ms: 15000
+  queue_capacity: 25
+  worker_concurrency: 1
+  review_threshold: 0.60
+  delete_threshold: 0.80
+  ignored_categories: []         # NSFWJS classes to exclude from explicit score (e.g. ["Hentai"])
+  log_only: false
 
 # -----------------------------------------------------------------------------
 # Appeals portal.
@@ -299,10 +333,11 @@ automod:
           reason: "Automod: {rule}"
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
-          content: "Your message was removed in {channel}."
+          content: "Hey {user} — one of your messages was just removed because it didn't follow this server's rules.\n\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
           title: "Message Removed"
-          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\\n\\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\\n\\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
+          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\n\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
           footer: "Thanks for helping keep {guild} friendly and safe."
           accent_color: "#ED4245"
           delete_after_seconds: 60
@@ -471,13 +506,31 @@ automod:
           reason: "Automod: {rule}"
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
-          content: "Your message was removed in {channel}."
+          content: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
           title: "Repeated Message Detected"
-          description: "Hey {user}, your messages were removed.\\n\\nYour messages were removed because you sent the same or a very similar message multiple times."
+          description: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
           delete_after_seconds: 60
         - type: warn
           reason: "Automod: repeated message spam ({rule})"
+        - type: run_escalation_check
+    mass_ping:
+      enabled: true
+      max_mentions: 5                          # mentions in a single message before triggering
+      spam_threshold: 3                       # same target pinged N times in window
+      spam_window_seconds: 60
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+          reason: "Automod: {rule}"
+        - type: delete_message
+        - type: warn
+          reason: "Automod: mass ping ({rule})"
         - type: run_escalation_check
   # Composite risk scoring: several signals feed a rolling per-user score.
   risk_scoring:

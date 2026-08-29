@@ -17,6 +17,9 @@ const sendChannelMessageSchema = z
     thumbnail_url: z.string().url().optional(),
     template_id: z.number().int().positive().optional(),
     template_name: z.string().min(1).optional(),
+    /** When true, DM the triggered user first. If the DM fails (DMs closed),
+     *  fall back to posting publicly with a note that DMs are disabled. */
+    dm_first: z.boolean().optional(),
   })
   .strict();
 

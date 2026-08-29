@@ -19,6 +19,9 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
       });
     }
     if (message.author.bot) return;
+    if (message.attachments.size > 0) {
+      void app.nsfw.handleMessage(message);
+    }
     if (!message.inGuild()) {
       const { handleMessageCreateDM } = await import('../security/modmail');
       await handleMessageCreateDM(app, message);

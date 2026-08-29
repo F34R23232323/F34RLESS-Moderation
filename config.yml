@@ -570,6 +570,22 @@ reports:
     channel_id: "1467100822176530453"
   merge_window_seconds: 300
   false_report_warning_enabled: false
+nsfw_moderation:
+  # Self-hosted NSFW image moderation (NSFWJS MobileNetV2, in-process). The
+  # model (~20MB) is downloaded from TF Hub once at boot when enabled.
+  # Reports go to reports.channel_id via the existing report system.
+  enabled: true
+  guilds: []                     # empty = every guild
+  ignored_channels: []
+  exempt_roles: []
+  max_attachment_bytes: 10485760
+  download_timeout_ms: 15000
+  queue_capacity: 25
+  worker_concurrency: 1
+  review_threshold: 0.60
+  delete_threshold: 0.80
+  ignored_categories: []         # e.g. ["Hentai"] — NSFWJS classes excluded from score
+  log_only: false                # test mode: reports without deleting
 appeals:
   # Public appeals portal â€” one config per guild. The global block below is
   # applied to every guild; per-guild overrides live under guild_overrides and
@@ -703,8 +719,9 @@ automod:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
-          content: Your message was removed in {channel}.
+          content: Hey {user}, your message was removed.
           title: Spam Detected
           description: |-
             Hey {user}, your message was removed.
@@ -941,8 +958,9 @@ automod:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
-          content: Your message was removed in {channel}.
+          content: Hey {user}, your messages were removed.
           title: Repeated Message Detected
           description: |-
             Hey {user}, your messages were removed.

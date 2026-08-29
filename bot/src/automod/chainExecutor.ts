@@ -108,8 +108,12 @@ export class ActionChainExecutor {
             const spec = this.app.messages.parsePayload(saved);
             const rendered = renderMessageSpecPlaceholders(spec, placeholders);
             const payload = buildMessagePayload(rendered, String(saved.id), clientEmojiIds(this.app.client));
-const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } as never);
-            result.actionsTaken.push('send_channel_message');
+            if (step.dm_first) {
+              const dmSent = await this.tryDm(trigger.user, payload as never);
+              if (dmSent) { result.actionsTaken.push('dm_user_message'); break; }
+            }
+            const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } as never);
+            result.actionsTaken.push(step.dm_first ? 'send_channel_message_dm_failed' : 'send_channel_message');
             if (step.delete_after_seconds && step.delete_after_seconds > 0) {
               setTimeout(() => void sent.delete().catch(() => undefined), step.delete_after_seconds * 1000);
             }
@@ -129,8 +133,14 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
           imageUrl: step.image_url ? renderPlaceholders(step.image_url, placeholders) : undefined,
           thumbnailUrl: step.thumbnail_url ? renderPlaceholders(step.thumbnail_url, placeholders) : undefined,
         };
+        if (step.dm_first) {
+          const dmPayload = this.buildFormatted(content, step.format);
+          const dmSent = await this.tryDm(trigger.user, dmPayload as never);
+          if (dmSent) { result.actionsTaken.push('dm_user_message'); break; }
+          spec.footer = spec.footer ? `${spec.footer}\n\n⚠️ DMs closed — showing publicly.` : '⚠️ DMs closed — showing publicly.';
+        }
         await this.sendFormatted(channel, content, step.format, step.delete_after_seconds || undefined, trigger.rule, spec);
-        result.actionsTaken.push('send_channel_message');
+        result.actionsTaken.push(step.dm_first ? 'send_channel_message_dm_failed' : 'send_channel_message');
         break;
       }
 
@@ -284,6 +294,17 @@ const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } a
       if (deleteAfterSeconds && deleteAfterSeconds > 0) {
         setTimeout(() => void sent.delete().catch(() => undefined), deleteAfterSeconds * 1000);
       }
+    }
+  }
+
+  /** Attempt to DM the triggered user. Returns true if the DM was sent. */
+  private async tryDm(user: { createDM(): Promise<{ send(payload: unknown): Promise<unknown> }> }, payload: unknown): Promise<boolean> {
+    try {
+      const dm = await user.createDM();
+      await dm.send(payload);
+      return true;
+    } catch {
+      return false;
     }
   }
 }

@@ -1,4 +1,5 @@
 import type { TextChannel, GuildMember, Message } from 'discord.js';
+import { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } from 'discord.js';
 import type { App } from '../core/context';
 import { DEFAULT_ACTION_CHAIN } from '../../../shared/src/index';
 import { ActionChainExecutor } from './chainExecutor';
@@ -22,6 +23,8 @@ export interface AutomodHit {
   suppressed_response_mode?: 'silent' | 'batched_summary';
   purge_message_ids?: string[];
   suppress_actions?: boolean;
+  /** User IDs to DM with an explanation after the action chain executes (e.g. mass-ping victims). */
+  dm_mentioned_users?: string[];
 }
 
 export interface AutomodModule {
@@ -35,6 +38,12 @@ export class AutomodManager {
   public readonly throttle: ResponseThrottle;
   private modules: AutomodModule[] = [];
   private readonly joinModules = new Map<string, AutomodModule>();
+  /** Per-user-per-rule last action timestamp — used to skip repeat warn/DM actions. */
+  private readonly recentActions = new Map<string, number>();
+  /** Per-target-user last ping-DM timestamp — prevents the same user being
+   *  DM'd about pings more than once within this window. */
+  private readonly recentPingedDms = new Map<string, number>();
+  private static readonly DM_COOLDOWN_MS = 120_000;
 
   constructor(app: App) {
     this.app = app;
@@ -61,6 +70,8 @@ export class AutomodManager {
     const globalImmune = this.app.config.automod.global_immune_roles;
     if (member.roles.cache.some((r) => globalImmune.includes(r.id))) return;
 
+    const allPurgeIds: string[] = [];
+
     for (const mod of this.modules) {
       try {
         const cfg = this.getModuleConfig(mod.name);
@@ -73,10 +84,16 @@ export class AutomodManager {
         if (!hit) continue;
 
         await this.handleHit(hit, member, message, channel, cfg);
+        if (hit.purge_message_ids) allPurgeIds.push(...hit.purge_message_ids);
       } catch (err) {
         this.app.logger.error(`Automod module ${mod.name} threw:`, err);
         await this.app.logManager.reportError(`Automod module ${mod.name}`, err);
       }
+    }
+
+    // Single bulk-delete per channel for all triggered modules
+    if (allPurgeIds.length > 0) {
+      await this.purgeMessages(channel, allPurgeIds);
     }
   }
 
@@ -158,10 +175,17 @@ export class AutomodManager {
       [guild.id, hit.rule, hit.module, member.id, channel?.id ?? null, message?.id ?? null, hit.content.slice(0, 500)],
     );
 
-    if (hit.suppress_actions) {
-      if (hit.purge_message_ids && channel) {
-        await this.purgeMessages(channel, hit.purge_message_ids);
-      }
+    // suppress_actions from the module itself (e.g. spam repeat).
+    // Also skip actions if this user+rule was already actioned within the
+    // suppress window — prevents duplicate warns/DMs when the same user
+    // triggers the same rule from multiple messages in quick succession.
+    const suppressWindowMs = (hit.suppress_repeat_response_seconds ?? cfg.suppress_repeat_response_seconds ?? 0) * 1000;
+    const actionKey = `${member.id}:${hit.rule}`;
+    const now = Date.now();
+    const lastAction = this.recentActions.get(actionKey) ?? 0;
+    const alreadyActioned = suppressWindowMs > 0 && now - lastAction < suppressWindowMs;
+
+    if (hit.suppress_actions || alreadyActioned) {
       return;
     }
 
@@ -210,9 +234,9 @@ export class AutomodManager {
       mode,
     );
 
-    if (hit.purge_message_ids && channel) {
-      await this.purgeMessages(channel, hit.purge_message_ids);
-    }
+    // Record this action so the same user+rule won't trigger again within the window
+    this.recentActions.set(actionKey, now);
+    this.pruneRecentActions();
 
     await this.app.logManager.logAutomodTrigger({
       guildId: guild.id,
@@ -234,6 +258,71 @@ export class AutomodManager {
     if (result.responseSuppressed && cfg.suppressed_response_mode === 'batched_summary' && channel) {
       this.maybePostSummary(hit, member, channel, cfg);
     }
+
+    // DM users who were mass-pinged so they understand why they received a notification
+    if (hit.dm_mentioned_users && hit.dm_mentioned_users.length > 0 && channel) {
+      this.dmMentionedUsers(hit, member, channel).catch(() => undefined);
+    }
+  }
+
+  /** Send a brief DM to each mass-pinged user explaining the situation. */
+  private async dmMentionedUsers(
+    hit: AutomodHit,
+    pinger: GuildMember,
+    channel: TextChannel,
+  ): Promise<void> {
+    const now = Date.now();
+    for (const userId of hit.dm_mentioned_users!) {
+      // Prevent the same user from being DM'd about pings more than once within the cooldown window.
+      const lastDm = this.recentPingedDms.get(userId) ?? 0;
+      if (now - lastDm < AutomodManager.DM_COOLDOWN_MS) continue;
+      this.recentPingedDms.set(userId, now);
+
+      try {
+        const user = await this.app.client.users.fetch(userId).catch(() => null);
+        if (!user || user.bot) continue;
+        const dm = await user.createDM().catch(() => null);
+        if (!dm) continue;
+
+        const container = new ContainerBuilder()
+          .setAccentColor(0xed4245)
+          .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Mass Ping Alert**'))
+          .addSeparatorComponents(new SeparatorBuilder())
+          .addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(
+              `You were pinged by <@${pinger.id}> in <#${channel.id}>.\n` +
+              `The message was flagged for mass pinging and has been removed.\n` +
+              `If you believe this was done in error, please contact a staff member.`,
+            ),
+          );
+
+        await dm.send({
+          components: [container] as unknown[],
+          flags: MessageFlags.IsComponentsV2,
+        } as never).catch(() => undefined);
+      } catch {
+        // Don't let a failed DM crash the handler
+      }
+    }
+    this.pruneRecentPingedDms();
+  }
+
+  private pruneRecentPingedDms(): void {
+    if (this.recentPingedDms.size > 500) {
+      const now = Date.now();
+      for (const [key, ts] of this.recentPingedDms) {
+        if (now - ts > AutomodManager.DM_COOLDOWN_MS * 2) this.recentPingedDms.delete(key);
+      }
+    }
+  }
+
+  private pruneRecentActions(): void {
+    if (this.recentActions.size > 2000) {
+      const now = Date.now();
+      for (const [key, ts] of this.recentActions) {
+        if (now - ts > 300_000) this.recentActions.delete(key); // 5 min max
+      }
+    }
   }
 
   private async purgeMessages(channel: TextChannel, ids: string[]): Promise<void> {
@@ -241,10 +330,10 @@ export class AutomodManager {
     if (unique.length === 0) return;
     try {
       await channel.bulkDelete(unique);
-    } catch {
-      for (const id of unique) {
-        await channel.messages.delete(id).catch(() => undefined);
-      }
+    } catch (err) {
+      // Rate limited or messages too old — log and move on. The messages
+      // will be caught by the next trigger or Discord's auto-purge.
+      this.app.logger.debug(`bulkDelete failed for channel ${channel.id}: ${(err as Error).message}`);
     }
   }
 

@@ -1,5 +1,9 @@
 const BASE = '';
 
+// Requests that take longer than this are treated as failures (the server is
+// likely hung or unreachable) instead of leaving pages spinning forever.
+const REQUEST_TIMEOUT_MS = 20_000;
+
 // --- Global error reporting ---------------------------------------------------
 // A tiny event bus so fetch failures anywhere in the app can surface as
 // friendly toasts without every page wiring its own handler.
@@ -35,13 +39,20 @@ export function messageOf(err) {
 export async function api(path, options = {}) {
   let res;
   try {
-    res = await fetch(`${BASE}/api${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      ...options,
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      res = await fetch(`${BASE}/api${path}`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        signal: controller.signal,
+        ...options,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
   } catch (err) {
-    const wrapped = new Error('Network error — is the dashboard server reachable?');
+    const wrapped = new Error(err?.name === 'AbortError' ? 'Request timed out — is the dashboard server reachable?' : 'Network error — is the dashboard server reachable?');
     wrapped.cause = err;
     emitApiError(wrapped, path);
     throw wrapped;
@@ -62,12 +73,19 @@ export async function api(path, options = {}) {
 // Call a NON-/api endpoint (e.g. the public /oauth routes) without the
 // auth-redirect behavior — used by the auth check so it never loops.
 export async function raw(path, options = {}) {
-  const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...options,
-  });
-  return res.json();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(path, {
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      signal: controller.signal,
+      ...options,
+    });
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function getSessionCookieToken() {

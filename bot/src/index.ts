@@ -36,6 +36,7 @@ import { AppealService } from './services/appealService';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 import { MusicService } from './music/MusicService';
+import { NsfwModerationService } from './nsfw/service';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -117,6 +118,7 @@ async function main(): Promise<void> {
     roleConnections: null as unknown as RoleConnectionsService,
     music: null as unknown as MusicService,
     appeals: null as unknown as AppealService,
+    nsfw: null as unknown as NsfwModerationService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -153,6 +155,7 @@ async function main(): Promise<void> {
   app.roleConnections = new RoleConnectionsService(app);
   app.music = new MusicService(app);
   app.appeals = new AppealService(app);
+  app.nsfw = new NsfwModerationService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
@@ -189,6 +192,16 @@ async function main(): Promise<void> {
       activities: [{ name: config.bot.activity.text, type, url }],
     });
   });
+
+  // Load the NSFW model before login so no image job starts before it is
+  // ready. init() never rejects — a model failure disables the feature.
+  await app.nsfw.init();
+
+  const shutdown = (): void => {
+    void app.nsfw.shutdown().finally(() => process.exit(0));
+  };
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
 
   await client.login(env.DISCORD_TOKEN);
   app.logger.info('Bot started');

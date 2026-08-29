@@ -6,6 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
+import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
 
 const data = new SlashCommandBuilder()
   .setName('kick')
@@ -14,11 +15,11 @@ const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const resolved = await resolveMemberOption(interaction, guild, app);
-  if (!resolved?.member) {
+  if (!resolved?.member || !resolved?.user) {
     await v2Reply(interaction, 'User not found in this server.', { ephemeral: true });
     return;
   }
@@ -28,12 +29,12 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
-  const result = await app.punishmentManager.kick(resolved.member, { reason, moderatorId: interaction.user.id, archiveChannelId: interaction.channel?.id ?? null });
-  if (!result.ok) {
-    await v2Reply(interaction, `Failed: ${result.error}`, { ephemeral: true });
-    return;
-  }
-  await v2Reply(interaction, `Kicked <@${resolved.user!.id}> — case ${result.case!.case_code}.`);
+  const actionId = storePendingAction({
+    action: 'kick', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId,
+    reason, actorId: interaction.user.id, expiresAt: Date.now() + 60_000,
+  });
+  const { components, flags } = buildConfirmEmbed('Kick', resolved.user.id, reason);
+  await interaction.editReply({ content: '', components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -65,8 +66,20 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: `Cannot kick: ${guard.reason}` });
     return;
   }
-  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-  await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  const actionId = storePendingAction({
+    action: 'kick', targetUserId: targetId, guildId: guild.id, channelId: message.channelId,
+    reason, actorId: message.author.id, expiresAt: Date.now() + 60_000,
+  });
+  const sent = await v2MessageReply(message, { content: `⚠️ **Confirm kick** <@${targetId}> — reason: ${reason}\nReact with ✅ to confirm, ❌ to cancel.` });
+  await sent.react('✅').catch(() => undefined);
+  await sent.react('❌').catch(() => undefined);
+  const collector = sent.createReactionCollector({ filter: (r, u) => (r.emoji.name === '✅' || r.emoji.name === '❌') && u.id === message.author.id, time: 30_000, max: 1 });
+  collector.on('end', async (collected) => {
+    await sent.delete().catch(() => undefined);
+    if (collected.first()?.emoji.name !== '✅') { await v2MessageReply(message, { content: 'Kick cancelled.' }); return; }
+    const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
+    await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
+  });
 }
 
 const command: BotCommand = {

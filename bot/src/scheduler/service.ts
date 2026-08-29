@@ -113,7 +113,7 @@ export class SchedulerService {
       const [rows] = await this.app.db.query<RowDataPacket[]>(
         'SELECT id, guild_id, user_id, type, role_id, case_id FROM punishments WHERE active = 1 AND expires_at <= NOW()',
       );
-      for (const row of rows) {
+for (const row of rows) {
         const guild = this.app.client.guilds.cache.get(row.guild_id);
         if (!guild) continue;
         try {
@@ -131,6 +131,8 @@ export class SchedulerService {
           this.app.logger.warn(`Failed to expire punishment ${row.id}:`, err);
         }
       }
+      // Long mutes (past Discord's 28-day timeout cap) renew their chunk here.
+      await this.app.punishmentManager.renewMutes();
     });
   }
 

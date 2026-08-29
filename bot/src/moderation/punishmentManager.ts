@@ -1,5 +1,6 @@
 import { GuildMember } from 'discord.js';
 import type { Guild, User } from 'discord.js';
+import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
 import type { PunishmentType } from '../../../shared/src/index';
 import { humanizeDuration } from '../../../shared/src/index';
@@ -31,6 +32,11 @@ export interface PunishResult {
 export class PunishmentManager {
   private readonly app: App;
 
+  /** Discord's maximum native timeout duration is 28 days. Mutes longer than
+   *  this are applied in 28-day chunks and re-applied automatically by the
+   *  scheduler until the full requested duration has elapsed. */
+  public static readonly MAX_TIMEOUT_MS = 28 * 86400000;
+
   // Bot-initiated timeout/mute changes, so the guildMemberUpdate handler
   // doesn't double-log the same transition that we already logged in the
   // punishment flow (e.g. via /mute, /timeout, /unmute).
@@ -56,6 +62,55 @@ export class PunishmentManager {
     if (entry.action !== action) return false;
     this.muteSuppressions.delete(key);
     return true;
+  }
+
+  /** True when the user has an active renewable long mute still inside its
+   *  window — used to suppress the misleading "unmuted" log when a 28-day
+   *  chunk expires naturally (the scheduler re-applies it right after). */
+  public async isRenewableMute(guildId: string, userId: string): Promise<boolean> {
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      `SELECT id FROM punishments
+       WHERE guild_id = ? AND user_id = ? AND type = 'mute' AND renewable = 1 AND active = 1 AND expires_at > NOW()
+       LIMIT 1`,
+      [guildId, userId],
+    );
+    return rows.length > 0;
+  }
+
+  /** Re-apply expired 28-day chunks of long mutes. Called by the scheduler.
+   *  A chunk is only renewed while the full mute window is still active and
+   *  the member is no longer timed out. */
+  public async renewMutes(): Promise<void> {
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      `SELECT id, guild_id, user_id, expires_at FROM punishments
+       WHERE type = 'mute' AND renewable = 1 AND active = 1 AND expires_at > NOW()`,
+    );
+    for (const row of rows) {
+      const guild = this.app.client.guilds.cache.get(String(row.guild_id));
+      if (!guild) continue;
+      const member = await guild.members.fetch(String(row.user_id)).catch(() => null);
+      if (!member || member.isCommunicationDisabled()) continue;
+
+      const remaining = new Date(row.expires_at).getTime() - Date.now();
+      if (remaining <= 0) continue;
+      const chunk = Math.min(remaining, PunishmentManager.MAX_TIMEOUT_MS);
+
+      this.markMuteChange(guild.id, member.id, 'mute');
+      try {
+        await member.timeout(chunk, 'Mute auto-renewal');
+      } catch (err) {
+        this.app.logger.warn(`Mute renewal failed for punishment ${row.id}:`, err);
+        continue;
+      }
+
+      await this.app.logManager.log({
+        event: 'member_mute',
+        guildId: guild.id,
+        targetId: member.id,
+        message: `Mute auto-renewed for <@${member.id}> — ${humanizeDuration(remaining)} remaining (28-day chunks)`,
+        details: { type: 'mute', renewable: true, remainingMs: remaining, chunkMs: chunk },
+      });
+    }
   }
 
   private async dmBefore(
@@ -181,9 +236,13 @@ export class PunishmentManager {
   public async timeout(target: GuildMember, durationMs: number, options: PunishOptions): Promise<PunishResult> {
     const dmSent = await this.dmBefore('mute', target.guild, target.user, options, durationMs);
     const logEvent = options.logEvent ?? 'member_timeout';
+    // Durations past Discord's timeout cap are applied in 28-day chunks and
+    // renewed automatically until the full duration is served.
+    const renewable = durationMs > PunishmentManager.MAX_TIMEOUT_MS;
+    const appliedMs = renewable ? PunishmentManager.MAX_TIMEOUT_MS : durationMs;
     this.markMuteChange(target.guild.id, target.id, 'mute');
     try {
-      await target.timeout(durationMs, options.reason ?? undefined);
+      await target.timeout(appliedMs, options.reason ?? undefined);
     } catch (err) {
       return { ok: false, error: (err as Error).message, dmSent };
     }
@@ -199,9 +258,9 @@ export class PunishmentManager {
     });
 
     await this.app.db.execute(
-      `INSERT INTO punishments (guild_id, user_id, type, case_id, expires_at)
-       VALUES (?, ?, 'mute', ?, ?)`,
-      [target.guild.id, target.id, caseRow.id, new Date(Date.now() + durationMs)],
+      `INSERT INTO punishments (guild_id, user_id, type, case_id, expires_at, renewable)
+       VALUES (?, ?, 'mute', ?, ?, ?)`,
+      [target.guild.id, target.id, caseRow.id, new Date(Date.now() + durationMs), renewable ? 1 : 0],
     );
 
     await this.dmAfter('mute', target.guild, target.user, caseRow, options);
@@ -214,8 +273,8 @@ export class PunishmentManager {
       guildId: target.guild.id,
       actorId: options.moderatorId ?? null,
       targetId: target.id,
-      message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(target.guild.id, options.evidence) },
+      message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${renewable ? ' — auto-renews every 28 days' : ''}${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink, renewable: renewable || undefined, ...this.evidenceDetails(target.guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };

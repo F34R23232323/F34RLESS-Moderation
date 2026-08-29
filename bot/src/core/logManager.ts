@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { AttachmentBuilder, ChannelType } from 'discord.js';
-import type { Guild, GuildBasedChannel } from 'discord.js';
+import type { Guild, GuildBasedChannel, TextChannel, ThreadChannel } from 'discord.js';
 import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
 import { isLogIgnored, type LogIgnoreContext } from '../../../shared/src/index';
@@ -26,9 +26,22 @@ export interface LogInput {
   files?: Array<{ name: string; data: Buffer | string }>;
 }
 
+interface QueuedEntry {
+  input: LogInput;
+  header: string;
+  text: string;
+  timestamp: number;
+}
+
+const FLUSH_INTERVAL_MS = 500;
+const MAX_BATCH_SIZE = 25;
+
 export class LogManager extends EventEmitter {
   private readonly db: Pool;
   public app: App | null = null;
+  /** Per-channel log queue — entries are batched and flushed together. */
+  private readonly pendingLogs = new Map<string, QueuedEntry[]>();
+  private readonly flushTimers = new Map<string, NodeJS.Timeout>();
 
   constructor(db: Pool) {
     super();
@@ -129,7 +142,7 @@ export class LogManager extends EventEmitter {
       );
       this.emit('log', { ...input });
       const insertId = (result as { insertId: number }).insertId;
-      await this.routeToDiscord(input);
+      this.enqueueLog(input);
       return insertId;
     } catch (err) {
       console.error('LogManager.log failed:', err);
@@ -137,12 +150,12 @@ export class LogManager extends EventEmitter {
     }
   }
 
-  private async routeToDiscord(input: LogInput): Promise<void> {
-    const app = this.app;
-    if (!app) return;
+  // ── Per-channel batch queue ──────────────────────────────────────────────
+
+  private enqueueLog(input: LogInput): void {
     const cfg = this.eventConfig(input.event);
     if (!cfg || !cfg.enabled) return;
-    const guild = app.client.guilds.cache.get(input.guildId);
+    const guild = this.app?.client.guilds.cache.get(input.guildId);
     if (!guild) return;
 
     const channel =
@@ -150,39 +163,95 @@ export class LogManager extends EventEmitter {
       (cfg.channel_id && guild.channels.cache.get(cfg.channel_id));
     if (!channel || !('send' in channel)) return;
 
+    const header = friendlyEventName(input.event);
+    const lines: string[] = [];
+    if (input.message) lines.push(input.message);
+    if (input.channelId && !input.message?.includes(`<#${input.channelId}>`)) {
+      lines.push(`**Channel:** <#${input.channelId}>`);
+    }
+    if (input.actorId) lines.push(`**Actor:** <@${input.actorId}>`);
+    if (input.targetId) lines.push(`**User:** <@${input.targetId}>`);
+    lines.push(...formatDetails(input.details, guild));
+
+    const details = input.details as Record<string, unknown> | null | undefined;
+    const messageId = details && typeof details.messageId === 'string' ? details.messageId : null;
+    if (messageId && input.channelId) {
+      lines.push(`**Link:** <https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}>`);
+    }
+
+    let text = lines.join('\n') || input.event;
+    if (text.length > 3800) text = `${text.slice(0, 3800)}… (+${text.length - 3800} chars)`;
+
+    const queueKey = `${input.guildId}:${channel.id}`;
+    const entry: QueuedEntry = { input, header, text, timestamp: Date.now() };
+    const queue = this.pendingLogs.get(queueKey);
+    if (queue) {
+      queue.push(entry);
+      if (queue.length >= MAX_BATCH_SIZE) void this.flushLogs(queueKey);
+    } else {
+      this.pendingLogs.set(queueKey, [entry]);
+    }
+    this.scheduleFlush(queueKey);
+  }
+
+  private scheduleFlush(key: string): void {
+    if (this.flushTimers.has(key)) return;
+    const timer = setTimeout(() => {
+      this.flushTimers.delete(key);
+      void this.flushLogs(key);
+    }, FLUSH_INTERVAL_MS);
+    timer.unref?.();
+    this.flushTimers.set(key, timer);
+  }
+
+  private async flushLogs(key: string): Promise<void> {
+    const queue = this.pendingLogs.get(key);
+    if (!queue || queue.length === 0) return;
+    this.pendingLogs.delete(key);
+
+    const app = this.app;
+    if (!app) return;
+
+    const [guildId, channelId] = key.split(':');
+    const guild = app.client.guilds.cache.get(guildId);
+    if (!guild) return;
+    const channel = guild.channels.cache.get(channelId);
+    if (!channel || !('send' in channel)) return;
+
     try {
-      const header = friendlyEventName(input.event);
-      const lines: string[] = [];
-      if (input.message) lines.push(input.message);
-      if (input.channelId && !input.message?.includes(`<#${input.channelId}>`)) {
-        lines.push(`**Channel:** <#${input.channelId}>`);
+      if (queue.length === 1) {
+        const e = queue[0];
+        const rich = buildRichV2({
+          accentColor: logAccent(e.input.event),
+          header: e.header,
+          text: e.text,
+          footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
+          mediaUrls: e.input.mediaUrls?.length ? e.input.mediaUrls : undefined,
+        });
+        const files = e.input.files?.map((f) => new AttachmentBuilder(Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data), { name: f.name }));
+        await channel.send({ ...rich, ...(files?.length ? { files } : {}), allowedMentions: { parse: [], repliedUser: false } } as never);
+      } else {
+        const sections: string[] = [];
+        for (const e of queue) {
+          sections.push(`**${e.header}**\n${e.text}`);
+        }
+        let text = sections.join('\n\n');
+        if (text.length > 3700) text = `${text.slice(0, 3700)}…`;
+
+        const rich = buildRichV2({
+          accentColor: 0x5865f2,
+          header: `${queue.length} log events`,
+          text,
+          footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
+        });
+        await channel.send({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never);
       }
-      if (input.actorId) lines.push(`**Actor:** <@${input.actorId}>`);
-      if (input.targetId) lines.push(`**User:** <@${input.targetId}>`);
-      lines.push(...formatDetails(input.details, guild));
-
-      const details = input.details as Record<string, unknown> | null | undefined;
-      const messageId = details && typeof details.messageId === 'string' ? details.messageId : null;
-      if (messageId && input.channelId) {
-        lines.push(`**Link:** <https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}>`);
-      }
-
-      let text = lines.join('\n') || input.event;
-      if (text.length > 3800) text = `${text.slice(0, 3800)}… (+${text.length - 3800} chars)`;
-
-      const rich = buildRichV2({
-        accentColor: logAccent(input.event),
-        header,
-        text,
-        footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
-        mediaUrls: input.mediaUrls?.length ? input.mediaUrls : undefined,
-      });
-      const files = input.files?.map((f) => new AttachmentBuilder(Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data), { name: f.name }));
-      await channel.send({ ...rich, ...(files?.length ? { files } : {}), allowedMentions: { parse: [], repliedUser: false } } as never);
     } catch (err) {
-      console.error(`Failed to route log ${input.event} to channel:`, err);
+      console.error(`Failed to flush batched logs to channel ${channelId}:`, err);
     }
   }
+
+  // ── Automod logging ────────────────────────────────────────────────────────
 
   public async logAutomodTrigger(entry: {
     guildId: string;
@@ -269,13 +338,25 @@ export class LogManager extends EventEmitter {
     if (entry.archiveLink) lines.push(`**Evidence:** ${entry.archiveLink}`);
     if (entry.responseSuppressed) lines.push(`**Response:** suppressed by throttle`);
 
-    const rich = buildRichV2({
-      accentColor: 0xeb459e,
+    let text = lines.join('\n');
+    if (text.length > 3800) text = `${text.slice(0, 3800)}…`;
+
+    // Route through the same per-channel batch queue
+    const queueKey = `${entry.guildId}:${channel.id}`;
+    const queued: QueuedEntry = {
+      input: { event: 'automod_trigger', guildId: entry.guildId },
       header: `Automod: ${entry.module} — ${entry.rule}`,
-      text: lines.join('\n'),
-      footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
-    });
-    await channel.send({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never).catch(() => undefined);
+      text,
+      timestamp: Date.now(),
+    };
+    const queue = this.pendingLogs.get(queueKey);
+    if (queue) {
+      queue.push(queued);
+      if (queue.length >= MAX_BATCH_SIZE) void this.flushLogs(queueKey);
+    } else {
+      this.pendingLogs.set(queueKey, [queued]);
+    }
+    this.scheduleFlush(queueKey);
   }
 
   public async logCommandUsage(entry: {

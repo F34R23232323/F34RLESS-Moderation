@@ -179,6 +179,15 @@ function AttachmentGrid({ media }) {
 
 const BTN_STYLES = { 1: 'primary', 2: 'secondary', 3: 'success', 4: 'danger', 5: 'link' };
 
+// Legacy draft numbering used by older discord.js builds — kept so old
+// archives still render. Maps old -> current.
+const LEGACY_TYPES = { 25: 12, 26: 17, 27: 9, 28: 10, 29: 14, 30: 11 };
+
+function normType(comp) {
+  const t = comp?.type;
+  return typeof t === 'number' ? (LEGACY_TYPES[t] ?? t) : null;
+}
+
 function Emoji({ emoji }) {
   if (!emoji) return null;
   if (typeof emoji === 'string') return <span className="arc-comp-emoji">{emoji}</span>;
@@ -186,12 +195,25 @@ function Emoji({ emoji }) {
   return <span className="arc-comp-emoji">{emoji.name || ''}</span>;
 }
 
-function ComponentItem({ comp }) {
+function mediaUrlOf(comp) {
+  return comp?.media?.url ?? comp?.url ?? null;
+}
+
+function ComponentItem({ comp, ctx }) {
   if (!comp || typeof comp !== 'object') return null;
-  if (comp.type === 1 || comp.type === 17) {
-    return <span className="arc-comp-row">{Array.isArray(comp.components) ? comp.components.map((c, i) => <ComponentItem key={i} comp={c} />) : null}</span>;
+  const type = normType(comp);
+  if (type === 1) {
+    return <span className="arc-comp-row">{Array.isArray(comp.components) ? comp.components.map((c, i) => <ComponentItem key={i} comp={c} ctx={ctx} />) : null}</span>;
   }
-  if (comp.type === 2) {
+  if (type === 17) {
+    const accent = typeof comp.accent_color === 'number' ? `#${comp.accent_color.toString(16).padStart(6, '0')}` : undefined;
+    return (
+      <span className="arc-comp-container-v2" style={accent ? { borderLeftColor: accent } : undefined}>
+        {Array.isArray(comp.components) ? comp.components.map((c, i) => <ComponentItem key={i} comp={c} ctx={ctx} />) : null}
+      </span>
+    );
+  }
+  if (type === 2) {
     const style = BTN_STYLES[comp.style] || 'secondary';
     if (style === 'link') {
       return <a className={'arc-comp-btn link'} href={comp.url} target="_blank" rel="noreferrer"><Emoji emoji={comp.emoji} />{comp.label || ''}</a>;
@@ -202,29 +224,52 @@ function ComponentItem({ comp }) {
       </span>
     );
   }
-  if (comp.type === 3 || comp.type === 5 || comp.type === 6 || comp.type === 7 || comp.type === 8) {
+  if (type === 3 || type === 5 || type === 6 || type === 7 || type === 8) {
     return <span className="arc-comp-select">{comp.placeholder || 'Select an option'} ▾</span>;
   }
-  if (comp.type === 28) {
-    return <span className="arc-comp-text">{comp.content || ''}</span>;
-  }
-  if (comp.type === 29) {
-    return <span className="arc-comp-sep" />;
-  }
-  if (comp.type === 25) {
+  if (type === 9) {
     return (
-      <span className="arc-comp-gallery">
-        {Array.isArray(comp.items) ? comp.items.map((it, i) => (it.url ? <img key={i} src={it.url} alt="" className="arc-comp-gallery-img" /> : null)) : null}
+      <span className="arc-comp-section">
+        <span className="arc-comp-section-body">
+          {Array.isArray(comp.components) ? comp.components.map((c, i) => <ComponentItem key={i} comp={c} ctx={ctx} />) : null}
+        </span>
+        {comp.accessory ? <ComponentItem comp={comp.accessory} ctx={ctx} /> : null}
       </span>
     );
+  }
+  if (type === 10) {
+    return <span className="arc-comp-text">{renderInline(comp.content || '', ctx)}</span>;
+  }
+  if (type === 11) {
+    const url = mediaUrlOf(comp);
+    return url ? <img src={url} alt="" className="arc-comp-thumb" /> : null;
+  }
+  if (type === 12) {
+    return (
+      <span className="arc-comp-gallery">
+        {Array.isArray(comp.items) ? comp.items.map((it, i) => {
+          const url = mediaUrlOf(it);
+          return url ? <img key={i} src={url} alt="" className="arc-comp-gallery-img" /> : null;
+        }) : null}
+      </span>
+    );
+  }
+  if (type === 13) {
+    return <span className="arc-comp-file">📄 {comp.label || 'File'}</span>;
+  }
+  if (type === 14) {
+    return <span className="arc-comp-sep" />;
+  }
+  if (type === 18) {
+    return <span className="arc-comp-text arc-comp-label">{comp.component?.content ?? comp.content ?? ''}</span>;
   }
   return <span className="arc-comp-unknown" title={JSON.stringify(comp)}>[component]</span>;
 }
 
-function ComponentRow({ comp }) {
+function ComponentRow({ comp, ctx }) {
   return (
     <span className="arc-comp-container">
-      {Array.isArray(comp) ? comp.map((c, i) => <ComponentItem key={i} comp={c} />) : <ComponentItem comp={comp} />}
+      {Array.isArray(comp) ? comp.map((c, i) => <ComponentItem key={i} comp={c} ctx={ctx} />) : <ComponentItem comp={comp} ctx={ctx} />}
     </span>
   );
 }
@@ -310,7 +355,7 @@ function MessageBody({ message, mediaByMsg, mediaUrl, ctx }) {
       )}
       <AttachmentGrid media={media} />
       {message.embeds && message.embeds.map((e, i) => <EmbedCard key={i} embed={e} mediaUrl={mediaUrl} />)}
-      {message.components && message.components.length > 0 && <ComponentRow comp={message.components} />}
+      {message.components && message.components.length > 0 && <ComponentRow comp={message.components} ctx={ctx} />}
     </div>
   );
 }

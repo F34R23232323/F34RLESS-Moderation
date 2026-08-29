@@ -100,6 +100,14 @@ function renderEmbed(embed: any): string {
   return parts.join('');
 }
 
+// Legacy draft numbering used by older discord.js builds — kept so old
+// archives still render. Maps old -> current.
+const LEGACY_COMP_TYPES: Record<number, number> = { 25: 12, 26: 17, 27: 9, 28: 10, 29: 14, 30: 11 };
+
+function normCompType(type: number): number {
+  return LEGACY_COMP_TYPES[type] ?? type;
+}
+
 function renderComponents(components: any): string {
   if (!Array.isArray(components) || components.length === 0) return '';
   const out: string[] = [];
@@ -107,16 +115,15 @@ function renderComponents(components: any): string {
     if (row.type === 1 && Array.isArray(row.components)) {
       return `<div class="comp-row">${row.components.map(renderComp).join('')}</div>`;
     }
-    if (row.type === 17) {
-      return `<div class="comp-row">${(row.components || []).map(renderComp).join('')}</div>`;
-    }
     return renderComp(row);
   };
   const renderComp = (comp: any): string => {
     if (!comp || typeof comp !== 'object') return '';
-    switch (comp.type) {
+    switch (normCompType(comp.type)) {
+      case 1:
+        return `<span class="comp-row">${(comp.components || []).map(renderComp).join('')}</span>`;
       case 2:
-        const style = ['primary', 'secondary', 'success', 'danger', 'link'][comp.style ?? 1] ?? 'secondary';
+        const style = ['primary', 'secondary', 'success', 'danger', 'link'][(comp.style ?? 1) - 1] ?? 'secondary';
         const emoji = comp.emoji ? `<span class="comp-emoji">${comp.emoji?.name ? esc(comp.emoji.name) : ''}</span>` : '';
         return `<span class="comp-btn ${style}">${emoji}${esc(comp.label ?? '')}</span>`;
       case 3:
@@ -125,14 +132,31 @@ function renderComponents(components: any): string {
       case 7:
       case 8:
         return `<span class="comp-select">${esc(comp.placeholder ?? 'Select an option')} ▾</span>`;
-      case 17:
-        return `<span class="comp-row">${(comp.components || []).map(renderComp).join('')}</span>`;
-      case 28:
-        return `<span class="comp-text">${renderContent(String(comp.content ?? ''))}</span>`;
-      case 29:
+      case 9:
+        return `<div class="comp-section"><div class="comp-section-body">${(comp.components || []).map(renderComp).join('')}</div>${comp.accessory ? renderComp(comp.accessory) : ''}</div>`;
+      case 10:
+        return `<div class="comp-text">${renderContent(String(comp.content ?? ''))}</div>`;
+      case 11: {
+        const url = comp.media?.url ?? comp.url;
+        return url ? `<img class="comp-thumb" src="${esc(url)}"/>` : '';
+      }
+      case 12: {
+        const items = (comp.items || [])
+          .map((it: any) => {
+            const url = it?.media?.url ?? it?.url;
+            return url ? `<img class="comp-gallery-img" src="${esc(url)}"/>` : '';
+          })
+          .join('');
+        return `<span class="comp-gallery">${items}</span>`;
+      }
+      case 13:
+        return `<span class="comp-file">📄 ${esc(comp.label ?? 'File')}</span>`;
+      case 14:
         return `<hr class="comp-sep"/>`;
-      case 25:
-        return `<span class="comp-gallery">🖼️ ${esc(comp.items?.length ?? 0)} media</span>`;
+      case 17:
+        return `<div class="comp-container">${(comp.components || []).map(renderComp).join('')}</div>`;
+      case 18:
+        return `<div class="comp-text comp-label">${esc(comp.component?.content ?? comp.content ?? '')}</div>`;
       default:
         return `<span class="comp-unknown" title="${esc(JSON.stringify(comp))}">[component]</span>`;
     }
@@ -245,6 +269,14 @@ export function buildTranscriptHtml(
   .embed-thumb{position:absolute;top:10px;right:10px;max-width:80px;max-height:80px;border-radius:4px}
   .embed-footer{color:#949ba4;font-size:12px;margin-top:8px}
   .comp-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .comp-container{display:flex;flex-direction:column;gap:6px;margin-top:6px;padding:8px 10px;border-left:3px solid #5865f2;border-radius:4px;background:rgba(255,255,255,.02)}
+  .comp-section{display:flex;gap:10px;align-items:flex-start;margin-top:6px}
+  .comp-section-body{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+  .comp-thumb{max-width:80px;max-height:80px;border-radius:6px}
+  .comp-gallery{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+  .comp-gallery-img{max-width:120px;max-height:120px;border-radius:6px}
+  .comp-file{display:inline-flex;align-items:center;gap:6px;background:#2b2d31;border:1px solid #26272b;border-radius:6px;padding:6px 10px;font-size:13px;color:#dbdee1;margin-top:6px}
+  .comp-label{font-weight:600}
   .comp-btn{border-radius:4px;padding:8px 12px;font-size:13px;font-weight:500;color:#fff;cursor:not-allowed}
   .comp-btn.primary{background:#5865f2}.comp-btn.secondary{background:#4e5058}.comp-btn.success{background:#248046}.comp-btn.danger{background:#da373c}.comp-btn.link{background:none;color:#00a8fc;border:1px solid #00a8fc}
   .comp-select{border:1px solid #3a3c42;border-radius:4px;padding:8px 12px;font-size:13px;color:#b5bac1;background:#1e1f22}

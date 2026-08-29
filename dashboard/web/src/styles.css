@@ -1048,8 +1048,14 @@ td.pre { white-space: normal; word-break: break-word; max-width: 420px; }
 .arc-comp-btn.disabled { opacity: 0.4; }
 .arc-comp-emoji { height: 1.1em; vertical-align: -0.15em; }
 .arc-comp-select { border: 1px solid #3a3c42; border-radius: 4px; padding: 8px 12px; font-size: 13px; color: #b5bac1; background: #1e1f22; cursor: default; }
-.arc-comp-sep { border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 8px 0; }
+.arc-comp-sep { display: block; border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 8px 0; }
 .arc-comp-text { color: #dbdee1; }
+.arc-comp-container-v2 { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding: 8px 10px; border-left: 3px solid #5865f2; border-radius: 4px; background: rgba(255, 255, 255, 0.02); }
+.arc-comp-section { display: flex; gap: 10px; align-items: flex-start; }
+.arc-comp-section-body { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.arc-comp-thumb { max-width: 80px; max-height: 80px; border-radius: 6px; flex-shrink: 0; }
+.arc-comp-file { display: inline-flex; align-items: center; gap: 6px; background: #2b2d31; border: 1px solid #26272b; border-radius: 6px; padding: 6px 10px; font-size: 13px; color: #dbdee1; }
+.arc-comp-label { font-weight: 600; }
 .arc-comp-gallery { display: flex; gap: 4px; flex-wrap: wrap; }
 .arc-comp-gallery-img { max-width: 120px; max-height: 120px; border-radius: 6px; }
 .arc-comp-unknown { color: #949ba4; border: 1px dashed #3a3c42; border-radius: 4px; padding: 4px 8px; font-size: 12px; }

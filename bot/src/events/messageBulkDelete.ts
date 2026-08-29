@@ -1,6 +1,7 @@
 import { AuditLogEvent, type Collection, type Message, type PartialMessage } from 'discord.js';
 import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
+import type { StoredEmbed } from '../utils/messageSerialization';
 
 export async function handleMessageBulkDelete(app: App, messages: Collection<string, Message | PartialMessage>, channel: { guildId: string | null; id: string; name?: string }): Promise<void> {
   try {
@@ -48,6 +49,45 @@ export async function handleMessageBulkDelete(app: App, messages: Collection<str
       files = [{ name: `bulk-delete-${Date.now()}.txt`, data: Buffer.from(text.slice(0, 1900000), 'utf8') }];
     }
 
+    // Create an archive with a public link so staff can review the deleted content
+    let archiveLink: string | null = null;
+    if (channel.guildId && sorted.length > 0) {
+      try {
+        const archiveRecords = sorted.map((msg) => ({
+          record: {
+            messageId: msg.id ?? '0',
+            channelId: channel.id,
+            authorId: msg.author?.id ?? '0',
+            authorUsername: msg.author?.username ?? 'unknown',
+            authorNickname: null as string | null,
+            authorAvatar: msg.author?.displayAvatarURL?.({ extension: 'png' }) ?? '',
+            authorIsBot: msg.author?.bot ?? false,
+            content: msg.content || '',
+            embeds: (msg.embeds ?? []) as unknown as StoredEmbed[],
+            components: [],
+            stickers: [],
+            referencedMessage: null,
+            attachments: [...(msg.attachments?.values() ?? [])].map((a) => ({
+              id: a.id, name: a.name, url: a.url, proxyUrl: a.proxyURL, size: a.size,
+              width: a.width ?? null, height: a.height ?? null, contentType: a.contentType ?? null,
+            })),
+            createdAt: msg.createdTimestamp ?? 0,
+          },
+          status: 'deleted' as const,
+        }));
+        const archive = await app.archives.archiveBatch({
+          guildId: channel.guildId,
+          channelId: channel.id,
+          records: archiveRecords,
+          kind: 'deleted_message',
+          title: `Bulk deleted ${messages.size} messages`,
+        });
+        archiveLink = archive?.link ?? null;
+      } catch {
+        // archive is best-effort
+      }
+    }
+
     const guild = channel.guildId ? app.client.guilds.cache.get(channel.guildId) ?? null : null;
     const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.MessageBulkDelete, { targetId: channel.id }) : null;
 
@@ -56,8 +96,8 @@ export async function handleMessageBulkDelete(app: App, messages: Collection<str
       guildId: channel.guildId ?? '0',
       channelId: channel.id,
       actorId,
-      message: `Bulk deleted ${messages.size} messages in <#${channel.id}>${files.length ? ' (transcript attached)' : ''}`,
-      details: { count: messages.size, channelId: channel.id, users: users.size },
+      message: `Bulk deleted ${messages.size} messages in <#${channel.id}>${archiveLink ? ` (archive: ${archiveLink})` : files.length ? ' (transcript attached)' : ''}`,
+      details: { count: messages.size, channelId: channel.id, users: users.size, ...(archiveLink ? { archiveLink } : {}) },
       files,
     });
   } catch (err) {

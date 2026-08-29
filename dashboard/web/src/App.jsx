@@ -25,6 +25,7 @@ import Archives from './pages/Archives';
 import ArchiveView from './pages/ArchiveView';
 import MessageLog from './pages/MessageLog';
 import Privacy from './pages/Privacy';
+import GdprPage from './pages/Gdpr';
 import RoleConnections from './pages/RoleConnections';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppealsAdmin from './pages/AppealsAdmin';
@@ -204,6 +205,11 @@ export default function App() {
   // Public pages (no auth required).
   if (location.pathname === '/privacy' || location.pathname === '/privacy-policy') {
     return <Privacy />;
+  }
+
+  // GDPR page — any Discord user with a session can manage their data.
+  if (location.pathname === '/me' || location.pathname === '/gdpr') {
+    return <GdprPage />;
   }
 
   // Public appeals portal — multi-tenant per guild, with its own login flow.

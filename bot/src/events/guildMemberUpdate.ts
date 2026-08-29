@@ -122,6 +122,9 @@ async function handleMuteChange(app: App, oldMember: GuildMember, newMember: Gui
   } catch {
     // ignore
   }
+  // A renewable long mute just crossed a 28-day chunk boundary — the scheduler
+  // re-applies it, so a "member unmuted" log here would be misleading.
+  if (await app.punishmentManager.isRenewableMute(newMember.guild.id, newMember.id)) return;
   await app.logManager.log({
     event: 'member_unmute',
     guildId: newMember.guild.id,

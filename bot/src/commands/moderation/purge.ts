@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
+import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
 
 async function performPurge(
   app: App,
@@ -62,15 +63,27 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const bots = interaction.options.getBoolean('bots') ?? false;
   const attachments = interaction.options.getBoolean('attachments') ?? false;
 
-  const count = await performPurge(app, interaction.user.id, interaction.guildId!, channel, amount, {
-    targetUserId: targetUser?.id ?? null,
-    contains,
-    bots,
-    attachments,
-    excludeId: interaction.id,
+  // Build filter summary for confirmation
+  const filters: string[] = [];
+  if (targetUser) filters.push(`user: ${targetUser.username}`);
+  if (contains) filters.push(`contains: "${contains}"`);
+  if (bots) filters.push('bots only');
+  if (attachments) filters.push('attachments only');
+  const filterStr = filters.length ? `\nFilters: ${filters.join(', ')}` : '';
+
+  storePendingAction({
+    action: 'purge', targetUserId: targetUser?.id ?? interaction.id,
+    guildId: interaction.guildId!, channelId: channel.id,
+    reason: `Purge ${amount} messages`, actorId: interaction.user.id,
+    expiresAt: Date.now() + 60_000,
   });
 
-  await v2Reply(interaction, `Purged ${count} message(s).`, { ephemeral: true });
+  const { components, flags } = buildConfirmEmbed(
+    `Purge ${amount} messages`,
+    targetUser?.id ?? interaction.user.id,
+    `Purge ${amount} messages in <#${channel.id}>${filterStr}`,
+  );
+  await interaction.editReply({ content: '', components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -92,27 +105,46 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     else if (arg.toLowerCase() === 'attachments') attachments = true;
   }
 
-  const count = await performPurge(app, message.author.id, message.guildId!, channel, amount, {
-    targetUserId,
-    contains,
-    bots,
-    attachments,
-    excludeId: message.id,
+  const filters: string[] = [];
+  if (targetUserId) filters.push(`user: <@${targetUserId}>`);
+  if (contains) filters.push(`contains: "${contains}"`);
+  if (bots) filters.push('bots only');
+  if (attachments) filters.push('attachments only');
+  const filterStr = filters.length ? `\nFilters: ${filters.join(', ')}` : '';
+
+  storePendingAction({
+    action: 'purge', targetUserId: targetUserId ?? message.id,
+    guildId: message.guildId!, channelId: channel.id,
+    reason: `Purge ${amount} messages`, actorId: message.author.id,
+    expiresAt: Date.now() + 60_000,
   });
 
-  const sent = await v2MessageReply(message, { content: `Purged ${count} message(s).` });
-  setTimeout(() => sent.delete().catch(() => undefined), 3000);
+  const sent = await v2MessageReply(message, {
+    content: `⚠️ **Confirm purge** ${amount} messages in <#${channel.id}>${filterStr}\nReact with ✅ to confirm, ❌ to cancel.`,
+  });
+  await sent.react('✅').catch(() => undefined);
+  await sent.react('❌').catch(() => undefined);
+  const collector = sent.createReactionCollector({
+    filter: (r, u) => (r.emoji.name === '✅' || r.emoji.name === '❌') && u.id === message.author.id,
+    time: 30_000, max: 1,
+  });
+  collector.on('end', async (collected) => {
+    await sent.delete().catch(() => undefined);
+    if (collected.first()?.emoji.name !== '✅') {
+      await v2MessageReply(message, { content: 'Purge cancelled.' });
+      return;
+    }
+    const count = await performPurge(app, message.author.id, message.guildId!, channel, amount, {
+      targetUserId, contains, bots, attachments, excludeId: message.id,
+    });
+    const reply = await v2MessageReply(message, { content: `Purged ${count} message(s).` });
+    setTimeout(() => reply.delete().catch(() => undefined), 3000);
+  });
 }
 
 const command: BotCommand = {
-  name: 'purge',
-  category: 'moderation',
-  description: 'Purge messages with optional filters',
-  data,
-  permissions: ['ManageMessages'],
-  aliases: ['clear', 'prune'],
-  execute,
-  prefixExecute,
+  name: 'purge', category: 'moderation', description: 'Purge messages with optional filters',
+  data, permissions: ['ManageMessages'], aliases: ['clear', 'prune'], execute, prefixExecute,
 };
 
 export default command;
