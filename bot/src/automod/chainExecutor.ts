@@ -5,6 +5,7 @@ import { parseDuration, renderPlaceholders } from '../../../shared/src/index';
 import { buildMessagePayload, clientEmojiIds, renderMessageSpecPlaceholders } from '../utils/messageBuilder';
 import { buildV2Content, buildRichV2, hexToInt } from '../utils/v2';
 import type { ResponseThrottle, ThrottleDecision } from './responseThrottle';
+import { notificationDmGuard } from '../moderation/notificationDmGuard';
 
 export interface ChainTrigger {
   rule: string;
@@ -50,10 +51,18 @@ export class ActionChainExecutor {
 
     for (const step of chain) {
       try {
-        await this.executeStep(step, trigger, member, result, suppressSeconds, suppressMode);
+        await this.executeStep(step, chain, trigger, member, result, suppressSeconds, suppressMode);
       } catch (err) {
         result.actionsFailed.push({ step: step.type, error: (err as Error).message });
       }
+    }
+
+    const dmHandled = result.actionsTaken.some((action) =>
+      action === 'dm_user_message' || action === 'dm_user' || action === 'send_channel_message_dm_failed',
+    );
+    if (trigger.message && !dmHandled) {
+      const dmSent = await this.tryDm(trigger.user, this.buildAutomodDm(trigger, chain));
+      if (dmSent) result.actionsTaken.push('dm_user_message');
     }
 
     return result;
@@ -61,6 +70,7 @@ export class ActionChainExecutor {
 
   private async executeStep(
     step: ActionChainStep,
+    chain: ActionChain,
     trigger: ChainTrigger,
     member: GuildMember | null | undefined,
     result: ChainResult,
@@ -109,7 +119,7 @@ export class ActionChainExecutor {
             const rendered = renderMessageSpecPlaceholders(spec, placeholders);
             const payload = buildMessagePayload(rendered, String(saved.id), clientEmojiIds(this.app.client));
             if (step.dm_first) {
-              const dmSent = await this.tryDm(trigger.user, payload as never);
+              const dmSent = await this.tryDm(trigger.user, this.buildAutomodDm(trigger, chain));
               if (dmSent) { result.actionsTaken.push('dm_user_message'); break; }
             }
             const sent = await channel.send({ ...payload, allowedMentions: { parse: [] } } as never);
@@ -134,8 +144,7 @@ export class ActionChainExecutor {
           thumbnailUrl: step.thumbnail_url ? renderPlaceholders(step.thumbnail_url, placeholders) : undefined,
         };
         if (step.dm_first) {
-          const dmPayload = this.buildFormatted(content, step.format);
-          const dmSent = await this.tryDm(trigger.user, dmPayload as never);
+          const dmSent = await this.tryDm(trigger.user, this.buildAutomodDm(trigger, chain, spec));
           if (dmSent) { result.actionsTaken.push('dm_user_message'); break; }
           spec.footer = spec.footer ? `${spec.footer}\n\n⚠️ DMs closed — showing publicly.` : '⚠️ DMs closed — showing publicly.';
         }
@@ -257,6 +266,43 @@ export class ActionChainExecutor {
     return buildV2Content(content);
   }
 
+  private buildAutomodDm(
+    trigger: ChainTrigger,
+    chain: ActionChain,
+    spec?: { title?: string; footer?: string; accentColor?: string },
+  ): { components: unknown[] } {
+    const removed = chain.some((step) => step.type === 'delete_message') ||
+      ['spam', 'duplicate_spam', 'mass_ping'].includes(trigger.module);
+    const content = (trigger.content ?? '').trim();
+    const preview = content
+      ? content.slice(0, 500).split('\n').map((line) => `> ${line || ' '}`).join('\n')
+      : '> No text content was available (the message may have contained only attachments).';
+    const text = [
+      '**What happened**',
+      removed
+        ? `Your message in <#${trigger.channel?.id ?? '0'}> was removed by AutoMod.`
+        : `Your message in <#${trigger.channel?.id ?? '0'}> was flagged by AutoMod.`,
+      '',
+      '**Why**',
+      trigger.reason ?? `It matched the **${trigger.rule}** rule.`,
+      '',
+      '**Detected content**',
+      preview,
+      '',
+      `**Rule:** ${trigger.rule}`,
+      `**Module:** ${trigger.module}`,
+      '',
+      'If you believe this was a mistake, contact the server staff team and include the rule shown above.',
+    ].join('\n');
+
+    return buildRichV2({
+      accentColor: hexToInt(spec?.accentColor) ?? 0xed4245,
+      header: spec?.title ?? 'AutoMod Message Removed',
+      text,
+      footer: spec?.footer ?? `${trigger.guild.name} • Automated moderation`,
+    });
+  }
+
   private async sendFormatted(
     channel: TextChannel,
     content: string,
@@ -298,12 +344,17 @@ export class ActionChainExecutor {
   }
 
   /** Attempt to DM the triggered user. Returns true if the DM was sent. */
-  private async tryDm(user: { createDM(): Promise<{ send(payload: unknown): Promise<unknown> }> }, payload: unknown): Promise<boolean> {
+  private async tryDm(user: User, payload: unknown): Promise<boolean> {
+    const guardKey = `automod:${Date.now()}`;
+    if (!notificationDmGuard.allow(user.id, guardKey, 0, this.app.config.punishment_dms.cooldown_seconds)) {
+      return true;
+    }
     try {
       const dm = await user.createDM();
-      await dm.send(payload);
+      await dm.send(payload as never);
       return true;
     } catch {
+      notificationDmGuard.release(user.id, guardKey);
       return false;
     }
   }

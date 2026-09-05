@@ -6,6 +6,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply, v2MessageReply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { snowflakeToDate } from '../../../../shared/src/index';
+import { parseTargetId } from '../../utils/moderationErrors';
 
 async function buildUserLookup(app: App, guild: Guild, user: User): Promise<string> {
   const member = await guild.members.fetch(user.id).catch(() => null);
@@ -78,7 +79,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
+  const targetId = parseTargetId(args[0]);
   if (!guild || !targetId) {
     await v2MessageReply(message, { content: 'Usage: `!lookup <user>`' });
     return;

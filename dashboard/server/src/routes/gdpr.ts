@@ -205,6 +205,9 @@ export function createGdprRouter(ctx: DashboardContext): Router {
     // escalation: clear
     await ctx.db.execute(`DELETE FROM escalation_state WHERE user_id = ?`, [userId]);
 
+    // roblox_links: delete
+    await ctx.db.execute(`DELETE FROM roblox_links WHERE user_id = ?`, [userId]);
+
     res.json({ success: true, deleted, message: 'Your personal data has been anonymized.' });
   });
 

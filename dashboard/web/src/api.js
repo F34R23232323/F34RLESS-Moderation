@@ -82,7 +82,9 @@ export async function raw(path, options = {}) {
       signal: controller.signal,
       ...options,
     });
-    return res.json();
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.message || body.error || `HTTP ${res.status}`);
+    return body;
   } finally {
     clearTimeout(timer);
   }

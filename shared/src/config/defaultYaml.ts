@@ -318,6 +318,7 @@ automod:
   global_immune_roles: []
   log_channel_id: "000000000000000000"
   # log_thread_id: "000000000000000000"
+  bulk_delete_quiet_seconds: 5          # reset on each hit; purge once the burst stops
   modules:
     spam:
       enabled: true
@@ -329,9 +330,11 @@ automod:
       suppressed_response_mode: "batched_summary"   # silent | batched_summary
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: "10m"
+          reason: "Automod: active message spam containment ({rule})"
         - type: create_report
           reason: "Automod: {rule}"
-        - type: delete_message
         - type: send_channel_message
           dm_first: true
           format: components_v2
@@ -502,9 +505,11 @@ automod:
       suppressed_response_mode: "silent"
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: "15m"
+          reason: "Automod: active repeated-message spam containment ({rule})"
         - type: create_report
           reason: "Automod: {rule}"
-        - type: delete_message
         - type: send_channel_message
           dm_first: true
           format: components_v2
@@ -526,9 +531,11 @@ automod:
       suppressed_response_mode: "silent"
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: "30m"
+          reason: "Automod: active mass-ping spam containment ({rule})"
         - type: create_report
           reason: "Automod: {rule}"
-        - type: delete_message
         - type: warn
           reason: "Automod: mass ping ({rule})"
         - type: run_escalation_check
@@ -589,6 +596,20 @@ automod:
         - type: warn
           reason: "Automod: new account velocity ({rule})"
         - type: run_escalation_check
+    spam_rejoins:
+      enabled: false
+      threshold: 3
+      window_seconds: 300
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+          reason: "Automod: {rule}"
+        - type: ban
+          reason: "Automod: spam rejoining ({rule})"
 
 # -----------------------------------------------------------------------------
 # Custom regex rules. Named, per-rule action chain, scope and immunity.
@@ -680,7 +701,7 @@ native_automod:
 
 # -----------------------------------------------------------------------------
 # Punishment DMs. Global toggle + per-type toggle/template.
-# Placeholders: {guild} {reason} {moderator} {duration} {case_id}
+# Placeholders: {guild} {reason} {moderator} {duration} {expires_at} {case_id}
 #               {appeal_instructions}
 # order: "before" DM before the Discord action (required for bans to be safe),
 #        "after" DM after the action.
@@ -690,6 +711,7 @@ punishment_dms:
   enabled: true
   hide_moderator: false
   order: "after"
+  cooldown_seconds: 15
   types:
     warn:
       enabled: true
@@ -817,13 +839,17 @@ channel_locking:
 
 # -----------------------------------------------------------------------------
 # Anti-raid mode. join_rate_threshold joins within window_seconds triggers.
-# action: lock_joins | timeout_joiners | verify_gate
+# action: lock_joins | timeout_joiners | quarantine_joiners | force_verify | log_only
 # -----------------------------------------------------------------------------
 anti_raid:
   enabled: false
-  join_rate_threshold: 10
-  window_seconds: 60
-  action: "lock_joins"
+  join_rate_threshold: 5
+  window_seconds: 30
+  action: "quarantine_joiners"
+  quarantine_role_id: "000000000000000000"
+  alert_channel_id: "000000000000000000"
+  account_age_days: 7
+  cooldown_seconds: 3600
 
 sticky_messages:
   enabled: false
@@ -855,8 +881,17 @@ modmail:
 
 verification_gate:
   enabled: false
-  button_channel_id: "000000000000000000"
+  panel_channel_id: "000000000000000000"
   verified_role_id: "000000000000000000"
+  unverified_role_id: "000000000000000000"
+  unverified_on_join: true
+  log_channel_id: "000000000000000000"
+  captcha:
+    enabled: true
+    types: ["math", "text", "button"]
+    math_max: 20
+    text_words: ["verify", "gate", "access", "welcome", "enter", "server", "safe"]
+    button_count: 4
   timeout_kick_seconds: 0                # 0 = disabled
 
 quarantine:

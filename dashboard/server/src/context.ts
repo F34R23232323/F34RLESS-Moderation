@@ -2,6 +2,7 @@ import { createDbPool, loadConfig, buildDatabaseUrl, formatConfigError } from '.
 import type { Pool } from 'mysql2/promise';
 import type { BotConfig } from '../../../shared/src/index';
 import { GuildAccessService } from './appeals/guildAccess';
+import { parseApiKey } from './apiKeys';
 
 export interface DashboardContext {
   db: Pool;
@@ -14,6 +15,7 @@ export interface DashboardContext {
   discordToken: string;
   config: BotConfig;
   guildAccess: GuildAccessService;
+  apiKey: string | null;
 }
 
 export function loadDashboardContext(): DashboardContext {
@@ -43,5 +45,6 @@ export function loadDashboardContext(): DashboardContext {
     discordToken: env.DISCORD_TOKEN,
     config: config.config,
     guildAccess: new GuildAccessService(env.DISCORD_TOKEN),
+    apiKey: parseApiKey(env.API_KEYS),
   };
 }

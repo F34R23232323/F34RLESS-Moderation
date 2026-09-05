@@ -62,27 +62,26 @@ async function runAltDetection(app: App, member: GuildMember): Promise<void> {
 async function runVerificationGate(app: App, member: GuildMember): Promise<void> {
   const cfg = app.config.verification_gate;
   if (!cfg.enabled) return;
+
+  if (cfg.verified_role_id) {
+    const role = member.guild.roles.cache.get(cfg.verified_role_id);
+    if (role && role.position < (member.guild.members.me?.roles.highest.position ?? 0)) {
+      await member.roles.remove(cfg.verified_role_id, 'Re-verification required').catch(() => undefined);
+    }
+  }
+
+  if (cfg.unverified_on_join && cfg.unverified_role_id) {
+    const role = member.guild.roles.cache.get(cfg.unverified_role_id);
+    if (role && role.position < (member.guild.members.me?.roles.highest.position ?? 0)) {
+      await member.roles.add(cfg.unverified_role_id, 'Unverified — pending gate').catch(() => undefined);
+    }
+  }
+
   await app.db.execute(
     `INSERT INTO gates (guild_id, user_id, state, expires_at) VALUES (?, ?, 'pending', ?)
      ON DUPLICATE KEY UPDATE state = 'pending', expires_at = VALUES(expires_at)`,
     [member.guild.id, member.id, cfg.timeout_kick_seconds > 0 ? new Date(Date.now() + cfg.timeout_kick_seconds * 1000) : null],
   );
-  if (cfg.verified_role_id) {
-    const role = member.guild.roles.cache.get(cfg.verified_role_id);
-    if (role && role.position < (member.guild.members.me?.roles.highest.position ?? 0)) {
-      // gate keeps them out by removing send permission handled via a base role;
-      // we instead just flag for now — staff can rely on the button flow.
-    }
-  }
-if (cfg.button_channel_id) {
-    const channel = member.guild.channels.cache.get(cfg.button_channel_id);
-    if (channel && 'send' in channel) {
-      const { v2Send } = await import('../utils/v2');
-      await v2Send(channel, `Welcome <@${member.id}>! Click below to verify and gain access.`, {
-        buttons: [{ customId: `verify:${member.id}`, label: 'Verify', style: 3 }],
-      }).catch(() => undefined);
-    }
-  }
 }
 
 async function runAntiRaid(app: App, member: GuildMember): Promise<void> {
@@ -91,9 +90,13 @@ async function runAntiRaid(app: App, member: GuildMember): Promise<void> {
   const manager = app.automod;
   const moduleName = 'new_account_velocity';
   const modCfg = manager.getModuleConfig(moduleName);
-  if (modCfg && modCfg.enabled) return; // new_account_velocity already handles velocity
+  if (modCfg && modCfg.enabled) return;
 
-  // Fallback: track raw join rate per guild
+  if (cfg.account_age_days > 0) {
+    const accountAgeDays = (Date.now() - member.user.createdTimestamp) / 86400000;
+    if (accountAgeDays > cfg.account_age_days) return;
+  }
+
   const now = Date.now();
   const joinLog = app.joinRate.get(member.guild.id) ?? [];
   joinLog.push(now);

@@ -205,7 +205,20 @@ export function formatDetails(details: unknown, guild: Guild | null, depth = 0):
       continue;
     }
 
+    if (typeof value === 'number' && key.endsWith('Ms')) {
+      lines.push(`**${label}:** ${humanizeMs(value)}`);
+      continue;
+    }
+
     const raw = String(value);
+    if (key.endsWith('At')) {
+      const timestamp = Date.parse(raw);
+      if (Number.isFinite(timestamp)) {
+        const unix = Math.floor(timestamp / 1000);
+        lines.push(`**${label}:** <t:${unix}:F> (<t:${unix}:R>)`);
+        continue;
+      }
+    }
     const mention = mentionSnowflake(key, raw);
     lines.push(`**${label}:** ${truncate(mention ?? raw)}`);
   }
@@ -214,14 +227,19 @@ export function formatDetails(details: unknown, guild: Guild | null, depth = 0):
 
 export function humanizeMs(ms: number): string {
   if (!ms || ms <= 0) return 'permanent';
-  const d = Math.floor(ms / 86400000);
-  const h = Math.floor((ms % 86400000) / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
+  let seconds = Math.max(1, Math.ceil(ms / 1000));
+  const d = Math.floor(seconds / 86400);
+  seconds %= 86400;
+  const h = Math.floor(seconds / 3600);
+  seconds %= 3600;
+  const m = Math.floor(seconds / 60);
+  seconds %= 60;
   const parts: string[] = [];
   if (d) parts.push(`${d}d`);
   if (h) parts.push(`${h}h`);
   if (m) parts.push(`${m}m`);
-  return parts.join(' ') || `${Math.round(ms / 1000)}s`;
+  if (seconds) parts.push(`${seconds}s`);
+  return parts.join(' ');
 }
 
 /** True if the event is "moderation_action" or otherwise needs a red accent. */

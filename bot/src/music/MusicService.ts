@@ -1,4 +1,5 @@
-import { DisTube, Events, type Queue, type Song } from 'distube';
+import DisTube from 'distube';
+import { Events, type Queue, type Song } from 'distube';
 import { YouTubePlugin } from '@distube/youtube';
 import { SpotifyPlugin } from '@distube/spotify';
 import { SoundCloudPlugin } from '@distube/soundcloud';

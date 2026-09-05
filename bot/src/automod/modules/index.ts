@@ -18,6 +18,7 @@ import { createRegexEngineModule } from './regexEngine';
 import { createTypingSpeedModule } from '../heuristics/typingSpeed';
 import { createMassIdenticalJoinsModule } from '../heuristics/massIdenticalJoins';
 import { createNewAccountVelocityModule } from '../heuristics/newAccountVelocity';
+import { createSpamRejoinsModule } from '../heuristics/spamRejoins';
 
 export function registerAutomodModules(app: App, manager: AutomodManager): void {
   const tracker = new MessageTracker();
@@ -49,4 +50,5 @@ export function registerAutomodModules(app: App, manager: AutomodManager): void 
 
   manager.registerJoinModule(createMassIdenticalJoinsModule());
   manager.registerJoinModule(createNewAccountVelocityModule());
+  manager.registerJoinModule(createSpamRejoinsModule());
 }

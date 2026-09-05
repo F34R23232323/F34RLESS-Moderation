@@ -16,5 +16,9 @@ import { migration014 } from './014_music_settings';
 import { migration015 } from './015_appeals';
 import { migration016 } from './016_mute_renewals';
 import { migration017 } from './017_user_privacy';
+import { migration018 } from './018_roblox_links';
+import { migration019 } from './019_drop_lockdown_preset_name';
+import { migration020 } from './020_api_case_requests';
+import { migration021 } from './021_reply_ping_protection';
 
-export const migrations: Migration[] = [migration001, migration002, migration003, migration004, migration005, migration006, migration007, migration008, migration009, migration010, migration011, migration012, migration013, migration014, migration015, migration016, migration017];
+export const migrations: Migration[] = [migration001, migration002, migration003, migration004, migration005, migration006, migration007, migration008, migration009, migration010, migration011, migration012, migration013, migration014, migration015, migration016, migration017, migration018, migration019, migration020, migration021];

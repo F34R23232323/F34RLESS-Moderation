@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
+import { parseTargetId } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
   .setName('report')
@@ -67,7 +68,7 @@ async function userContext(app: App, interaction: UserContextMenuCommandInteract
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
+  const targetId = parseTargetId(args[0]);
   const reason = args.slice(1).join(' ') || 'No reason given';
   if (!guild || !targetId) {
     await v2MessageReply(message, { content: 'Usage: `!report <user> <reason>`' });

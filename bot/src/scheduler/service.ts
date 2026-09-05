@@ -21,7 +21,6 @@ export class SchedulerService {
   public start(): void {
     this.schedulePunishmentExpiry();
     this.scheduleReminders();
-    this.scheduleLockdowns();
     this.scheduleAnnouncements();
     this.scheduleBackups();
     this.scheduleSlowmodeRevert();
@@ -29,6 +28,7 @@ export class SchedulerService {
     this.scheduleTrustLevels();
     this.schedulePendingMessageSends();
     this.schedulePendingDashboardLogs();
+    this.schedulePendingApiCases();
     this.schedulePendingAppealActions();
     this.scheduleChannelSync();
     this.scheduleRoleConnections();
@@ -45,6 +45,12 @@ export class SchedulerService {
   private schedulePendingDashboardLogs(): void {
     this.addCron('dashboard-log-sends', '*/5 * * * * *', async () => {
       await this.app.dashboardLogs.processPending();
+    });
+  }
+
+  private schedulePendingApiCases(): void {
+    this.addCron('api-case-execution', '*/2 * * * * *', async () => {
+      await this.app.apiCases.processPending();
     });
   }
 
@@ -158,18 +164,6 @@ for (const row of rows) {
         }
       }
     });
-  }
-
-  private scheduleLockdowns(): void {
-    for (const preset of this.app.config.channel_locking.presets) {
-      for (const sched of preset.schedule) {
-        this.addCron(`lockdown-${preset.name}-${sched.action}`, sched.cron, async () => {
-          const channelLocking = this.app.lockingService;
-          if (sched.action === 'lock') await channelLocking.lock(preset.name);
-          else await channelLocking.unlock(preset.name);
-        });
-      }
-    }
   }
 
   private scheduleAnnouncements(): void {

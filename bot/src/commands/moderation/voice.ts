@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
+import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 function voiceCommand(name: string, description: string, aliases: string[], action: (m: any) => Promise<void>): BotCommand {
   const data = new SlashCommandBuilder()
@@ -36,7 +37,7 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
     },
     async prefixExecute(message, args, app) {
       const guild = message.guild;
-      const targetId = args[0]?.replace(/[<@!>]/g, '');
+      const targetId = parseTargetId(args[0]);
       if (!guild || !targetId) {
         await v2MessageReply(message, { content: `Usage: !${name} <user>` });
         return;
@@ -46,7 +47,7 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
         await v2MessageReply(message, { content: 'User not found.' });
         return;
       }
-      await action(member).then(() => v2MessageReply(message, { content: `Done for <@${targetId}>.` })).catch((err) => v2MessageReply(message, { content: `Failed: ${err.message}` }));
+      await action(member).then(() => v2MessageReply(message, { content: `Done for <@${targetId}>.` })).catch((err) => v2MessageReply(message, { content: `Failed: ${mapDiscordError(err.message)}` }));
     },
   };
 }

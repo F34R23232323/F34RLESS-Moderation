@@ -29,6 +29,14 @@ export class ModerationCommandGuard {
     if (this.isOwner(member.id)) return { ok: true };
     const cfg = this.app.config.commands[command.name];
 
+    const allowedRoles = cfg?.allowed_roles ?? [];
+    if (allowedRoles.length > 0) {
+      const hasAllowedRole = member.roles.cache.some((r) => allowedRoles.includes(r.id));
+      if (!hasAllowedRole) {
+        return { ok: false, reason: 'you do not have a required role for this command' };
+      }
+    }
+
     if (cfg?.permission_group) {
       const group = this.app.config.staff_permission_groups.groups.find((g) => g.name === cfg.permission_group);
       if (group) {

@@ -26,6 +26,8 @@ export interface EnvVars {
   /** Optional Spotify API credentials — improve Spotify URL resolution reliability */
   SPOTIFY_CLIENT_ID?: string;
   SPOTIFY_CLIENT_SECRET?: string;
+  /** Single API key used by external bots to authenticate against the HTTP API. */
+  API_KEYS?: string;
 }
 
 function requireEnv(name: string): string {
@@ -56,6 +58,7 @@ export function loadEnv(): EnvVars {
     GUILD_ID: process.env.GUILD_ID,
     SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
+    API_KEYS: process.env.API_KEYS,
   };
 }
 

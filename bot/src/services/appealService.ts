@@ -434,7 +434,7 @@ export class AppealService {
       decidedByTag: decidedBy?.tag ?? null,
       decidedAt: appeal.decided_at,
     });
-    await message.edit({ content: '', components: card.components, flags: card.flags, allowedMentions: { parse: [] } } as never).catch(() => undefined);
+    await message.edit({ components: card.components, flags: card.flags, allowedMentions: { parse: [] } } as never).catch(() => undefined);
   }
 
   /** Relay a staff web message into the Discord thread (+ DM the appellant). */

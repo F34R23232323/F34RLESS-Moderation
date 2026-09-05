@@ -6,7 +6,13 @@ export async function handleAutoModerationActionExecution(
   app: App,
   execution: AutoModerationActionExecution,
 ): Promise<void> {
-  await handleNativeAutomod(app, execution);
+  app.logger.info(
+    `[autoModerationActionExecution] FIRED — ruleId=${execution.ruleId} actionType=${execution.action.type} userId=${execution.userId} channelId=${execution.channelId ?? 'null'} messageId=${execution.messageId ?? 'null'} content="${execution.content?.slice(0, 80) ?? ''}"`,
+  );
+  await Promise.all([
+    handleNativeAutomod(app, execution),
+    app.replyPingProtection.handleExecution(execution),
+  ]);
 }
 
 export default { name: 'autoModerationActionExecution', run: handleAutoModerationActionExecution };

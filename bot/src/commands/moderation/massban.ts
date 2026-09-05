@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
+import { isValidSnowflake } from '../../../../shared/src/index';
 
 const data = new SlashCommandBuilder()
   .setName('massban')
@@ -71,10 +72,16 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const ids = args[0]?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+  const rawIds = args[0]?.split(',').map((s) => s.trim()).filter(Boolean) ?? [];
+  const ids = rawIds.filter((id) => isValidSnowflake(id));
+  const invalidCount = rawIds.length - ids.length;
   const reason = args.slice(1).join(' ') || 'Mass action';
   if (!guild || ids.length === 0) {
-    await v2MessageReply(message, { content: 'Usage: `!massban <id1,id2,...> <reason>`' });
+    if (invalidCount > 0) {
+      await v2MessageReply(message, { content: `Usage: \`!massban <id1,id2,...> <reason>\`\n${invalidCount} invalid ID(s) skipped (must be 15-20 digit numbers).` });
+    } else {
+      await v2MessageReply(message, { content: 'Usage: `!massban <id1,id2,...> <reason>`' });
+    }
     return;
   }
   let banned = 0;

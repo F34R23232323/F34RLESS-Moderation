@@ -39,12 +39,15 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
 
     await app.automod.handleMessage(message);
 
+    await app.replyPingProtection.handleMessage(message);
+
     if (message.inGuild()) {
       await handleAfk(app, message);
       if (app.config.community.levels.enabled) await handleXp(app, message);
     }
 
     if (message.content) await handlePrefix(app, message);
+
   } catch (err) {
     app.logger.error('messageCreate handler threw:', err);
   }
@@ -272,6 +275,7 @@ async function runCommand(app: App, message: Message, commandName: string, args:
     app.metrics.incCommand(false);
     app.logger.error(`Prefix command ${cmd.name} failed:`, err);
     await app.logManager.reportError(`Prefix command ${cmd.name}`, err);
+    await v2MessageReply(message, { content: 'An error occurred while running this command.' }).catch(() => undefined);
   } finally {
     await app.logManager.logCommandUsage({
       guildId: message.guildId,

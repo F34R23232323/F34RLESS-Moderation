@@ -47,12 +47,11 @@ async function runPurgeUntil(app: App, interaction: ChatInputCommandInteraction 
     return;
   }
 
-  // Collect messages newer than the target (to be deleted)
   const toDelete = [...fetched.values()]
     .filter((m: any) => m.createdTimestamp > target.createdTimestamp && m.id !== targetId)
     .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
 
-  const count = toDelete.length + 1; // +1 for the target message itself
+  const count = toDelete.length + 1;
   if (count === 0) {
     await (interaction as any).reply({ content: 'No messages to purge.', ephemeral: true });
     return;
@@ -131,65 +130,32 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     return;
   }
 
-  const actionId = storePendingAction({
-    action: 'purge',
-    targetUserId: targetId,
-    guildId: message.guildId!,
-    channelId: channel.id,
-    reason: `Purge until ${targetId}`,
-    actorId: message.author.id,
-    expiresAt: Date.now() + 60_000,
-  });
+  const { sendButtonConfirm } = await import('../../components/moderation');
+  const { confirmed } = await sendButtonConfirm(app, message, 'purge', targetId, `Purge ${count} messages until target`);
+  if (!confirmed) return;
 
-  const { buildRichV2 } = require('../../utils/v2');
-  const embed = buildRichV2({
-    accentColor: 0xfee75c,
-    header: '⚠️ Confirm Purge',
-    text: `This will delete **${count} message(s)** in <#${channel.id}>, including the target message.\nTarget: [Message](${target.url})\n\n**React with ✅ to confirm.**`,
-  });
-
-  const sent = await v2MessageReply(message, {
-    content: `⚠️ This will delete **${count} message(s)** including the target. React with ✅ within 30s to confirm, or ❌ to cancel.`,
-  });
-  await sent.react('✅').catch(() => undefined);
-  await sent.react('❌').catch(() => undefined);
-
-  const collector = sent.createReactionCollector({
-    filter: (reaction, user) => (reaction.emoji.name === '✅' || reaction.emoji.name === '❌') && user.id === message.author.id,
-    time: 30_000,
-    max: 1,
-  });
-
-  collector.on('end', async (collected) => {
-    await sent.delete().catch(() => undefined);
-    if (collected.size === 0 || collected.first()?.emoji.name !== '✅') {
-      await v2MessageReply(message, { content: 'Purge cancelled.' });
-      return;
+  try {
+    const fetched = await (channel as any).messages.fetch({ around: targetId, limit: 100 });
+    const toDelete = [...fetched.values()]
+      .filter((m: any) => m.createdTimestamp >= target.createdTimestamp && m.id !== message.id)
+      .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
+    const ids = toDelete.map((m: any) => m.id);
+    if (ids.length > 0) {
+      try { await (channel as any).bulkDelete(ids, true); }
+      catch { for (const m of toDelete) await m.delete().catch(() => undefined); }
     }
-    // Execute the purge
-    try {
-      const fetched = await (channel as any).messages.fetch({ around: targetId, limit: 100 });
-      const toDelete = [...fetched.values()]
-        .filter((m: any) => m.createdTimestamp >= target.createdTimestamp && m.id !== message.id)
-        .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
-      const ids = toDelete.map((m: any) => m.id);
-      if (ids.length > 0) {
-        try { await (channel as any).bulkDelete(ids, true); }
-        catch { for (const m of toDelete) await m.delete().catch(() => undefined); }
-      }
-      await app.logManager.log({
-        event: 'moderation_action',
-        guildId: message.guildId!,
-        channelId: channel.id,
-        actorId: message.author.id,
-        message: `Purged ${ids.length} messages in <#${channel.id}>`,
-        details: { amount: ids.length },
-      });
-      await v2MessageReply(message, { content: `✅ Purged ${ids.length} message(s).` });
-    } catch (err) {
-      await v2MessageReply(message, { content: `❌ Purge failed: ${(err as Error).message}` });
-    }
-  });
+    await app.logManager.log({
+      event: 'moderation_action',
+      guildId: message.guildId!,
+      channelId: channel.id,
+      actorId: message.author.id,
+      message: `Purged ${ids.length} messages in <#${channel.id}>`,
+      details: { amount: ids.length },
+    });
+    await v2MessageReply(message, { content: `✅ Purged ${ids.length} message(s).` });
+  } catch (err) {
+    await v2MessageReply(message, { content: `❌ Purge failed: ${(err as Error).message}` });
+  }
 }
 
 const command: BotCommand = {

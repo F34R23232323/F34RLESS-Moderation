@@ -7,6 +7,7 @@ import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
   .setName('kick')
@@ -33,64 +34,35 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     action: 'kick', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId,
     reason, actorId: interaction.user.id, expiresAt: Date.now() + 60_000,
   });
-  const { components, flags } = buildConfirmEmbed('Kick', resolved.user.id, reason);
-  await interaction.editReply({ content: '', components, flags } as never);
+  const { components, flags } = buildConfirmEmbed('Kick', resolved.user.id, reason, undefined, actionId);
+  await interaction.editReply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  if (!guild) {
-    await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>`' });
-    return;
-  }
+  if (!guild) { await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>`' }); return; }
   const replyCtx = await resolveReplyContext(message);
-  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let targetId = parseTargetId(args[0]) ?? (replyCtx ? replyCtx.targetId : null);
   let reason = args.slice(1).join(' ') || 'No reason provided';
   let evidence: CaseEvidenceItem[] | undefined;
-  if (!targetId && replyCtx) {
-    targetId = replyCtx.targetId;
-    reason = args.join(' ') || 'No reason provided';
-    evidence = replyCtx.evidence;
-  }
-  if (!targetId) {
-    await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>` — or reply to a message to kick its author.' });
-    return;
-  }
+  if (!parseTargetId(args[0]) && replyCtx) { targetId = replyCtx.targetId; reason = args.join(' ') || 'No reason provided'; evidence = replyCtx.evidence; }
+  if (!targetId) { await v2MessageReply(message, { content: 'Usage: `!kick <user> <reason>` — or reply to a message to kick its author.' }); return; }
   const member = await guild.members.fetch(targetId).catch(() => null);
-  if (!member) {
-    await v2MessageReply(message, { content: 'User not found.' });
-    return;
-  }
+  if (!member) { await v2MessageReply(message, { content: 'User not found.' }); return; }
   const guard = app.modGuard.canModerate(member, message.member!);
-  if (!guard.ok) {
-    await v2MessageReply(message, { content: `Cannot kick: ${guard.reason}` });
-    return;
-  }
-  const actionId = storePendingAction({
-    action: 'kick', targetUserId: targetId, guildId: guild.id, channelId: message.channelId,
-    reason, actorId: message.author.id, expiresAt: Date.now() + 60_000,
-  });
-  const sent = await v2MessageReply(message, { content: `⚠️ **Confirm kick** <@${targetId}> — reason: ${reason}\nReact with ✅ to confirm, ❌ to cancel.` });
-  await sent.react('✅').catch(() => undefined);
-  await sent.react('❌').catch(() => undefined);
-  const collector = sent.createReactionCollector({ filter: (r, u) => (r.emoji.name === '✅' || r.emoji.name === '❌') && u.id === message.author.id, time: 30_000, max: 1 });
-  collector.on('end', async (collected) => {
-    await sent.delete().catch(() => undefined);
-    if (collected.first()?.emoji.name !== '✅') { await v2MessageReply(message, { content: 'Kick cancelled.' }); return; }
-    const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-    await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${result.error}` });
-  });
+  if (!guard.ok) { await v2MessageReply(message, { content: `Cannot kick: ${guard.reason}` }); return; }
+
+  const { sendButtonConfirm } = await import('../../components/moderation');
+  const { confirmed } = await sendButtonConfirm(app, message, 'kick', targetId, reason);
+  if (!confirmed) return;
+
+  const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
+  await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
 }
 
 const command: BotCommand = {
-  name: 'kick',
-  category: 'moderation',
-  description: 'Kick a user from the server',
-  data,
-  permissions: ['KickMembers'],
-  aliases: ['k', 'kik'],
-  execute,
-  prefixExecute,
+  name: 'kick', category: 'moderation', description: 'Kick a user from the server',
+  data, permissions: ['KickMembers'], aliases: ['k', 'kik'], execute, prefixExecute,
 };
 
 export default command;

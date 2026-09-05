@@ -31,6 +31,7 @@ export const commandSchema = z
     immune_roles: snowflakeArray,
     aliases: z.array(z.string().min(1)).default([]),
     permission_group: z.string().optional(),
+    allowed_roles: snowflakeArray,
   })
   .strict();
 
@@ -490,6 +491,7 @@ export const configSchema = z
         global_immune_roles: snowflakeArray,
         log_channel_id: snowflake.optional(),
         log_thread_id: snowflake.optional(),
+        bulk_delete_quiet_seconds: z.number().int().min(1).max(30).default(5),
         modules: z
           .object({
             spam: z
@@ -589,6 +591,14 @@ export const configSchema = z
               })
               .strict()
               .default(() => ({ enabled: false, action_chain: [...DEFAULT_WARN_CHAIN], immune_roles: [], channel_ignore_list: [], log_channel_id: undefined, log_thread_id: undefined, suppress_repeat_response_seconds: 0, suppressed_response_mode: 'silent' as const, shadow_mode: false, max_account_age_days: 7, threshold: 3, window_seconds: 600 })),
+            spam_rejoins: z
+              .object({
+                ...automodModuleBase,
+                threshold: z.number().int().min(2).default(3),
+                window_seconds: z.number().int().min(1).default(300),
+              })
+              .strict()
+              .default(() => ({ enabled: false, action_chain: [{ type: 'create_report' as const, reason: 'Automod: {rule}' }, { type: 'ban' as const, reason: 'Automod: spam rejoining ({rule})' }], immune_roles: [], channel_ignore_list: [], log_channel_id: undefined, log_thread_id: undefined, suppress_repeat_response_seconds: 0, suppressed_response_mode: 'silent' as const, shadow_mode: false, threshold: 3, window_seconds: 300 })),
           })
           .strict()
           .default({}),
@@ -623,6 +633,7 @@ export const configSchema = z
                 scope: z.enum(['message', 'username', 'nickname']).default('message'),
                 enabled: boolean.default(true),
                 immune_roles: snowflakeArray,
+                channel_ignore_list: snowflakeArray.optional().default([]),
                 action_chain: actionChainSchema,
               })
               .strict(),
@@ -637,6 +648,7 @@ export const configSchema = z
         enabled: boolean.default(true),
         hide_moderator: boolean.default(false),
         order: z.enum(['before', 'after']).default('after'),
+        cooldown_seconds: z.number().int().min(1).max(300).default(15),
         types: z
           .record(
             z.enum(['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute', 'case_closed']),
@@ -757,40 +769,23 @@ export const configSchema = z
 
     channel_locking: z
       .object({
-        presets: z
-          .array(
-            z
-              .object({
-                name: z.string().min(1),
-                channels: snowflakeArray,
-                categories: snowflakeArray,
-                all_channels: boolean.default(false),
-                exclude_roles: snowflakeArray,
-                deny_permissions: z.array(z.string()).default(['SendMessages', 'AddReactions']),
-                schedule: z
-                  .array(
-                    z
-                      .object({
-                        cron: z.string().min(1),
-                        action: z.enum(['lock', 'unlock']),
-                      })
-                      .strict(),
-                  )
-                  .default([]),
-              })
-              .strict(),
-          )
-          .default([]),
+        channels: snowflakeArray.default([]),
+        exclude_roles: snowflakeArray.default([]),
+        deny_permissions: z.array(z.string()).default(['SendMessages', 'AddReactions']),
       })
       .strict()
-      .default({ presets: [] }),
+      .default({ channels: [], exclude_roles: [], deny_permissions: ['SendMessages', 'AddReactions'] }),
 
     anti_raid: z
       .object({
         enabled: boolean.default(false),
-        join_rate_threshold: z.number().int().min(2).default(10),
-        window_seconds: z.number().int().min(1).default(60),
-        action: z.enum(['lock_joins', 'timeout_joiners', 'verify_gate']).default('lock_joins'),
+        join_rate_threshold: z.number().int().min(2).default(5),
+        window_seconds: z.number().int().min(1).default(30),
+        action: z.enum(['lock_joins', 'timeout_joiners', 'quarantine_joiners', 'force_verify', 'log_only']).default('quarantine_joiners'),
+        quarantine_role_id: snowflake.optional(),
+        alert_channel_id: snowflake.optional(),
+        account_age_days: z.number().int().min(0).default(7),
+        cooldown_seconds: z.number().int().min(60).default(3600),
       })
       .strict()
       .default({}),
@@ -850,8 +845,20 @@ export const configSchema = z
     verification_gate: z
       .object({
         enabled: boolean.default(false),
-        button_channel_id: snowflake.optional(),
+        panel_channel_id: snowflake.optional(),
         verified_role_id: snowflake.optional(),
+        unverified_role_id: snowflake.optional(),
+        unverified_on_join: boolean.default(true),
+        log_channel_id: snowflake.optional(),
+        captcha: z
+          .object({
+            enabled: boolean.default(true),
+            types: z.array(z.enum(['math', 'text', 'button'])).default(['math', 'text', 'button']),
+            math_max: z.number().int().min(2).default(20),
+            text_words: z.array(z.string()).default(['verify', 'gate', 'access', 'welcome', 'enter', 'server', 'safe']),
+            button_count: z.number().int().min(2).max(5).default(4),
+          })
+          .default({}),
         timeout_kick_seconds: z.number().int().min(0).default(0),
       })
       .strict()
@@ -1018,6 +1025,44 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    reply_ping_protection: z
+      .object({
+        enabled: boolean.default(false),
+        native_rule_id: z.string().regex(/^\d{15,20}$/, 'Expected a Discord AutoMod rule ID (snowflake)').optional(),
+        protected_users: snowflakeArray,
+        protected_roles: snowflakeArray,
+        exempt_users: snowflakeArray,
+        exempt_roles: snowflakeArray,
+        exempt_channels: snowflakeArray,
+        notice_channel_id: snowflake.optional(),
+        log_channel_id: snowflake.optional(),
+        notice_title: z.string().min(1).default('Reply Mention Blocked'),
+        notice_description: z.string().optional(),
+        notice_accent_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Expected a hex color like #FEE75C').default('#FEE75C'),
+        notice_delete_after_seconds: z.number().int().min(0).default(0),
+        escalation: z
+          .object({
+            enabled: boolean.default(true),
+            window_seconds: z.number().int().min(1).default(3600),
+            levels: z
+              .array(
+                z
+                  .object({
+                    level: z.number().int().min(1),
+                    violation_count: z.number().int().min(1),
+                    action_type: z.enum(['warn', 'mute', 'timeout', 'kick', 'ban']),
+                    action_duration: z.string().optional(),
+                  })
+                  .strict(),
+              )
+              .default([]),
+          })
+          .strict()
+          .default({}),
+      })
+      .strict()
+      .default({}),
+
     error_reporting: z
       .object({
         enabled: boolean.default(true),
@@ -1054,6 +1099,7 @@ export type AutomodModuleConfig = z.infer<typeof configSchema.shape.automod.shap
 export type CommandConfig = z.infer<typeof commandSchema>;
 export type LoggingEntryConfig = z.infer<typeof loggingEntrySchema>;
 export type NsfwModerationConfig = z.infer<typeof configSchema.shape.nsfw_moderation>;
+export type ReplyPingProtectionConfig = z.infer<typeof configSchema.shape.reply_ping_protection>;
 export type EscalationActionConfig = z.infer<typeof escalationActionSchema>;
 export type PunishmentDmTypeConfig = z.infer<typeof punishmentDmTypeSchema>;
 

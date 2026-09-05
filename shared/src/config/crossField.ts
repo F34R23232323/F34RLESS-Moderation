@@ -57,17 +57,6 @@ export function runCrossFieldChecks(config: BotConfig): ConfigIssue[] {
     levelSeen.add(lv.level);
   }
 
-  const presetNames = new Set<string>();
-  for (const p of config.channel_locking.presets) {
-    if (presetNames.has(p.name)) {
-      add(issues, `channel_locking.presets`, 'unique preset name', `duplicate preset "${p.name}"`);
-    }
-    presetNames.add(p.name);
-    if (p.channels.length === 0 && p.categories.length === 0 && !p.all_channels) {
-      add(issues, `channel_locking.presets.${p.name}`, 'at least one of channels/categories/all_channels', 'none specified');
-    }
-  }
-
   const ruleNames = new Set<string>();
   for (const rule of config.regex_engine.rules) {
     if (ruleNames.has(rule.name)) {

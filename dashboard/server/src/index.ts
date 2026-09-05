@@ -16,6 +16,7 @@ import { createMessageLogRouter } from './routes/messageLog';
 import { createRoleConnectionsRouter } from './routes/roleConnections';
 import { createAppealsRouter } from './routes/appeals';
 import { createGdprRouter } from './routes/gdpr';
+import { createExternalApiRouter } from './routes/external';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -69,6 +70,9 @@ async function main(): Promise<void> {
 
   // Public GDPR API (session-authenticated: any Discord user can manage their data).
   app.use('/api/gdpr', createGdprRouter(ctx));
+
+  // External-bot API: API-key authenticated (Authorization: Bearer <key>).
+  app.use('/api/v1', createExternalApiRouter(ctx));
 
   const protectedApi = express.Router();
   protectedApi.use(requireAuth(ctx));

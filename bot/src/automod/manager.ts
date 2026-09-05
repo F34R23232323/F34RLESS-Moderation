@@ -43,6 +43,8 @@ export class AutomodManager {
   /** Per-target-user last ping-DM timestamp — prevents the same user being
    *  DM'd about pings more than once within this window. */
   private readonly recentPingedDms = new Map<string, number>();
+  /** Pending spam purges, debounced per channel until the message burst is quiet. */
+  private readonly pendingPurges = new Map<string, { ids: Set<string>; timer: NodeJS.Timeout }>();
   private static readonly DM_COOLDOWN_MS = 120_000;
 
   constructor(app: App) {
@@ -91,9 +93,9 @@ export class AutomodManager {
       }
     }
 
-    // Single bulk-delete per channel for all triggered modules
+    // Merge triggered messages into one per-channel purge after the burst ends.
     if (allPurgeIds.length > 0) {
-      await this.purgeMessages(channel, allPurgeIds);
+      this.queuePurge(channel, allPurgeIds);
     }
   }
 
@@ -129,7 +131,7 @@ export class AutomodManager {
     const globalImmune = this.app.config.automod.global_immune_roles;
     if (member.roles.cache.some((r) => globalImmune.includes(r.id))) return;
 
-    for (const moduleName of ['mass_identical_joins', 'new_account_velocity'] as const) {
+    for (const moduleName of ['mass_identical_joins', 'new_account_velocity', 'spam_rejoins'] as const) {
       try {
         const cfg = this.getModuleConfig(moduleName);
         if (!cfg || !cfg.enabled || cfg.shadow_mode) continue;
@@ -156,7 +158,7 @@ export class AutomodManager {
       if (hit && hit.rule) {
         await this.handleHit(hit, member, null, null, cfg);
       }
-    } catch (err) {
+      } catch (err) {
       this.app.logger.error('Automod nickname check threw:', err);
     }
   }
@@ -325,15 +327,36 @@ export class AutomodManager {
     }
   }
 
+  private queuePurge(channel: TextChannel, ids: string[]): void {
+    const existing = this.pendingPurges.get(channel.id);
+    const pendingIds = existing?.ids ?? new Set<string>();
+    for (const id of ids) pendingIds.add(id);
+    if (existing) clearTimeout(existing.timer);
+
+    const quietMs = this.app.config.automod.bulk_delete_quiet_seconds * 1000;
+    const timer = setTimeout(() => {
+      this.pendingPurges.delete(channel.id);
+      void this.purgeMessages(channel, [...pendingIds]);
+    }, quietMs);
+    timer.unref();
+    this.pendingPurges.set(channel.id, { ids: pendingIds, timer });
+  }
+
   private async purgeMessages(channel: TextChannel, ids: string[]): Promise<void> {
-    const unique = [...new Set(ids)];
-    if (unique.length === 0) return;
-    try {
-      await channel.bulkDelete(unique);
-    } catch (err) {
+    const unique = [...new Set(ids)].filter((id) => channel.messages.cache.has(id));
+    for (let index = 0; index < unique.length; index += 100) {
+      const batch = unique.slice(index, index + 100);
+      try {
+        if (batch.length === 1) {
+          await channel.messages.delete(batch[0]);
+        } else if (batch.length > 1) {
+          await channel.bulkDelete(batch);
+        }
+      } catch (err) {
       // Rate limited or messages too old — log and move on. The messages
       // will be caught by the next trigger or Discord's auto-purge.
-      this.app.logger.debug(`bulkDelete failed for channel ${channel.id}: ${(err as Error).message}`);
+        this.app.logger.warn(`Queued automod purge failed for channel ${channel.id}: ${(err as Error).message}`);
+      }
     }
   }
 

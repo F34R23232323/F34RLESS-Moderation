@@ -4,7 +4,7 @@ const FIRED_PRUNE_MS = 3600_000;
 
 export function createMassPingModule(): AutomodModule {
   /** Per sender: target userId → list of recent timestamps */
-  const pingHistory = new Map<string, Map<string, number[]>>();
+  const pingHistory = new Map<string, Map<string, Array<{ ts: number; id: string }>>>();
   const firedAt = new Map<string, number>();
 
   return {
@@ -43,17 +43,17 @@ export function createMassPingModule(): AutomodModule {
 
       for (const [targetId] of ctx.message.mentions.users) {
         if (targetId === ctx.member.id) continue; // ignore self-mentions
-        let timestamps = senderHistory.get(targetId);
-        if (!timestamps) {
-          timestamps = [];
-          senderHistory.set(targetId, timestamps);
+        let entries = senderHistory.get(targetId);
+        if (!entries) {
+          entries = [];
+          senderHistory.set(targetId, entries);
         }
-        timestamps.push(now);
+        entries.push({ ts: now, id: ctx.message.id });
         // Prune old entries
         const cutoff = now - windowMs;
-        while (timestamps.length > 0 && timestamps[0] < cutoff) timestamps.shift();
+        while (entries.length > 0 && entries[0].ts < cutoff) entries.shift();
 
-        if (timestamps.length >= cfg.spam_threshold) {
+        if (entries.length >= cfg.spam_threshold) {
           const ruleKey = `mass_ping_spam:${ctx.member.id}:${targetId}`;
           const repeat = now - (firedAt.get(ruleKey) ?? 0) < windowMs;
           if (!repeat) firedAt.set(ruleKey, now);
@@ -61,10 +61,10 @@ export function createMassPingModule(): AutomodModule {
             module: 'mass_ping',
             rule: 'spam_ping',
             reason: repeat
-              ? `pinged <@${targetId}> ${timestamps.length} times in ${cfg.spam_window_seconds}s (repeat)`
-              : `pinged <@${targetId}> ${timestamps.length} times in ${cfg.spam_window_seconds}s`,
+              ? `pinged <@${targetId}> ${entries.length} times in ${cfg.spam_window_seconds}s (repeat)`
+              : `pinged <@${targetId}> ${entries.length} times in ${cfg.spam_window_seconds}s`,
             content: ctx.content,
-            purge_message_ids: [ctx.message.id],
+            purge_message_ids: entries.map((entry) => entry.id),
             suppress_actions: repeat,
             dm_mentioned_users: [targetId],
           };

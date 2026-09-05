@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
+import { parseTargetId } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
   .setName('quarantine')
@@ -42,7 +43,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
-  const targetId = args[0]?.replace(/[<@!>]/g, '');
+  const targetId = parseTargetId(args[0]);
   if (!guild || !targetId) {
     await v2MessageReply(message, { content: 'Usage: `!quarantine <user>`' });
     return;

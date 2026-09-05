@@ -7,6 +7,7 @@ import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
   .setName('warn')
@@ -25,36 +26,32 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
   const reason = interaction.options.getString('reason', true);
-  storePendingAction({ action: 'warn', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
-  const { components, flags } = buildConfirmEmbed('Warn', user.id, reason);
-  await interaction.editReply({ content: '', components, flags } as never);
+  const actionId = storePendingAction({ action: 'warn', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
+  const { components, flags } = buildConfirmEmbed('Warn', user.id, reason, undefined, actionId);
+  await interaction.editReply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
   if (!guild) { await v2MessageReply(message, { content: 'Usage: `!warn <user> <reason>`' }); return; }
   const replyCtx = await resolveReplyContext(message);
-  let targetId = args[0]?.replace(/[<@!>]/g, '');
+  let targetId = parseTargetId(args[0]) ?? (replyCtx ? replyCtx.targetId : null);
   let reason = args.slice(1).join(' ') || 'No reason provided';
   let evidence: CaseEvidenceItem[] | undefined;
-  if (!targetId && replyCtx) { targetId = replyCtx.targetId; reason = args.join(' ') || 'No reason provided'; evidence = replyCtx.evidence; }
+  if (!parseTargetId(args[0]) && replyCtx) { targetId = replyCtx.targetId; reason = args.join(' ') || 'No reason provided'; evidence = replyCtx.evidence; }
   if (!targetId) { await v2MessageReply(message, { content: 'Usage: `!warn <user> <reason>` — or reply to a message to warn its author.' }); return; }
   const member = await guild.members.fetch(targetId).catch(() => null);
   if (!member) { await v2MessageReply(message, { content: 'User not found in this server.' }); return; }
   const guard = app.modGuard.canModerate(member, message.member!);
   if (!guard.ok) { await v2MessageReply(message, { content: `Cannot warn: ${guard.reason}` }); return; }
-  storePendingAction({ action: 'warn', targetUserId: targetId, guildId: guild.id, channelId: message.channelId, reason, actorId: message.author.id, expiresAt: Date.now() + 60_000 });
-  const sent = await v2MessageReply(message, { content: `⚠️ **Confirm warn** <@${targetId}> — reason: ${reason}\nReact with ✅ to confirm, ❌ to cancel.` });
-  await sent.react('✅').catch(() => undefined);
-  await sent.react('❌').catch(() => undefined);
-  const collector = sent.createReactionCollector({ filter: (r, u) => (r.emoji.name === '✅' || r.emoji.name === '❌') && u.id === message.author.id, time: 30_000, max: 1 });
-  collector.on('end', async (collected) => {
-    await sent.delete().catch(() => undefined);
-    if (collected.first()?.emoji.name !== '✅') { await v2MessageReply(message, { content: 'Warn cancelled.' }); return; }
-    const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-    if (!result.ok) { await v2MessageReply(message, { content: `Failed: ${result.error}` }); return; }
-    await v2MessageReply(message, { content: `Warned <@${targetId}> — case ${result.case!.case_code}.` });
-  });
+
+  const { sendButtonConfirm } = await import('../../components/moderation');
+  const { confirmed } = await sendButtonConfirm(app, message, 'warn', targetId, reason);
+  if (!confirmed) return;
+
+  const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
+  if (!result.ok) { await v2MessageReply(message, { content: `Failed: ${mapDiscordError(result.error!)}` }); return; }
+  await v2MessageReply(message, { content: `Warned <@${targetId}> — case ${result.case!.case_code}.` });
 }
 
 const command: BotCommand = {

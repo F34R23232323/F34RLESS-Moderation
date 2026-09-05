@@ -56,12 +56,17 @@ export function formatDuration(ms: number): string {
 
 export function humanizeDuration(ms: number): string {
   if (ms <= 0) return 'permanent';
-  const mins = Math.round(ms / 60000);
-  if (mins < 60) return `${mins} minute(s)`;
-  const hours = Math.floor(mins / 60);
-  const remMins = mins % 60;
-  if (hours < 24) return remMins ? `${hours}h ${remMins}m` : `${hours} hour(s)`;
-  const days = Math.floor(hours / 24);
-  const remHours = hours % 24;
-  return remHours ? `${days}d ${remHours}h` : `${days} day(s)`;
+  let seconds = Math.max(1, Math.ceil(ms / 1000));
+  const days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+  const hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+  const minutes = Math.floor(seconds / 60);
+  seconds %= 60;
+  const parts: string[] = [];
+  if (days) parts.push(`${days}d`);
+  if (hours) parts.push(`${hours}h`);
+  if (minutes) parts.push(`${minutes}m`);
+  if (seconds) parts.push(`${seconds}s`);
+  return parts.join(' ');
 }

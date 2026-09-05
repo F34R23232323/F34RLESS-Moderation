@@ -77,6 +77,13 @@ export function createRegexEngineModule(): AutomodModule {
       for (const rule of cfg.rules) {
         if (!rule.enabled) continue;
         if (rule.immune_roles.length > 0 && member.roles.cache.some((r) => rule.immune_roles.includes(r.id))) continue;
+        if (rule.channel_ignore_list && rule.channel_ignore_list.length > 0) {
+          const cid = ctx.channel?.id;
+          const pid = ctx.channel?.parentId;
+          if ((cid && rule.channel_ignore_list.includes(cid)) || (pid && rule.channel_ignore_list.includes(pid))) {
+            continue;
+          }
+        }
         let haystack = '';
         switch (rule.scope) {
           case 'message':

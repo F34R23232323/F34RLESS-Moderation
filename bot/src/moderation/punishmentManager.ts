@@ -119,8 +119,9 @@ export class PunishmentManager {
     user: User,
     options: PunishOptions,
     durationMs?: number | null,
+    force = false,
   ): Promise<boolean> {
-    if (this.app.config.punishment_dms.order !== 'before') return false;
+    if (!force && this.app.config.punishment_dms.order !== 'before') return false;
     return this.app.punishmentDm.send(type, {
       guild,
       user,
@@ -136,6 +137,7 @@ export class PunishmentManager {
     user: User,
     caseRow: CaseRow,
     options: PunishOptions,
+    durationMs?: number | null,
   ): Promise<boolean> {
     if (this.app.config.punishment_dms.order !== 'after') return false;
     return this.app.punishmentDm.send(type, {
@@ -143,7 +145,7 @@ export class PunishmentManager {
       user,
       reason: options.reason,
       moderator: options.moderatorId ? (await guild.members.fetch(options.moderatorId).catch(() => null))?.displayName ?? undefined : undefined,
-      durationMs: options.durationMs,
+      durationMs: options.durationMs ?? durationMs,
       caseCode: caseRow.case_code,
     });
   }
@@ -234,7 +236,7 @@ export class PunishmentManager {
   }
 
   public async timeout(target: GuildMember, durationMs: number, options: PunishOptions): Promise<PunishResult> {
-    const dmSent = await this.dmBefore('mute', target.guild, target.user, options, durationMs);
+    let dmSent = await this.dmBefore('mute', target.guild, target.user, options, durationMs);
     const logEvent = options.logEvent ?? 'member_timeout';
     // Durations past Discord's timeout cap are applied in 28-day chunks and
     // renewed automatically until the full duration is served.
@@ -257,13 +259,14 @@ export class PunishmentManager {
       evidence: options.evidence,
     });
 
+    const expiresAt = new Date(Date.now() + durationMs);
     await this.app.db.execute(
       `INSERT INTO punishments (guild_id, user_id, type, case_id, expires_at, renewable)
        VALUES (?, ?, 'mute', ?, ?, ?)`,
-      [target.guild.id, target.id, caseRow.id, new Date(Date.now() + durationMs), renewable ? 1 : 0],
+      [target.guild.id, target.id, caseRow.id, expiresAt, renewable ? 1 : 0],
     );
 
-    await this.dmAfter('mute', target.guild, target.user, caseRow, options);
+    dmSent = (await this.dmAfter('mute', target.guild, target.user, caseRow, options, durationMs)) || dmSent;
 
     const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
 
@@ -274,7 +277,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${renewable ? ' — auto-renews every 28 days' : ''}${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'mute', durationMs, caseCode: caseRow.case_code, reason: options.reason, archiveLink, renewable: renewable || undefined, ...this.evidenceDetails(target.guild.id, options.evidence) },
+      details: { type: 'mute', durationMs, expiresAt: expiresAt.toISOString(), caseCode: caseRow.case_code, reason: options.reason, archiveLink, renewable: renewable || undefined, ...this.evidenceDetails(target.guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -346,7 +349,7 @@ export class PunishmentManager {
     if (!guild) return { ok: false, error: 'guild not resolved', dmSent: false };
 
     const user = target instanceof GuildMember ? target.user : target;
-    const dmSent = await this.dmBefore('ban', guild, user, options, options.durationMs);
+    let dmSent = await this.dmBefore('ban', guild, user, options, options.durationMs, true);
     try {
       await guild.bans.create(target.id, {
         reason: options.reason ?? undefined,
@@ -374,7 +377,7 @@ export class PunishmentManager {
       );
     }
 
-    await this.dmAfter('ban', guild, user, caseRow, options);
+    dmSent = (await this.dmAfter('ban', guild, user, caseRow, options, options.durationMs)) || dmSent;
 
     const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
 
@@ -384,7 +387,7 @@ export class PunishmentManager {
       actorId: options.moderatorId ?? null,
       targetId: target.id,
       message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, expiresAt: options.durationMs ? new Date(Date.now() + options.durationMs).toISOString() : undefined, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -428,7 +431,7 @@ export class PunishmentManager {
     if (!guild) return { ok: false, error: 'guild not resolved', dmSent: false };
 
     const user = target instanceof GuildMember ? target.user : target;
-    const dmSent = await this.dmBefore('kick', guild, user, options);
+    const dmSent = await this.dmBefore('kick', guild, user, options, undefined, true);
     try {
       await guild.bans.create(target.id, {
         reason: `${options.reason ?? 'Softban'} (softban)`,

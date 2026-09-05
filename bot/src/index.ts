@@ -29,6 +29,7 @@ import { SlowmodeScheduler } from './management/slowmodeScheduler';
 import { AntiRaidService } from './security/antiRaid';
 import { SavedMessageService } from './services/savedMessageService';
 import { DashboardLogService } from './services/dashboardLogService';
+import { ApiCaseService } from './services/apiCaseService';
 import { ArchiveService } from './services/archiveService';
 import { MessageLogService } from './services/messageLogService';
 import { RoleConnectionsService } from './services/roleConnections';
@@ -37,6 +38,7 @@ import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 import { MusicService } from './music/MusicService';
 import { NsfwModerationService } from './nsfw/service';
+import { ReplyPingProtectionService } from './services/replyPingProtection/service';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -113,12 +115,14 @@ async function main(): Promise<void> {
     messages: null as unknown as SavedMessageService,
     messageCache: new MessageContentCache(),
     dashboardLogs: null as unknown as DashboardLogService,
+    apiCases: null as unknown as ApiCaseService,
     archives: null as unknown as ArchiveService,
     messageLogs: null as unknown as MessageLogService,
     roleConnections: null as unknown as RoleConnectionsService,
     music: null as unknown as MusicService,
     appeals: null as unknown as AppealService,
     nsfw: null as unknown as NsfwModerationService,
+    replyPingProtection: null as unknown as ReplyPingProtectionService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -150,12 +154,14 @@ async function main(): Promise<void> {
   app.antiRaid = new AntiRaidService(app);
   app.messages = new SavedMessageService(app);
   app.dashboardLogs = new DashboardLogService(app);
+  app.apiCases = new ApiCaseService(app);
   app.archives = new ArchiveService(app);
   app.messageLogs = new MessageLogService(app);
   app.roleConnections = new RoleConnectionsService(app);
   app.music = new MusicService(app);
   app.appeals = new AppealService(app);
   app.nsfw = new NsfwModerationService(app);
+  app.replyPingProtection = new ReplyPingProtectionService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
@@ -196,6 +202,12 @@ async function main(): Promise<void> {
   // Load the NSFW model before login so no image job starts before it is
   // ready. init() never rejects — a model failure disables the feature.
   await app.nsfw.init();
+  app.replyPingProtection.loadTrackedRules();
+
+  // Raw gateway debug — fires before discord.js processes the event
+  (client.ws as any).on('AUTO_MODERATION_ACTION_EXECUTION', (data: unknown) => {
+    app.logger.info(`[RAW_WS] AUTO_MODERATION_ACTION_EXECUTION received: ${JSON.stringify(data).slice(0, 300)}`);
+  });
 
   const shutdown = (): void => {
     void app.nsfw.shutdown().finally(() => process.exit(0));
@@ -218,14 +230,24 @@ async function registerSlashCommands(app: App): Promise<void> {
 
   const guildBodies: object[] = [];
   const globalBodies: object[] = [];
+  const skipped: string[] = [];
+  const failed: string[] = [];
 
   for (const cmd of app.commands.values()) {
-    if (config.commands[cmd.name]?.slash === false) continue;
-    const body = cmd.data.toJSON();
-    if (GUILD_CATEGORIES.has(cmd.category)) {
-      guildBodies.push(body);
-    } else {
-      globalBodies.push(body);
+    if (config.commands[cmd.name]?.slash === false) {
+      skipped.push(cmd.name);
+      continue;
+    }
+    try {
+      const body = cmd.data.toJSON();
+      if (GUILD_CATEGORIES.has(cmd.category)) {
+        guildBodies.push(body);
+      } else {
+        globalBodies.push(body);
+      }
+    } catch (err) {
+      failed.push(`${cmd.name}: ${(err as Error).message}`);
+      app.logger.error(`Failed to serialize slash command "${cmd.name}":`, err);
     }
   }
 
@@ -251,6 +273,22 @@ async function registerSlashCommands(app: App): Promise<void> {
     guildBodies.push({ name: cmd.name, type: 2 } as never);
   }
 
+  if (failed.length > 0) {
+    app.logger.warn(`Skipped ${failed.length} command(s) that failed to serialize: ${failed.join(', ')}`);
+  }
+  if (skipped.length > 0) {
+    app.logger.info(`Skipped ${skipped.length} command(s) disabled in config: ${skipped.join(', ')}`);
+  }
+
+  app.logger.info(`Slash command totals — guild: ${guildBodies.length}/100, global: ${globalBodies.length}/100`);
+
+  if (guildBodies.length > 100) {
+    app.logger.error(`GUILD COMMAND LIMIT EXCEEDED: ${guildBodies.length} > 100. Excess commands will NOT be registered.`);
+  }
+  if (globalBodies.length > 100) {
+    app.logger.error(`GLOBAL COMMAND LIMIT EXCEEDED: ${globalBodies.length} > 100. Excess commands will NOT be registered.`);
+  }
+
   // When REGISTER_GUILD_ID is set (development), dump everything to that guild
   // so changes are instant. In production, split across guild + global.
   const devGuildId = env.REGISTER_GUILD_ID;
@@ -258,17 +296,38 @@ async function registerSlashCommands(app: App): Promise<void> {
   try {
     if (devGuildId) {
       const all = [...guildBodies, ...globalBodies];
+      if (all.length > 100) {
+        app.logger.warn(`Dev mode: ${all.length} commands exceeds 100-guild limit — some will be dropped by Discord.`);
+      }
       await rest.put(Routes.applicationGuildCommands(env.CLIENT_ID, devGuildId), { body: all });
       app.logger.info(`Registered ${all.length} commands to dev guild ${devGuildId}`);
     } else {
       const guildId = env.GUILD_ID;
       if (guildBodies.length > 0 && guildId) {
         await rest.put(Routes.applicationGuildCommands(env.CLIENT_ID, guildId), { body: guildBodies });
-        app.logger.info(`Registered ${guildBodies.length} guild commands (moderation/admin) to guild ${guildId}`);
+        app.logger.info(`Registered ${guildBodies.length} guild commands to guild ${guildId}`);
+      } else if (guildBodies.length > 0 && !guildId) {
+        app.logger.error(`GUILD_ID not set — skipping registration of ${guildBodies.length} guild commands (moderation/admin).`);
+        app.logger.error('Set GUILD_ID in your .env or docker-compose.yml environment to register guild commands.');
       }
       if (globalBodies.length > 0) {
         await rest.put(Routes.applicationCommands(env.CLIENT_ID), { body: globalBodies });
-        app.logger.info(`Registered ${globalBodies.length} global commands (community/utility/info)`);
+        app.logger.info(`Registered ${globalBodies.length} global commands`);
+      }
+    }
+
+    // Verification: fetch back registered commands and warn about mismatches
+    const targetGuildId = devGuildId ?? env.GUILD_ID;
+    if (targetGuildId) {
+      const registered = await rest.get(Routes.applicationGuildCommands(env.CLIENT_ID, targetGuildId)) as Array<{ name: string }>;
+      const registeredNames = new Set(registered.map((c) => c.name));
+      const expectedNames = new Set([...guildBodies, ...(devGuildId ? globalBodies : [])].map((b: any) => b.name));
+      const missing = [...expectedNames].filter((n) => !registeredNames.has(n));
+      if (missing.length > 0) {
+        app.logger.error(`Commands registered to Discord but NOT visible in guild ${targetGuildId} (${missing.length}): ${missing.join(', ')}`);
+        app.logger.error('This usually means the commands were rejected by Discord (e.g. name conflict, invalid schema, or permission issue).');
+      } else {
+        app.logger.info(`Verified: all ${expectedNames.size} expected commands are registered in guild ${targetGuildId}.`);
       }
     }
   } catch (err) {

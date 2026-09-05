@@ -3,6 +3,7 @@ import type { App } from '../core/context';
 import type { PunishmentType } from '../../../shared/src/index';
 import { renderPlaceholders, humanizeDuration } from '../../../shared/src/index';
 import { buildV2Content } from '../utils/v2';
+import { notificationDmGuard } from './notificationDmGuard';
 
 export interface PunishmentDmContext {
   guild: Guild;
@@ -25,6 +26,13 @@ export class PunishmentDmManager {
     if (!cfg.enabled) return false;
     const typeCfg = cfg.types[type];
     if (!typeCfg || !typeCfg.enabled) return false;
+    const priority = type === 'ban' ? 4 : type === 'kick' ? 3 : type === 'mute' || type === 'timeout' ? 2 : 1;
+    const guardKey = `punishment:${ctx.guild.id}:${type}:${ctx.caseCode ?? ctx.reason ?? 'unknown'}`;
+    if (!notificationDmGuard.allow(ctx.user.id, guardKey, priority, cfg.cooldown_seconds)) return false;
+
+    const expiry = ctx.durationMs && ctx.durationMs > 0
+      ? Math.floor((Date.now() + ctx.durationMs) / 1000)
+      : null;
 
     const placeholders: Record<string, string> = {
       guild: ctx.guild.name,
@@ -33,6 +41,7 @@ export class PunishmentDmManager {
       reason: ctx.reason ?? 'no reason provided',
       moderator: cfg.hide_moderator ? 'staff' : (ctx.moderator ?? 'staff'),
       duration: ctx.durationMs ? humanizeDuration(ctx.durationMs) : 'permanent',
+      expires_at: expiry ? `<t:${expiry}:F> (<t:${expiry}:R>)` : 'Never',
       case_id: ctx.caseCode ?? 'n/a',
       punishment: type.replace('_', ' '),
       appeal_instructions: 'you can contact a staff member to appeal',
@@ -45,6 +54,7 @@ export class PunishmentDmManager {
       await dm.send({ ...payload } as never);
       return true;
     } catch {
+      notificationDmGuard.release(ctx.user.id, guardKey);
       return false;
     }
   }

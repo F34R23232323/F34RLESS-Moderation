@@ -308,6 +308,14 @@ commands:
     enabled: true
   unlockall:
     enabled: true
+  say:
+    enabled: true
+    allowed_roles:
+      - "1490439698416402613"
+  announce:
+    enabled: true
+    allowed_roles:
+      - "1490439698416402613"
   unblock-appeal-user:
     enabled: true
   report-blacklist:
@@ -584,10 +592,10 @@ nsfw_moderation:
   worker_concurrency: 1
   review_threshold: 0.60
   delete_threshold: 0.80
-  ignored_categories: []         # e.g. ["Hentai"] — NSFWJS classes excluded from score
+  ignored_categories: []         # e.g. ["Hentai"] â€” NSFWJS classes excluded from score
   log_only: false                # test mode: reports without deleting
 appeals:
-  # Public appeals portal â€” one config per guild. The global block below is
+  # Public appeals portal Ã¢â‚¬â€ one config per guild. The global block below is
   # applied to every guild; per-guild overrides live under guild_overrides and
   # fall back to these values for anything they omit.
   enabled: true
@@ -621,7 +629,7 @@ appeals:
       required: true
       min_length: 30
       max_length: 2000
-      help_text: "Give as much detail as you can â€” context helps staff review faster."
+      help_text: "Give as much detail as you can Ã¢â‚¬â€ context helps staff review faster."
     - id: what_happened
       label: "In your own words, what happened?"
       type: long_text
@@ -641,14 +649,14 @@ appeals:
       required: true
       min_length: 2
       max_length: 200
-      help_text: "Roughly is fine â€” e.g. 'about a year' or 'a few weeks'."
+      help_text: "Roughly is fine Ã¢â‚¬â€ e.g. 'about a year' or 'a few weeks'."
     - id: evidence
       label: "Do you have any evidence or additional context that supports your appeal?"
       type: long_text
       required: false
       min_length: 0
       max_length: 2000
-      help_text: "Screenshots, message links, timestamps â€” anything staff should consider. Optional."
+      help_text: "Screenshots, message links, timestamps Ã¢â‚¬â€ anything staff should consider. Optional."
     - id: zero_rights_ack
       label: "I understand that severe infractions (hate speech, CSAM, doxxing, threats) carry zero appeal rights."
       type: checkbox
@@ -658,7 +666,7 @@ appeals:
       type: checkbox
       required: true
     - id: no_dm_ack
-      label: "I understand I must not DM staff about this appeal â€” all communication goes through the portal."
+      label: "I understand I must not DM staff about this appeal Ã¢â‚¬â€ all communication goes through the portal."
       type: checkbox
       required: true
     - id: agreement
@@ -672,7 +680,7 @@ appeals:
       min_length: 0
       max_length: 2000
   guild_overrides: {}
-  # Per-guild overrides example (everything optional â€” omitted keys fall back
+  # Per-guild overrides example (everything optional Ã¢â‚¬â€ omitted keys fall back
   # to the global block above):
   # guild_overrides:
   #   "1466990155020898413":
@@ -704,6 +712,7 @@ automod:
   global_immune_roles:
     - "1520031216651210773"
   log_channel_id: "1467185464124510319"
+  bulk_delete_quiet_seconds: 5
   modules:
     spam:
       enabled: true
@@ -711,13 +720,16 @@ automod:
       window_seconds: 3
       immune_roles:
         - "1520031216651210773"
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: batched_summary
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: 10m
+          reason: "[AUTOMOD] Active message spam containment"
         - type: create_report
-        - type: delete_message
         - type: send_channel_message
           dm_first: true
           format: components_v2
@@ -741,14 +753,19 @@ automod:
       window_seconds: 5
       immune_roles:
         - "1520031216651210773"
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: 24h
+          reason: "[AUTOMOD] Channel Spamming - Suspicious Account"
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Channel Spam Detected
@@ -761,9 +778,6 @@ automod:
           footer: Thanks for helping keep {guild} friendly and safe.
           accent_color: "#ED4245"
           delete_after_seconds: 60
-        - type: timeout
-          duration: 24h
-          reason: "[AUTOMOD] Channel Spamming - Suspicious Account"
         - type: run_escalation_check
     link_filter:
       enabled: true
@@ -786,6 +800,7 @@ automod:
         - "1466990155352113308"
         - "1466990155352113309"
       channel_ignore_list:
+        - "1518277392727015646"
         - "1467119486489595987"
         - "1467121220976644107"
         - "1466990156690227319"
@@ -798,6 +813,7 @@ automod:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Link Not Allowed
@@ -815,7 +831,8 @@ automod:
       threshold: 5
       window_seconds: 10
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -840,7 +857,8 @@ automod:
         - .com
         - .dll
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -855,7 +873,8 @@ automod:
       threshold: 5
       window_seconds: 10
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -872,6 +891,7 @@ automod:
       immune_roles:
         - "1520031216651210773"
       channel_ignore_list:
+        - "1518277392727015646"
         - "1467119486489595987"
         - "1466990156690227319"
         - "1467121220976644107"
@@ -883,6 +903,7 @@ automod:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Invites Not Allowed
@@ -902,7 +923,8 @@ automod:
       enabled: false
       threshold: 10
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -918,7 +940,8 @@ automod:
       multi_message_lines: 40
       multi_message_window_seconds: 10
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -933,7 +956,8 @@ automod:
       threshold: 3
       window_seconds: 60
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -950,13 +974,16 @@ automod:
       similarity_threshold: 0.75
       immune_roles:
         - "1520031216651210773"
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
       action_chain:
+        - type: timeout
+          duration: 15m
+          reason: "[AUTOMOD] Active repeated-message spam containment"
         - type: create_report
-        - type: delete_message
         - type: send_channel_message
           dm_first: true
           format: components_v2
@@ -974,6 +1001,26 @@ automod:
         - type: warn
           reason: "[AUTOMOD] Repeated Message Spam"
         - type: run_escalation_check
+    mass_ping:
+      enabled: true
+      max_mentions: 5
+      spam_threshold: 3
+      spam_window_seconds: 60
+      immune_roles:
+        - "1520031216651210773"
+      channel_ignore_list:
+        - "1518277392727015646"
+      suppress_repeat_response_seconds: 60
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: timeout
+          duration: 30m
+          reason: "[AUTOMOD] Active mass-ping spam containment"
+        - type: create_report
+        - type: warn
+          reason: "[AUTOMOD] Mass Ping Spam"
+        - type: run_escalation_check
   risk_scoring:
     enabled: false
     threshold: 50
@@ -987,7 +1034,8 @@ automod:
       min_characters_per_second: 15
       window_seconds: 10
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1002,7 +1050,8 @@ automod:
       threshold: 5
       window_seconds: 120
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1017,7 +1066,8 @@ automod:
       threshold: 3
       window_seconds: 600
       immune_roles: []
-      channel_ignore_list: []
+      channel_ignore_list:
+        - "1518277392727015646"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1031,11 +1081,6 @@ regex_engine:
   rules:
     - name: Zalgo
       patterns:
-        - "[\\u{1F100}-\\u{1F1FF}]"
-        - "[\\uFF01-\\uFF5E]{3,}"
-        - "[\\u0370-\\u03FF]"
-        - "[\\u0400-\\u04FF]"
-        - "[\\u{1D400}-\\u{1D7FF}]"
         - "[\\u200B-\\u200F\\u202A-\\u202E\\uFEFF]"
         - "[\\u0300-\\u036F]{5,}"
         - "[\\u0336\\u0337\\u0338\\u0321\\u0322\\u0327\\u0328]{3,}"
@@ -1044,10 +1089,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Zalgo Text Removed
@@ -1080,10 +1128,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Malicious Content Blocked
@@ -1125,10 +1176,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Threats Removed
@@ -1144,71 +1198,6 @@ regex_engine:
         - type: warn
           reason: "[AUTOMOD] Threats"
         - type: run_escalation_check
-    - name: Suicide Encourageme
-      patterns:
-        - (delete|remove)\s+yourself\s+(from\s+)?(life|existence|earth|planet)
-        - \byeet\s+(yourself|urself)\s+off\b
-        - rope\s*(up|yourself|urself)\b
-        - (drink|take)\s+(bleach|bleach+|the\s+bleach)\b
-        - (unalive|un-alive)\s+(yourself|urself|u)\b
-        - (k[i1]ll|end)\s*y[o0]urs3lf\b
-        - (k[i1]ll\s*ur\s*self|end\s*ur\s*self|h[a@]ng\s*ur\s*self|n[e3]ck\s*ur\s*self)
-        - do\s+it\s+already\b(?:.*?(rope|noose|blade|pills))
-        - go\s+die\s+(already|please|now|in)
-        - end\s+it\s+(all\s+)?(now|already|please|tonight)
-        - off\s+yourself\b
-        - nobody\s+wants\s+you\s+(here|alive|around)
-        - (jump|leap)\s+off\s+(a\s+)?(bridge|roof|building|cliff|ledge)
-        - you\s+should\s+(just\s+)?(kill|end|hurt)\s+yourself
-        - (slit|cut|slash)\s+(your|my|his|her|their)\s+(wrist|arm|throat|vein)
-        - \b(you|u|they|he|she|that\s+person)\s+(just|should\s*(just)?)\s*die\s+(already|please|now)\b
-        - (go\s+)?(hang|neck)\s+yourself
-        - end\s+(your\s+(own\s+)?life|yourself)\b
-        - \bkys\b|k\.y\.s\b|k\s+y\s+s\b
-        - k[i1]ll\s*y[o0]urs[e3]lf
-        - (just|go|pl[sz]|please|why\s+don'?t\s+you)\s+k[i1]ll\s+(urself|yourself|your\s+self|u|you)\b
-        - (go|just|pl[sz]|please)\s+(unalive|kms|kys|self\s*delet(?:e|ing)?)\b
-        - \bself\s*delet(?:e|ing)?\b
-        - (end|k[i1]ll|take)\s+(your|ur)\s+(own\s+)?life\b
-        - nob[o0]dy\s*(?:want[sd]?|love[sd]?|need[sd]?|care[sd]?\s*(?:about)?|miss(?:es)?)\s*you\b
-        - no\s*one\s*(will\s+)?(?:love[sd]?|want[sd]?|miss(?:es)?|need[sd]?|care[sd]?\s*(?:about)?)\s*you\b
-        - (everyone|people|society|the\s+world)\s+(hates|would\s+be\s+(happier|better\s+off)\s+without)\s+you\b
-        - (you|ur|u)\s+should\s+(just\s+)?(off|unalive|end)\s+(yourself|urself|ur\s+self)\b
-        - (do\s+the\s+world\s+a\s+favor|world\s+would\s+be\s+better\s+without)\b
-        - (why\s+are\s+you\s+still\s+(alive|here|breathing)|you\s+should\s+have\s+been\s+(aborted|a\s+miscarriage)|your\s+parents\s+should\s+have\s+(aborted|killed)\s+you)\b
-        - (go\s+)?(walk|throw|step)\s+(into|in\s+front\s+of)\s+traffic\b
-        - (go\s+)?(swallow|eat)\s+(a\s+)?(bottle\s+of\s+)?pills\b
-        - (you|u|ur)\s*(?:'?re|r|are)?\s*(?:so\s+)?better\s+off\s+dead\b
-        - no\s*one\s+(would|c[o0]ul?d)\s+(care|c[o0]re)\s+(if|when)\s+(you|u|ur)\s+(die|died|kill\s+yourself)\b
-        - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*y[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*s\b
-        - (un[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*)?[a@][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*l[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*v[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\s+(yourself|urself|u|you)\b
-        - \bk[i1!|][l1!|]+[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*(?:ur|y[o0]u?r?|you)[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*self\b
-        - (hang|neck|slit|slash|cut)\s*(yourself|urself|ur\s*self|your\s*own)\b
-        - (kms|k\.m\.s|k\s+m\s+s)\s*(already|now|please|then)?\b
-      flags: gi
-      scope: message
-      enabled: true
-      immune_roles: []
-      action_chain:
-        - type: create_report
-        - type: delete_message
-        - type: send_channel_message
-          format: components_v2
-          content: Your message was removed in {channel}.
-          title: Self-Harm Encouragement
-          description: |-
-            Hey {user}, your message was removed.
-
-            Your message was removed and your account was banned because it encouraged self-harm or suicide.
-
-            If you need support, please reach out to a trusted adult or a mental-health helpline. If you believe this was a mistake, contact a staff member.
-          footer: Thanks for helping keep {guild} friendly and safe.
-          accent_color: "#ED4245"
-          delete_after_seconds: 60
-        - type: ban
-          duration: perm
-          reason: "[AUTOMOD] Encouraging self-harm is a severe safety violation and strictly prohibited."
-        - type: run_escalation_check
     - name: Slurs
       patterns:
         - \bm[i1]gr[a@]nt\s*(scum|filth|crim[i1]n[a@]l)
@@ -1222,8 +1211,8 @@ regex_engine:
         - \bw+[e3]+t+b+[a@4]+ck+\b|\bw+[o0]+g+b+[o0]+y+\b|\bw+[o0]+g+b+[o0]+[yi]+\b
         - \bsp+[i1]+[ck]+\b
         - \bch+[i1!]+nk+\b
-        - \bn[i1l!|Ñ–]+[g9q]+[e3Ðµa@]*[rÑÑ€]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|Ñ–]+[g9q]{2,}(?:a|4|@|Ð°)(?:s|z)?\b
-        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3Ðµa@][\.\-_*\s]*[rÑÑ€](?:s|z|er|ers)?(?![\w])
+        - \bn[i1l!|Ã‘â€“]+[g9q]+[e3ÃÂµa@]*[rÃ‘ÂÃ‘â‚¬]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|Ã‘â€“]+[g9q]{2,}(?:a|4|@|ÃÂ°)(?:s|z)?\b
+        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3ÃÂµa@][\.\-_*\s]*[rÃ‘ÂÃ‘â‚¬](?:s|z|er|ers)?(?![\w])
         - \bp[i1]c[a@]n[i1]?nn[yi]\b|\bp[\.\-_*\s]+[i1]c[\.\-_*\s]+[a@4]n[\.\-_*\s]+[i1]?n[\.\-_*\s]+[yi]\b
         - \bw[o0][g9]\b|\bw[o0][g9]{2}[o0][yi]?\b
         - \bn[i1][b8]{2}[e3a@](?:r|s)?\b|\bn[i1][b8]{2}e?r[s5]?\b
@@ -1233,7 +1222,7 @@ regex_engine:
         - \bn[e3][g9]r[o0](?:[i1]d)?[s5]?\b
         - \b(?:s[a@]nd|p[o0]rch|tree)\s*m[o0]nk[e3][yi]\b
         - \bm[o0]nk[e3][yi]\s*(?:b[o0][yi]|girl|man|woman|face|poster|b[o0]y)\b
-        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3Ðµa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rÑÑ€](?:s|z|er|ers)?(?![\w])
+        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3ÃÂµa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rÃ‘ÂÃ‘â‚¬](?:s|z|er|ers)?(?![\w])
         - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4]\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[uo0*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
@@ -1241,7 +1230,7 @@ regex_engine:
         - \bs[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*p[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*c(?:k)?s?\b
         - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\b
         - \bch[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k\b
-        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3Ðµa@]*[rÑÑ€]?(?![\w])
+        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3ÃÂµa@]*[rÃ‘ÂÃ‘â‚¬]?(?![\w])
         - \bgr[e3][a@]se[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*b[a@4]ll\b|\bg[\.\-_*\s]*r[\.\-_*\s]*[e3][\.\-_*\s]*[a@4][\.\-_*\s]*[s5][\.\-_*\s]*[yi]\b
         - \bp[\.\-_*\s]+[i1][\.\-_*\s]+[ck][\.\-_*\s]+[a@4][\.\-_*\s]+n[\.\-_*\s]+n[\.\-_*\s]+[yi]\b
         - \bs[\.\-_*\s]+[a@4][\.\-_*\s]+m[\.\-_*\s]+b[\.\-_*\s]+[o0]\b
@@ -1249,10 +1238,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Hate Speech Removed
@@ -1271,20 +1263,19 @@ regex_engine:
     - name: Severe Language
       patterns:
         - (?:(?:c[u*]nt\w*|wh[o0]re\w*|b[i1]tch\w*).*?){2,}
-        - cunt
-        - c0nt
-        - cnut
-        - bastard
-        - b@stard
-        - motherfucker
-        - motherf*cker
-        - mofo
+        - \bcunt\b
+        - \bc0nt\b
+        - \bcnut\b
+        - \bbastard\b
+        - \bb@stard\b
+        - \bmotherfucker\b
+        - \bmotherf\*cker\b
+        - \bmofo\b
         - son of a bitch
-        - soab
-        - whore
-        - wh0re
-        - skank
-        - slag
+        - \bsoab\b
+        - \bwhore\b
+        - \bwh0re\b
+        - \bskank\b
         - \bwh[o0]r[e3]\b
         - \bm[o0]th[e3]rf[u*]+ck(?:[e3]r|a|u|in'?|ing)?\b
         - \bc[u*]+n+[t*]+\b
@@ -1297,15 +1288,18 @@ regex_engine:
         - \bc[u*]nt\s*(?:ass|face|nose|bitch)\b
         - \bm[o0]th[e3]r[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*f[u*][ck]+(?:[e3]r|a)?\b
         - \bwh[o0]r[e3]s?\b
-        - \bsk[a@]nk\b|\bsl[a@]g\b
+        - \bsk[a@]nk\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Severe Language Removed
@@ -1321,11 +1315,9 @@ regex_engine:
         - type: warn
           reason: "[AUTOMOD] Severe Language"
         - type: run_escalation_check
-    - name: Self Harm
+    - name: Self Harm & Suicide Encouragement
       patterns:
         - \byou?r?\s+(friends|family|loved\s+ones|parents|kids|children)\s+will\s+(be\s+)?better\s+(off|without)\s+(without\s+you|if\s+(you|u|ur)\s+die)\b
-        - \blife\s+(is|s)\s+(not\s+worth|pointless|meaningless)\b
-        - \bno\s+point\s+in\s+(living|being\s+alive)\b
         - (cut|slice|slash|slit)\s+(deep|straight|all)\s+(into|across|along)\s+(my|your|ur)\s+(wrist|arm|throat|neck)
         - \b(knife|blade|razor|sharp)\s+(to|on|across|along)\s+(my|your|ur|his|her|their)\s+(wrist|arm|throat|neck|vein|skin|leg|thigh)\b
         - (shoot|blow)\s+(my|your|ur)\s+(self|head|brains?)\s*(off|out)
@@ -1336,20 +1328,55 @@ regex_engine:
         - how\s+to\s+(commit\s+suicide|kill\s+(myself|yourself|urself)|end\s+(my|your|ur)\s+life)
         - (best|easiest|quickest|fastest|painless|surest)\s+way\s+to\s+(die|kill\s+(myself|yourself|urself))
         - (i|im|i'?m)\s+(want\s+to|wanna|should|might)\s+(just\s+)?(die|kill\s+(myself|m[e3]self)|end\s+(it|my\s+life))\b
-        - (i'?m|im|i\s+am)\s+(?:so\s+)?(tired|done|over)\s+(?:of|with)\s+(living|life|everything|it\s+all)\b
-        - (i\s+)?(wish|wished|want)\s+(i\s+)?(was|were|would\s+be)\s+(dead|gone|never\s+born)\b
-        - (i'?m|im|i\s+am)\s+(done|over|through)\s+(with\s+)?(life|living|everything|it\s+all)\b
-        - (what'?s|whats|what\s+is)\s+the\s+point\s+of\s+(living|life|going\s+on)\b
         - i\s+want\s+to\s+(hurt|cut|harm)\s+(myself|my\s+self)\b
         - (slit|cut|slash)\s+(open\s+)?(my|your|ur|our|his|her)\s+(wrists?|arms?|thr[o0]a?ts?|veins?|necks?)\b
+        # --- merged from Suicide Encouragement ---
+        - (delete|remove)\s+yourself\s+(from\s+)?(life|existence|earth|planet)
+        - \byeet\s+(yourself|urself)\s+off\b
+        - rope\s*(up|yourself|urself)\b
+        - (drink|take)\s+(bleach|bleach+|the\s+bleach)\b
+        - (unalive|un-alive)\s+(yourself|urself|u)\b
+        - (k[i1]ll|end)\s*y[o0]urs3lf\b
+        - (k[i1]ll\s*ur\s*self|end\s*ur\s*self|h[a@]ng\s*ur\s*self|n[e3]ck\s*ur\s*self)
+        - do\s+it\s+already\b(?:.*?(rope|noose|blade|pills))
+        - go\s+die\s+(already|please|now|in)
+        - off\s+yourself\b
+        - nobody\s+wants\s+you\s+(here|alive|around)
+        - (jump|leap)\s+off\s+(a\s+)?(bridge|roof|building|cliff|ledge)
+        - you\s+should\s+(just\s+)?(kill|end|hurt)\s+yourself
+        - (slit|cut|slash)\s+(your|my|his|her|their)\s+(wrist|arm|throat|vein)
+        - \b(you|u|they|he|she|that\s+person)\s+(just|should\s*(just)?)\s*die\s+(already|please|now)\b
+        - (go\s+)?(hang|neck)\s+yourself
+        - end\s+(your\s+(own\s+)?life|yourself)\b
+        - k\.y\.s\b|k\s+y\s+s\b
+        - k[i1]ll\s*y[o0]urs[e3]lf
+        - (just|go|pl[sz]|please|why\s+don'?t\s+you)\s+k[i1]ll\s+(urself|yourself|your\s+self|u|you)\b
+        - (go|just|pl[sz]|please)\s+(unalive|kys)\b
+        - (end|k[i1]ll|take)\s+(your|ur)\s+(own\s+)?life\b
+        - no\s*one\s*(will\s+)?(?:love[sd]?|want[sd]?|miss(?:es)?|need[sd]?|care[sd]?\s*(?:about)?)\s*you\b
+        - (everyone|people|society|the\s+world)\s+(hates|would\s+be\s+(happier|better\s+off)\s+without)\s+you\b
+        - (you|ur|u)\s+should\s+(just\s+)?(off|unalive|end)\s+(yourself|urself|ur\s+self)\b
+        - (do\s+the\s+world\s+a\s+favor|world\s+would\s+be\s+better\s+without)\b
+        - (why\s+are\s+you\s+still\s+(alive|here|breathing)|you\s+should\s+have\s+been\s+(aborted|a\s+miscarriage)|your\s+parents\s+should\s+have\s+(aborted|killed)\s+you)\b
+        - (go\s+)?(walk|throw|step)\s+(into|in\s+front\s+of)\s+traffic\b
+        - (go\s+)?(swallow|eat)\s+(a\s+)?(bottle\s+of\s+)?pills\b
+        - (you|u|ur)\s*(?:'?re|r|are)?\s*(?:so\s+)?better\s+off\s+dead\b
+        - no\s*one\s+(would|c[o0]ul?d)\s+(care|c[o0]re)\s+(if|when)\s+(you|u|ur)\s+(die|died|kill\s+yourself)\b
+        - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*y[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*s\b
+        - (un[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*)?[a@][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*l[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*v[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\s+(yourself|urself|u|you)\b
+        - \bk[i1!|][l1!|]+[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*(?:ur|y[o0]u?r?|you)[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*self\b
+        - (hang|neck|slit|slash|cut)\s*(yourself|urself|ur\s*self|your\s*own)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Self-Harm Content Removed
@@ -1371,23 +1398,20 @@ regex_engine:
         - https?://[^\s]*(n[i1]tr[o0][-_]?(gen|gift|claim|boost|free|drop|x)|d[i1]sc[o0]rd[-\s]?n[i1]tr[o0])[^\s]*
         - (click|open|tap)\s+(this|the|my)\s+(link|url|site)\s+(?:for\s+)?(?:a\s+|an\s+)?(free|nitro|robux|giveaway)
         - https?://[^\s]*(discord-gift\.com|discordfree\.com|dlscordnitro\.com|appnitro\.com|nitrodrop|nitroupgrade\.info|verifydiscord\.com|discordhuman\.com|discordverif\.com|discordcheck\.com|steamnitro\.com)[^\s]*
-        - https?://[^\s]*(qr\.codes|qrco\.de|me\.qr|qr\.page)[^\s]+
         - https?://[^\s]*(adf\.ly|ouo\.io|bc\.vc|za\.gl|ay\.gy|coinhive)[^\s]*
         - https?://[^\s]*(paypal\.me|cash\.app|ko-fi\.com|patreon\.com|buymeacoffee\.com)/[^\s]+\s*(dm|hmu|free)
         - https?://[^\s]*(123movies|putlocker|fmovies|solarmovie|soap2day|yesmovies|watchseries)[^\s]*
-        - disc[o0]rd\s*[\.\-]?\s*gift\s*[\.\-]?\s*(gg|com|net|io|app)
+        - disc[o0]rd\s*[.\-]?\s*gift\s*[.\-]?\s*(gg|com|net|io|app)
         - https?://[^\s]*(free|get|claim)\s*[-_]?\s*(nitro|rob[u]x|vbucks|steam\s*key|gift\s*card)[^\s]*
         - https?://[^\s]*(n[i1]tr[o0]gen[i1]um|d[i1]sc0rd|d1scord|discordl|dlscord|discrod|dicsord|dlscrod|dlsc0rd|discordn|discrd|disccord|dlcord)[^\s]*
         - https?://(www\.)?(grabify\.|iplogger\.|2no\.co|blasze\.|bit\.do|ps3cfw\.com|ipgrabber\.|yip\.su|ezstat\.ru|iplis\.ru|ip2geolocation\.com|iplogger\.org|grabify\.link|grabify\.party|webresolver\.(nl|net)|checkip\.(xyz|su|ru)|octosniff\.com|lancaster\.pm|lanc\.pm|resolve\.rip|sketch\.rip|sketch\.ink|viralweb\.net|blasze\.net|briskgram|joinhoney\.pro|cybergateway\.(xyz|pw)|stormhe\.ru|ps3\.cfw|privazer\.net|pmresolver\.com|check-host\.by)
         - https?://[^\s]*(steamc[o0]m[^\s]*|free\s*[-_]?\s*(nitro|robux|vbucks|steam[^c])|free-?\s*(nitro|robux|vbucks))[^\s]*
         - https?://[^\s]*discord[^\s]*(gift|n[i1]tr[o0])[^\s]*\.(ru|xyz|tk|ml|ga|cf|gg|pw|cc|to|me|net)
-        - https?://(bit\.ly|tinyurl\.com|is\.gd|cutt\.ly|ow\.ly|short\.io|rb\.gy|t\.ly|v\.gd|clck\.ru)/[^\s]+
         - https?://[^\s]*(free-robux|free-vbucks|free-nitro|claim.*nitro|discord.*airdrop|free-nitro-claim|nitro-boost|boost-nitro)[^\s]*
-        - (free|get\s+free|claim)\s+(nitro|vbucks?|robux|steam\s*keys?|gift\s*cards?)\s*(for\s+(free|claiming))?\b
         - \bnitro\s*(giveaway|drop|claim|gift|give)\b
         - \b(robux|vbucks?|rp|steam\s*keys?)\s*(generator|giveaway|hack|claim|free)\b
         - \b(steam|epic|riot|valorant|fortnite|csgo|roblox)\s*(key|code|card|gift\s*card)\s*(generator|giveaway|free|claim)\b
-        - \b(free|win|won)\s+(nitro|robux|vbucks?|steam\s*key)\s*(for\s+)?(entering|clicking|sharing|dm|following)?\b
+        - \b(free|win|won)\s+(nitro|robux|vbucks?|steam\s*key)\s*(for\s+)?(entering|clicking|sharing|dm|following)\b
         - (dm|pm|message)\s+(me|us)\s+for\s+(free\s+)?(nitro|robux|vbucks?)\b
         - (nitro|robux|vbucks?)\s*(dm|hmu|pm)\s*(me)?\b
         - \b(discord|steam)\s*(nitro|gift)\s*(card|code)\s*(giveaway|free|claim)?\b
@@ -1397,10 +1421,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Scam Link Removed
@@ -1422,9 +1449,7 @@ regex_engine:
         - (your\s+)?(discord\s+)?(account|token|password)\s+(has\s+been|was|is|got|get)\s+(compromised|hacked|stolen|suspended|banned|flagged|deleted)
         - (verify\s+(your\s+)?(discord|account|email|password|credentials?)).{0,50}(link|click|here|now)
         - (?!.*inactiv)(account|profile|server|identity)\s+(will\s+be|is\s+being|getting|about\s+to\s+be)\s+(deleted|banned|suspended|terminated)\s+(in|within|after)\s+(\d+\s*)?(hours?|days?|minutes?|24h|48h)\b
-        - (you\s+)?(won|win)\s+(a|the|first)\s+(prize|reward|giveaway)\s*(click|link|claim|here|join)?\b
-        - (claim|collect|redeem)\s+(your|the|a)\s+(prize|reward|gift|nitro|item|skin|code)\b
-        - (click|join|visit|open|press|verify)\s+(here|this|the|that)?\s*(link|site|url|page|server|button)?\s*(to|and|for)?\s*(claim|verify|confirm|unlock|get|receive)\b
+        - (you\s+)?(won|win)\s+(a|the|first)\s+(prize|reward|giveaway)\s*(click|link|claim|here|join)\b
         - (your|the)\s+(discord|steam|account)\s+(is|are|was)\s+(under\s+investigation|flagged|restricted|limited)\b
         - (server|channel|guild)\s+(is|will\s+be)\s+(deleted|taken\s+down|removed)\s+(unless|if)\s+(you\s+)?(verify|click|send|join)\b
         - (verify|confirm|validate)\s+your\s+(account|identity|server)\s+(to\s+)?(avoid|prevent|stop)\s+(deletion|suspension|termination|ban)\b
@@ -1432,10 +1457,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Phishing Attempt Blocked
@@ -1453,8 +1481,6 @@ regex_engine:
         - type: run_escalation_check
     - name: Doxxing
       patterns:
-        - \b([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b
-        - \b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[2-9]\d|\d)\b
         - (your|ur|his|her|their)\s+(ip|address|location|position)\s*(?:is\s*[:=]?|[:=])\s*[\d\w]
         - (pull|grab|trace|find|hunt)\s+(ur|your|their|his|her)\s+(ip|location|address|info)
         - (i\s+)?(have|got|found|know)\s+(ur|your|his|her|their)\s+(add?ress|loc(ation)?|ip|info)
@@ -1476,10 +1502,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Private Info Protected
@@ -1518,10 +1547,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Predatory Behaviour Blocked
@@ -1552,10 +1584,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Gore Content Removed
@@ -1571,9 +1606,9 @@ regex_engine:
         - type: warn
           reason: "[AUTOMOD] Gore / Shock"
         - type: run_escalation_check
-    - name: Extremeism
+    - name: Extremism
       patterns:
-        - å|å|åå
+        - Ã¥ÂÂ|Ã¥ÂÂ|Ã¥ÂÂÃ¥ÂÂ
         - \b(great\s+replacement|white\s+replacement)\b
         - \b(blood\s+and\s+soil|sieg\s+heil)\b
         - \b14\s*words\b(?!\s+(?:is|are|was|were|means|being))\b(?:\s*(of\s+)?(truth|wisdom|the|our))?|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))?
@@ -1600,10 +1635,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Extremist Content Removed
@@ -1617,7 +1655,7 @@ regex_engine:
           accent_color: "#ED4245"
           delete_after_seconds: 60
         - type: warn
-          reason: "[AUTOMOD] Extremeism"
+          reason: "[AUTOMOD] Extremism"
         - type: run_escalation_check
     - name: Drugs
       patterns:
@@ -1641,10 +1679,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Drug Content Removed
@@ -1687,10 +1728,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: CSAM Content Blocked
@@ -1727,10 +1771,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Bomb / Weapon Content
@@ -1746,30 +1793,6 @@ regex_engine:
         - type: warn
           reason: "[AUTOMOD] Bombs / Bomb threats"
         - type: run_escalation_check
-    - name: Text Markdown
-      patterns:
-        - ^#{1,3}\s+\S
-      flags: gim
-      scope: message
-      enabled: true
-      immune_roles: []
-      action_chain:
-        - type: create_report
-        - type: delete_message
-        - type: send_channel_message
-          format: components_v2
-          content: Your message was removed in {channel}.
-          title: Text Formatting Removed
-          description: |-
-            Hey {user}, your message was removed.
-
-            Your message was removed because it used excessive text formatting that is not allowed here.
-
-            If you think this was a mistake, just message any staff member and we will happily take another look.
-          footer: Thanks for helping keep {guild} friendly and safe.
-          accent_color: "#ED4245"
-          delete_after_seconds: 60
-        - type: run_escalation_check
     - name: Account Trading
       patterns:
         - (aimbot|wallhack|esp|softaim|triggerbot|spinbot|silent\s+aim)\s+(for\s+sale|free|download|link|key|cheat|hack)
@@ -1784,10 +1807,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Account Trading Blocked
@@ -1807,16 +1833,11 @@ regex_engine:
       patterns:
         - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
         - \bg[o0*][o0*]n(?:ing|ed|er[s]?|ette|s|session|\s+(?:session|cave|mode|squad|club|brain))?\b
-        - \bhook\s*up\b
-        - \b(ur|u|you|ya)\s+(so\s+|very\s+|really\s+)?(sexy|hot|fine|cute|gorgeous|pretty)\b
         - (suck|swallow|choke|ride|fuck|eat|lick|kiss|touch|spank|finger|fist|peg|edge|step\s+on|worship|breed|impregnate|raw\s*dog)\s+(my|me|your|his|her)\b
         - my\s+(body|ass|tits|dick|pussy|boobs|cock)\s+(is\s+for|for\s+you)\b
-        - (you\s+are|ur|u\s+r|you'?re)\s+(so\s+|very\s+|really\s+)?(gorgeous|sexy|hot|cute|fine)\b
-        - slide\s+into\s+(my|your|the)\s+dms?\b
         - (whats|what'?s|wassup|sup)\s+your\s+snap\s*(baby|babe|hot)?\s*$
         - snap\s+me\s+(baby|babe|beaut|hottie|gorgeous|cutie)\b
         - (send|dm|slide|pm)\s+(me\s+|us\s+)?(your\s+|ur\s+)?(age|digits|insta|snap)\b
-        - (snap|insta|kik|tele|discord)\s*(name|tag|handle|user|id)\s*[?:]
         - (your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|balls|legs)\s+(is|looks?|are|be)\s+(hot|cute|good|nice|sexy|fine|amazing|pretty)
         - (snap|insta|kik|tele|discord)\s*(me|you|us)\s*(your|the)?\s*(nude|nudes|pic|pics|body|ass|tits|dick|pussy|boobs|cock|lewd)
         - (add\s+my\s+(snap|insta|tele|kik|discord))\s+(for|to\s+(see|get|trade|find)?\s*(nudes?|pics?|body|ass|hot|sex))\b
@@ -1836,9 +1857,6 @@ regex_engine:
         - \b(send|dm|pm|share|snap|slide)\s+(me\s+)?(your\s+)?(nudes?|lewds?|feet\s*pics?|body|ass|tits|dick|pussy|boobs|cock|nude)\b
         - \b(bl[o0]w\s+me|[s$]uck\s+(my|me|your|his|her)\s+(d[i1]ck|c[o0]ck|p[u*][s$][s$]y|t[i1]ts|b[o0]obs)|ch[o0]k[e3]\s+me|f[u*][ck*]+\s+me|ph[u*]ck\s+me|r[i1]d[e3]\s+me|[s$][i1]t\s+on\s+my\s+f[a@]c[e3]|[e3][a@]t\s+me\s+[o0]ut|f[i1]ng[e3]r\s+me|[s$]p[a@]nk\s+me|p[e3]g\s+me|f[i1][s$]t\s+me|[e3]dg[e3]\s+me|d[o0]m\s+me|[s$]t[e3]p\s+[o0]n\s+me|kn[e3][e3]l\s+(b[e3]f[o0]r[e3]|t[o0])\s+me|w[o0]r[s$]h[i1]p\s+my\s+f[e3][e3]t|br[e3][e3]d\s+me|[i1]mpr[e3]gn[a@]t[e3]\s+me|r[a@]w\s*d[o0]g\s+me|g[e3]t\s+n[a@]k[e3]d|[s$]tr[i1]p\s+f[o0]r\s+me|t[a@]k[e3]\s+[i1]t\s+[o0]ff|[s$]pr[e3][a@]d\s+f[o0]r\s+me|[o0]p[e3]n\s+y[o0]ur\s+l[e3]g[s$]?|t[o0]uch\s+y[o0]ur[s$][e3]lf|m[o0][a@]n\s+f[o0]r\s+me|[s$]cr[e3][a@]m\s+my\s+n[a@]m[e3]|[i1]'?m\s+w[e3]t|l[e3]t\s+me\s+c[u*]m|c[u*]m\s+[o0]n\s+me|j[e3]rk\s+[o0]ff|g[i1]v[e3]\s+me\s+h[e3][a@]d|bl[o0]wj[o0]b|t[i1]tty\s*f[u*][ck*]+|[a@][s$]{2}\s*t[o0]\s*m[o0]uth|cr[e3][a@]mp[i1][e3]|l[e3]t[s$]?\s*69|[a@]n[a@]l)\b
         - \b(w[a@]nk(?:er|ing|ed)?|fapp(?:ing|ed)?|j[e3]rk(?:ing|ed|er)?)\b
-        - \b(h[o0*]rn[yi3]|h[o0]rni)\b
-        - \b(your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|legs)\s+(is|are|looks?|look|be)\b
-        - \b((?:you(?:'?re|r)|u(?:'?re)?|ya)\s+|(?:you|u)\s+(?:are|r)\s+)(?:so|really|lowkey|hella|very|so\s+damn|f[u*]ck[i1]ng)\s*(?:f[u*]ck[i1]ng\s+)?(sexy|hot|fine|fit|cute|gorgeous|pretty|beautiful)\b
         - \b(my|your|his|her|their|suck|eat|choke|ride|f[u*][ck*]+|big|huge|small|tiny|fat|little)\s+c[o0*]c?k\b|\bc[o0*]c?k\s*(pic|pics|shot|size|ring|suck)\b|\bsuck\s+(my|your|his|her)\s+c[o0*]c?k\b
         - \b(s[e3]+x+(?![yi]|u[a@]+l|ist|ism)|s3x|sex\s+(with|tape|video|chat|toy|doll|scene|act|worker|bot|cam|party|friend|me|her|him|them|us|pics?|nude|send|dm)|sext(?:ing|me|her|him|them|us|ed)?|have\s+sex|sex\s+(me|her|him|them|us)|sex\s+with)\b
         - r[34]l?[\s_-]?p[o0]rn
@@ -1857,10 +1875,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: NSFW Content Removed
@@ -1891,10 +1912,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: NSFW Link Removed
@@ -1913,15 +1937,17 @@ regex_engine:
     - name: Executables
       patterns:
         - \.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command|jse|msix|appx|sct|dll|sys|ocx)(?:\?.*)?(?:$|\s|/|"|')
-        - \b[\w.-]+\.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command|jse|msix|appx|sct|dll|sys|ocx)\b
       flags: gi
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Executable File Removed
@@ -1944,18 +1970,10 @@ regex_engine:
         - \bf[e3]m[a@]l[e3]\s?g[a@]y\b
         - \bb[u*]ssy\b
         - \b(?:m[a@]n|b[o0]y)\s?p[u*]ssy\b
-        - \bb[i1]tch\s?b[o0]y\b
         - \bs[u*]ck\s?d[i1]ck\b
         - \bf[u*]ck[i1]ng\s?g[a@]y\b
-        - \btr[a@]p\s?sh[i1]t\b
-        - \bh[e3]rm[a@]phr[o0]d[i1]t[e3]s?\b
-        - \bg[e3]nd[e3]r\s?b[e3]nd[e3]rs?\b
-        - \bcr[o0]ss\s?dr[e3]ss[e3]rs?\b
         - \btr[a@]n[s5]v[e3]st[i1]t[e3]s?\b
-        - \bt[o0]d[g9][e3]rs?\b
         - \bsh[i1]rt\s?l[i1]ft[e3]rs?\b
-        - \bp[a@]nsy\s?b[o0]y\b|\b(?:you|ur|u|he'?s|she'?s|th[a@]t|little|silly|stupid|what\s+a)\s+p[a@]ns(?:[y1i](?:es)?)\b
-        - \bm[i1]nc[e3]rs?\b
         - \bfl[a@]m[i1]ng\s?(?:h[o0]m[o0]|f[a@]g|qu[e3][e3]r)\b
         - \b(?:r[u*]g|c[a@]rp[e3]t)\s?m[u*]nch[e3]rs?\b
         - \bp[i1]ll[o0]w\s?b[i1]t[e3]rs?\b
@@ -1989,10 +2007,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Anti-LGBTQ+ Hate Removed
@@ -2026,10 +2047,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: E-Dating Blocked
@@ -2062,10 +2086,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Raid Coordination Blocked
@@ -2088,9 +2115,12 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Staff Alerted
@@ -2138,10 +2168,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Religious Hate Removed
@@ -2175,10 +2208,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Private Credentials Removed
@@ -2235,10 +2271,13 @@ regex_engine:
       scope: message
       enabled: true
       immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
       action_chain:
         - type: create_report
         - type: delete_message
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Ableist Language Removed
@@ -2271,6 +2310,7 @@ regex_engine:
       action_chain:
         - type: create_report
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Punishment Begging
@@ -2302,6 +2342,7 @@ regex_engine:
       action_chain:
         - type: create_report
         - type: send_channel_message
+          dm_first: true
           format: components_v2
           content: Your message was removed in {channel}.
           title: Staff Begging
@@ -2315,10 +2356,182 @@ regex_engine:
           accent_color: "#ED4245"
           delete_after_seconds: 60
         - type: run_escalation_check
+    - name: Piracy
+      patterns:
+        - \b(how\s+to\s+(pirate|crack|get\s+free)|where\s+to\s+(pirate|download\s+free))\b
+        - \b(pirate\s*bay|1337x|rutracker|kickass)\b
+        - \bmagnet:\s*link\b
+        - \b(nulled|nulled\s*(?:script|plugin|theme|addon))\b
+        - \b(bypass\s*(?:activation|license|payment|trial))\b
+        - \b(illegal(?:ly)?|stolen)\s*(?:copy|software|game|movie|music|video|media)\b
+        - \b(downloading\s+from\s+(?:torrent|pirate|crack))\b
+        - \b(reupload|re-?upload|dl\s+link|download\s+link)\s*(?:for|to)?\s*(?:crack|pirate|warez|torrent)\b
+        - \b(free\s*crack|crack\s*(?:download|link|file))\b
+        - \b(pirat(?:e|ing|ed)|crack(?:ing|ed)|warez)\s+(?:software|game|app|tool|plugin|theme|movie|series)\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Piracy Content Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained or referenced pirated content, crack tools, or illegal distribution.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Piracy content or discussion"
+        - type: run_escalation_check
+    - name: Alt Account Promotion
+      patterns:
+        - \b(use|get|make|create|switch\s+to|log\s+into?|join\s+on)\s+(?:a\s+)?(?:alt|alternate|backup|secondary|smurf|throwaway)\s*(?:account)?\b
+        - \b(?:this|here\s+is|using)\s+(?:my\s+)?(?:alt|alternate|backup|secondary|smurf|throwaway)\s*(?:account)?\b
+        - \b(i'?m\s+(?:back|here|online)\s+(?:on|with)\s+(?:my\s+)?(?:alt|backup|smurf|throwaway))\b
+        - \b(ban\s*evad(?:e|ing|ed)|evad(?:e|ing|ed)\s+(?:the\s+)?ban)\b
+        - \b(avoid\s+(?:the\s+)?(?:ban|mute|kick|punishment|restriction)\s+(?:with|using|on|via)\s+(?:an?\s+)?(?:alt|account))\b
+        - \b(who(?:\'?s|\s+is)\s+(?:got|have|has)\s+(?:another|a\s+backup|an?)\s*(?:alt|account))\b
+        - \b(smurf\s*(?:account|acc|acct))\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Alt Account Promotion Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it promoted, encouraged, or discussed the use of alternate accounts. Alt accounts are strictly prohibited in this server.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Alt account promotion"
+        - type: run_escalation_check
+    - name: Staff Impersonation
+      patterns:
+        - \b(i\s+(?:am|'?m)\s+(?:a\s+|the\s+|an\s+)?)\s*(?:staff|mod(?:erator)?|admin(?:istrator)?|owner|helper|trial\s*mod)\b
+        - \b(?:i\s+)?(?:have\s+(?:the\s+)?(?:power|authority|permission|right)\s+to)\s+(?:mute|ban|kick|warn|timeout|punish)\b
+        - \b(?:i\s+)?(?:do|does)?\s*(?:work|work\s+for|represent|manage)\s+(?:for|with|at)\s+(?:sapphire|discord|noxx|the\s+bot)\b
+        - \b(?:i'?m\s+(?:a\s+)?(?:staff|mod|admin|owner)\s+(?:here|of|in|on)\s+this)\b
+        - \b(?:i\s+)?(?:have\s+been\s+(?:given|promoted|made)\s+(?:a\s+)?(?:staff|mod|admin))\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Staff Impersonation Detected
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained staff impersonation. Claiming to be a staff member, moderator, or authority figure when you are not is a zero-tolerance offense.
+
+            If you believe this was a mistake, contact a staff member.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Staff impersonation"
+        - type: run_escalation_check
+    - name: Advertising & DM Ads
+      patterns:
+        - \b(?:free\s*(?:nitro|robux|vbucks|gift|money|crypto|coins))\b
+        - \b(?:giveaway|give\s+away|prize|winner|congrat(?:s|ulations))\s+(?:in|at|on|join|click|check|enter)\b
+        - \b(?:i'?m\s+(?:selling|buying|trading|offering|giving))\s+(?:a\s+|an\s+|my\s+)?\b
+        - \b(?:dms?\s+(?:open|are\s+open|to\s+buy))\b
+        - \b(?:use\s+my\s+(?:code|ref|referral|affiliate|coupon))\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Advertising Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained advertising, self-promotion, or unsolicited DM content. Advertising is not allowed outside of designated channels.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Advertising or unsolicited promotion"
+        - type: run_escalation_check
+    - name: Bumping
+      patterns:
+        - \b(?:bump(?:ing|ed|s)?|disboard|bump\s+(?:this|the|my|our|a)\s+(?:server|guild|discord))\b
+        - \b(?:type|send|write|use)\s+(?:!|/|\?)?bump\b
+        - \b(?:d\s*?b\s*?b)\b
+        - \b(?:bump\s+(?:command|me|this|us|it|server|guild))\b
+      flags: gi
+      scope: message
+      enabled: true
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Bumping Not Allowed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Bumping is not allowed anywhere in this server. This includes server listing bots, self-promotion commands, or any form of server boosting requests.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Bumping not allowed"
+        - type: run_escalation_check
 punishment_dms:
   enabled: true
   hide_moderator: false
   order: after
+  cooldown_seconds: 15
   types:
     warn:
       enabled: true
@@ -2344,6 +2557,7 @@ punishment_dms:
         You've been muted and can no longer send messages.
 
         Duration: {duration}
+        Ends: {expires_at}
         Reason: {reason}
         Issued by: {moderator}
         Case ID: {case_id}
@@ -2360,6 +2574,7 @@ punishment_dms:
         You've been timed out and can no longer send messages for a while.
 
         Duration: {duration}
+        Ends: {expires_at}
         Reason: {reason}
         Issued by: {moderator}
         Case ID: {case_id}
@@ -2394,6 +2609,7 @@ punishment_dms:
         Issued by: {moderator}
         Case ID: {case_id}
         Duration: {duration}
+        Ends: {expires_at}
 
         A ban removes your access to the server. If you believe this was a mistake, {appeal_instructions}.
     unban:
@@ -2445,43 +2661,59 @@ punishment_dms:
 # -----------------------------------------------------------------------------
 native_automod:
   enabled: true
-  responses:
-    - rule_id: "1528109018227150969"        # ping f34rless.dev for attention
-      on: block_message
-      format: components_v2
-      title: "${username} said"
-      description: |-
-        Please refrain from pinging f34rless.dev for attention. They are currently occupied and will respond to your inquiry as soon as they are available.
-
-        **Message Content:**
-        > ${originmessagecontent}
-      fields:
-        - name: "Moderation Notice"
-          value: "Your message has been logged. Please be advised that continued pinging may result in moderation actions, typically resulting in warnings or mutes, or a ban in serious cases."
-      footer: "Please do not ping f34rless.dev for attention. They will answer as soon as possible."
-      accent_color: "#6B6B6B"
-      image_url: "https://images.noxxbot.com/de4VYqFQlkB4B2VeEy660erui59mCEeGl02"
-      buttons:
-        - label: "Why?"
-          style: secondary
-          custom_id: "whypingbf34r"
-    # - rule_id: "000000000000000000"        # the Discord AutoMod rule ID
-    #   on: block_message
-    #   format: components_v2
-    #   content: "Your message was removed in {channel}."
-    #   title: "Message Blocked"
-    #   description: |-
-    #     Hey {user}, your message was blocked by AutoMod.
-    #
-    #     Blocked content:
-    #     > ${originmessagecontent}
-    #   footer: "If you think this was a mistake, contact a staff member."
-    #   accent_color: "#ED4245"
-    #   delete_after_seconds: 60
+  responses: []
+reply_ping_protection:
+  enabled: true
+  native_rule_id: "1528109018227150969"
+  protected_users:
+    - "1075077561454973020"
+  protected_roles: []
+  exempt_users: []
+  exempt_roles: []
+  exempt_channels: []
+  notice_channel_id: "1467185464124510319"
+  log_channel_id: "1467185464124510319"
+  notice_title: "Reply Mention Blocked"
+  notice_description: "This reply mentions a protected user or role and has been blocked. Pinging staff or protected entities in replies is not allowed."
+  notice_accent_color: "#FEE75C"
+  notice_delete_after_seconds: 0
+  escalation:
+    enabled: true
+    window_seconds: 3600
+    levels:
+      - level: 1
+        violation_count: 2
+        action_type: warn
+      - level: 2
+        violation_count: 3
+        action_type: timeout
+        action_duration: "1h"
+      - level: 3
+        violation_count: 5
+        action_type: timeout
+        action_duration: "24h"
+      - level: 4
+        violation_count: 7
+        action_type: kick
+      - level: 5
+        violation_count: 10
+        action_type: ban
 escalation:
   enabled: true
   window_seconds: 3600
   rules:
+    - rule: spam
+      count: 2
+      within_seconds: 3600
+      action:
+        type: timeout
+        duration: 12h
+    - rule: duplicate_spam
+      count: 2
+      within_seconds: 3600
+      action:
+        type: timeout
+        duration: 6h
     - rule: "*"
       count: 3
       within_seconds: 3600
@@ -2558,37 +2790,36 @@ role_connections:
         - has_role: true
           role_id: "1467103806561980528"
 channel_locking:
-  presets:
-    - name: lockdown-all
-      channels:
-        - "1466990156199362883"
-        - "1466990156199362880"
-        - "1518992336263053455"
-        - "1518284336443424768"
-        - "1518284522909864156"
-        - "1526730345699999945"
-        - "1467128459913461912"
-        - "1527017514746515537"
-        - "1466990156690227314"
-        - "1532151854119649491"
-        - "1535379316014325790"
-        - "1534350105312886865"
-        - "1535372412105789531"
-        - "1535372374684336138"
-        - "1535372305381855232"
-      categories: []
-      all_channels: false
-      exclude_roles:
-        - "1520031216651210773"
-      deny_permissions:
-        - SendMessages
-        - AddReactions
-      schedule: []
+  channels:
+    - "1487206037659586782"
+    - "1534888234776264795"
+    - "1535379316014325790"
+    - "1466990156199362880"
+    - "1534350105312886865"
+    - "1518992336263053455"
+    - "1518284336443424768"
+    - "1518284522909864156"
+    - "1535372305381855232"
+    - "1535372374684336138"
+    - "1535372412105789531"
+    - "1466990156199362883"
+    - "1467128459913461912"
+    - "1526730345699999945"
+    - "1542191772237701170"
+  exclude_roles:
+    - "1520031216651210773"
+  deny_permissions:
+    - SendMessages
+    - AddReactions
 anti_raid:
-  enabled: false
-  join_rate_threshold: 10
-  window_seconds: 60
-  action: lock_joins
+  enabled: true
+  join_rate_threshold: 5
+  window_seconds: 30
+  action: quarantine_joiners
+  quarantine_role_id: "000000000000000000"
+  alert_channel_id: "000000000000000000"
+  account_age_days: 7
+  cooldown_seconds: 3600
 sticky_messages:
   enabled: false
   re_post_after_messages: 5
@@ -2612,13 +2843,22 @@ modmail:
   support_roles: []
   transcript_channel_id: "000000000000000000"
 verification_gate:
-  enabled: false
-  button_channel_id: "000000000000000000"
-  verified_role_id: "000000000000000000"
+  enabled: true
+  panel_channel_id: "1467118853673844857"
+  verified_role_id: "1466990155339661388"
+  unverified_role_id: "1467117236056625317"
+  unverified_on_join: false
+  log_channel_id: "1525242406595727514"
+  captcha:
+    enabled: true
+    types: ["math", "text", "button"]
+    math_max: 20
+    text_words: ["verify", "gate", "access", "welcome", "enter", "server", "safe"]
+    button_count: 4
   timeout_kick_seconds: 0
 quarantine:
   enabled: true
-  restricted_role_id: "000000000000000000"
+  restricted_role_id: "1543404020914458634"
 blacklist:
   enabled: true
   action: flag
@@ -2722,7 +2962,7 @@ custom_commands:
     actions:
       - type: send_message
         embeds:
-          - title: â„¹ï¸ Information
+          - title: Ã¢â€žÂ¹Ã¯Â¸Â Information
             description: |-
               For support, go to <#1467119424455704760>
               For staff applications, go to <#1467133723148419103>
@@ -2755,12 +2995,12 @@ custom_commands:
                 value: |-
                   Use the </report:1532041403742425280> command with <@1531976584276480070> to submit a report.
 
-                  You can also **right-click a message or user â†’ Apps â†’ Report message/user**.
+                  You can also **right-click a message or user Ã¢â€ â€™ Apps Ã¢â€ â€™ Report message/user**.
               - name: <:link:908747871136919622> What to Include
                 value: |-
-                  â€¢ A clear reason for the report
-                  â€¢ Message links or screenshots (if possible)
-                  â€¢ Any relevant context that helps staff understand the situation
+                  Ã¢â‚¬Â¢ A clear reason for the report
+                  Ã¢â‚¬Â¢ Message links or screenshots (if possible)
+                  Ã¢â‚¬Â¢ Any relevant context that helps staff understand the situation
               - name: <:shield:865895492047470604> What Happens Next?
                 value: Our staff team will **review the report privately** and take appropriate action if needed. False reports or abuse of the system may result in punishment.
             footer:
@@ -2857,7 +3097,7 @@ custom_commands:
                   `EXT` - Extortion
                 inline: true
             footer:
-              text: Internal Staff Documentation â€¢ Select a category below
+              text: Internal Staff Documentation Ã¢â‚¬Â¢ Select a category below
         components:
           - components:
               - type: select
@@ -2916,14 +3156,14 @@ custom_commands:
             fields:
               - name: <:shield:865895492047470604> Ownership & Operation
                 value: "**f34rless.dev** (the server owner) **does not own** the bot or its core code. We simply utilize the custom branding feature provided by Sapphire to give the bot our own unique identity in this server."
-              - name: â­ Infinite Limits Subscription
+              - name: Ã¢Â­Â Infinite Limits Subscription
                 value: Our server is powered by Sapphire's **Infinite Limits subscription**! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
               - name: <:link:908747871136919622> Get Your Own Custom Bot
                 value: |-
                   Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
 
-                  â€¢ **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
-                  â€¢ **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
+                  Ã¢â‚¬Â¢ **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
+                  Ã¢â‚¬Â¢ **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3087,9 +3327,9 @@ custom_commands:
                   Please head over there and read through them carefully.
               - name: <:shield:865895492047470604> Why it Matters
                 value: |-
-                  â€¢ You are responsible for knowing and following these rules.
-                  â€¢ **Ignorance is never a valid defence** if you break a rule.
-                  â€¢ By participating in this server, you agree to abide by everything listed.
+                  Ã¢â‚¬Â¢ You are responsible for knowing and following these rules.
+                  Ã¢â‚¬Â¢ **Ignorance is never a valid defence** if you break a rule.
+                  Ã¢â‚¬Â¢ By participating in this server, you agree to abide by everything listed.
               - name: <:link:908747871136919622> Need Clarification?
                 value: If you are confused about a specific rule or policy, don't guess! Feel free to ask a staff member for clarification to avoid future infractions.
             footer:
@@ -3122,14 +3362,14 @@ custom_commands:
                 value: |-
                   All appeals must be submitted through our official platform. We do not accept appeals through any other channel.
 
-                  **ðŸ”— [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
+                  **Ã°Å¸â€â€” [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
               - name: <:shield:865895492047470604> Important Guidelines
                 value: |-
-                  â€¢ **Do not** DM staff members about your punishment or appeal.
-                  â€¢ **Do not** have friends or third parties submit an appeal on your behalf.
-                  â€¢ Be patient. Staff will review your submission and provide a final, binding decision.
+                  Ã¢â‚¬Â¢ **Do not** DM staff members about your punishment or appeal.
+                  Ã¢â‚¬Â¢ **Do not** have friends or third parties submit an appeal on your behalf.
+                  Ã¢â‚¬Â¢ Be patient. Staff will review your submission and provide a final, binding decision.
               - name: <:link:908747871136919622> Zero Appeal Rights
-                value: Please note that certain severe infractionsâ€”such as hate speech, CSAM, doxxing, and threatsâ€”carry **zero appeal rights** under any circumstances.
+                value: Please note that certain severe infractionsÃ¢â‚¬â€such as hate speech, CSAM, doxxing, and threatsÃ¢â‚¬â€carry **zero appeal rights** under any circumstances.
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3192,7 +3432,7 @@ custom_commands:
               - name: <:link:908747871136919622> Further Information
                 value: |-
                   For a comprehensive breakdown of our moderation principles and staff jurisdiction, please read the full policy here:
-                  **ðŸ”— [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
+                  **Ã°Å¸â€â€” [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3234,23 +3474,23 @@ custom_commands:
             fields:
               - name: <:blue_pin:1216132453098459336> The SnowHaven Empire (TSHE)
                 value: |-
-                  â€¢ **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
-                  â€¢ **[Official Website](https://url.f34rless.xyz/tshe-website)**
-                  â€¢ **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
-                  â€¢ **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
-                  â€¢ **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
+                  Ã¢â‚¬Â¢ **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
+                  Ã¢â‚¬Â¢ **[Official Website](https://url.f34rless.xyz/tshe-website)**
+                  Ã¢â‚¬Â¢ **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
+                  Ã¢â‚¬Â¢ **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
+                  Ã¢â‚¬Â¢ **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
               - name: <:shield:865895492047470604> f34rless.dev
                 value: |-
-                  â€¢ **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
-                  â€¢ **[GitHub](https://url.f34rless.xyz/f34rless-github)**
-                  â€¢ **[Store](https://url.f34rless.xyz/f34rless-store)**
-                  â€¢ **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
+                  Ã¢â‚¬Â¢ **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
+                  Ã¢â‚¬Â¢ **[GitHub](https://url.f34rless.xyz/f34rless-github)**
+                  Ã¢â‚¬Â¢ **[Store](https://url.f34rless.xyz/f34rless-store)**
+                  Ã¢â‚¬Â¢ **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
               - name: <:link:908747871136919622> Bots & Affiliates
                 value: |-
-                  â€¢ **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
-                  â€¢ **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
-                  â€¢ **[Noxx Bot](https://url.f34rless.xyz/noxx)**
-                  â€¢ **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
+                  Ã¢â‚¬Â¢ **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
+                  Ã¢â‚¬Â¢ **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
+                  Ã¢â‚¬Â¢ **[Noxx Bot](https://url.f34rless.xyz/noxx)**
+                  Ã¢â‚¬Â¢ **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
             footer:
               text: Requested By {username}
               icon_url: "{useravatarurl}"
@@ -3422,17 +3662,17 @@ custom_commands:
           - description: |-
               ## Information on <@&1485003903891275977>
 
-              ### 1ï¸âƒ£ The moderator emergency ping should be used when ...
+              ### 1Ã¯Â¸ÂÃ¢Æ’Â£ The moderator emergency ping should be used when ...
               > ... important <#1466990155922542722> are violated. Including:
               > - A user is acting very disrespectful
               > - A user posts NSFW content
               > - A user sends spam / scam / harmful advertisements
 
-              ### 2ï¸âƒ£ Do NOT use the emergency ping when ...
+              ### 2Ã¯Â¸ÂÃ¢Æ’Â£ Do NOT use the emergency ping when ...
               > **... you are in need of anything**, users use channels incorrectly, user don't speak English or for other minor infractions. Moderators are usually checking in from time to time to take care of these issues. 
               > Please use </report:1532041403742425280> for minor infractions.
 
-              ### 3ï¸âƒ£ **Always reply** to the message you want to report ...
+              ### 3Ã¯Â¸ÂÃ¢Æ’Â£ **Always reply** to the message you want to report ...
               > ... so a moderator can take action immediately. 
 
               # <:exclamation_mark_red:866413651177897984> **Misuse will result in a ban** <:exclamation_mark_red:866413651177897984>
@@ -3464,7 +3704,7 @@ custom_commands:
     actions:
       - type: send_message
         embeds:
-          - title: ðŸ’œ Unlock Exclusive Sneak Peeks & Perks!
+          - title: Ã°Å¸â€™Å“ Unlock Exclusive Sneak Peeks & Perks!
             description: Want to support the dev infrastructure and get behind-the-scenes access to my latest web apps, deep neon purple UI designs, and Docker setups? Check out the membership tiers on Ko-fi!
             color: "#5865f2"
             timestamp: true
@@ -3477,12 +3717,12 @@ custom_commands:
                   Make sure your Discord account is linked to your Ko-fi to automatically claim your roles and exclusive channels! :3
               - name: <:sapphTada:998232812324913223> Instant Perks (All Tiers)
                 value: Subscribing to **ANY** tier instantly unlocks embed permissions, image permissions, and more across the entire server.
-              - name: ðŸ’œ Amethyst Supporter (Â£3/mo)
-                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private ðŸ’œãƒ»amethyst-lounge.
-              - name: ðŸ’» Dev Insider (Â£10/mo)
-                value: Behind-the-scenes access! Gets you the **Dev Insider** role and ðŸ› ï¸ãƒ»dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
-              - name: ðŸ‘‘ Root Admin (Â£25/mo)
-                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in ðŸ‘‘ãƒ»root-access, and 10% off any commissions or hosting fees.
+              - name: Ã°Å¸â€™Å“ Amethyst Supporter (Ã‚Â£3/mo)
+                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private Ã°Å¸â€™Å“Ã£Æ’Â»amethyst-lounge.
+              - name: Ã°Å¸â€™Â» Dev Insider (Ã‚Â£10/mo)
+                value: Behind-the-scenes access! Gets you the **Dev Insider** role and Ã°Å¸â€ºÂ Ã¯Â¸ÂÃ£Æ’Â»dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
+              - name: Ã°Å¸â€˜â€˜ Root Admin (Ã‚Â£25/mo)
+                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in Ã°Å¸â€˜â€˜Ã£Æ’Â»root-access, and 10% off any commissions or hosting fees.
             footer:
               text: Recommended By {username}
               icon_url: "{useravatarurl}"
@@ -3510,8 +3750,8 @@ custom_commands:
             fields:
               - name: <:blue_pin:1216132453098459336> Square Hosting
                 value: |-
-                  â€¢ **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
-                  â€¢ **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
+                  Ã¢â‚¬Â¢ **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
+                  Ã¢â‚¬Â¢ **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
               - name: <:shield:865895492047470604> Affiliation & Team
                 value: This server's owner, **f34rless.dev**, works directly for Square Hosting! You are in great hands for all your hosting, development, and support needs.
         components:
@@ -3521,13 +3761,13 @@ custom_commands:
                 label: Visit Website
                 style: link
                 url: https://url.f34rless.xyz/square-hosting
-                emoji: ðŸŒ
+                emoji: Ã°Å¸Å’Â
               - type: button
                 id: b1
                 label: Get Support
                 style: link
                 url: https://url.f34rless.xyz/square-hosting-support
-                emoji: â­
+                emoji: Ã¢Â­Â
   suggest:
     enabled: true
     slash: false

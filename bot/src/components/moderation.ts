@@ -1,4 +1,4 @@
-import type { ButtonInteraction } from 'discord.js';
+import type { ButtonInteraction, Message } from 'discord.js';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -9,6 +9,7 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import type { App } from '../core/context';
+import { mapDiscordError } from '../utils/moderationErrors';
 
 /** Pending moderation action awaiting confirmation. Stored in-memory with a
  *  60-second TTL so stale entries are cleaned up automatically. */
@@ -65,9 +66,12 @@ export function buildConfirmEmbed(
   targetUserId: string,
   reason: string,
   durationMs?: number,
+  actionId?: string,
 ): { components: unknown[]; flags: number } {
   const { humanizeDuration } = require('../../../shared/src/index') as typeof import('../../../shared/src/index');
   const durLine = durationMs ? `\nDuration: ${humanizeDuration(durationMs)}` : '';
+  const confirmId = actionId ? `confirm:${actionId}` : 'confirm';
+  const cancelId = actionId ? `cancel:${actionId}` : 'cancel';
 
   const container = new ContainerBuilder()
     .setAccentColor(0xfee75c)
@@ -81,11 +85,11 @@ export function buildConfirmEmbed(
     .addActionRowComponents(
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
-          .setCustomId('confirm')
+          .setCustomId(confirmId)
           .setLabel('Confirm')
           .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
-          .setCustomId('cancel')
+          .setCustomId(cancelId)
           .setLabel('Cancel')
           .setStyle(ButtonStyle.Secondary),
       ) as never,
@@ -110,6 +114,13 @@ export function consumePendingAction(id: string): PendingAction | null {
   return action;
 }
 
+export function peekPendingAction(id: string): PendingAction | null {
+  const action = pending.get(id);
+  if (!action) return null;
+  if (action.expiresAt < Date.now()) { pending.delete(id); return null; }
+  return action;
+}
+
 /* ─── Confirm / Cancel button handler ───────────────────────────────────── */
 
 function extractActionId(interaction: ButtonInteraction): string | null {
@@ -124,8 +135,13 @@ export const confirmButton = {
   async run(app: App, interaction: ButtonInteraction): Promise<void> {
     const id = extractActionId(interaction);
     if (!id) { await interaction.update({ content: 'Invalid action.', components: [] }); return; }
-    const action = consumePendingAction(id);
+    const action = peekPendingAction(id);
     if (!action) { await interaction.update({ content: 'This confirmation has expired.', components: [] }); return; }
+    if (interaction.user.id !== action.actorId) {
+      await interaction.reply({ content: 'Only the command invoker can confirm this action.', ephemeral: true });
+      return;
+    }
+    consumePendingAction(id);
     await executeAction(app, interaction, action);
   },
 };
@@ -135,7 +151,14 @@ export const cancelButton = {
   id: 'cancel:',
   async run(app: App, interaction: ButtonInteraction): Promise<void> {
     const id = extractActionId(interaction);
-    if (id) consumePendingAction(id); // discard
+    if (!id) { await interaction.update({ content: 'Invalid action.', components: [] }); return; }
+    const action = peekPendingAction(id);
+    if (!action) { await interaction.update({ content: 'This confirmation has expired.', components: [] }); return; }
+    if (interaction.user.id !== action.actorId) {
+      await interaction.reply({ content: 'Only the command invoker can cancel this action.', ephemeral: true });
+      return;
+    }
+    consumePendingAction(id);
     await interaction.update({ content: '❌ Action cancelled.', components: [] });
   },
 };
@@ -230,7 +253,7 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
     if (result.ok) {
       await interaction.update({ content: `✅ ${action.action} applied to <@${action.targetUserId}>${dur} — case ${result.case!.case_code}.`, components: [] });
     } else {
-      await interaction.update({ content: `❌ Failed: ${result.error}`, components: [] });
+      await interaction.update({ content: `❌ Failed: ${mapDiscordError(result.error!)}`, components: [] });
     }
   } catch (err) {
     await interaction.update({ content: `❌ Error: ${(err as Error).message}`, components: [] });
@@ -238,3 +261,63 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
 }
 
 export default [confirmButton, cancelButton];
+
+/* ─── CV2 Button Confirmation for Prefix Commands ────────────────────────── */
+
+export async function sendButtonConfirm(
+  app: App,
+  message: Message,
+  action: string,
+  targetUserId: string,
+  reason: string,
+  durationMs?: number,
+): Promise<{ confirmed: boolean }> {
+  const { humanizeDuration } = require('../../../shared/src/index') as typeof import('../../../shared/src/index');
+  const { v2MessageReply } = await import('../utils/v2');
+  const { ContainerBuilder, TextDisplayBuilder, SeparatorBuilder, MessageFlags } = await import('discord.js');
+  const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+
+  const actionId = nextId();
+
+  const durLine = durationMs ? ` for ${humanizeDuration(durationMs)}` : '';
+  const container = new ContainerBuilder()
+    .setAccentColor(0xfee75c)
+    .addTextDisplayComponents(new (await import('discord.js')).TextDisplayBuilder().setContent(
+      `⚠️ **Confirm ${action.toUpperCase()}**\nTarget: <@${targetUserId}>${durLine}\nReason: ${reason}\n\n**Press Confirm to proceed, or Cancel to abort.**`,
+    ))
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(`pconfirm:${actionId}`).setLabel('Confirm').setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId(`pcancel:${actionId}`).setLabel('Cancel').setStyle(ButtonStyle.Secondary),
+      ) as never,
+    );
+
+  const sent = await (message.channel as any).send({
+    components: [container] as unknown[],
+    flags: MessageFlags.IsComponentsV2,
+    allowedMentions: { parse: [] },
+  });
+
+  return new Promise((resolve) => {
+    const filter = (i: any) => (i.customId.startsWith('pconfirm:') || i.customId.startsWith('pcancel:')) && i.user.id === message.author.id;
+    const collector = sent.createMessageComponentCollector({ filter, time: 60_000, max: 1 });
+    collector.on('collect', async (i: any) => {
+      if (i.customId.startsWith('pcancel:')) {
+        await i.update({ content: '❌ Action cancelled.', components: [] });
+        resolve({ confirmed: false });
+      } else {
+        await i.deferUpdate();
+        await sent.delete().catch(() => undefined);
+        resolve({ confirmed: true });
+      }
+    });
+    collector.on('end', async (_collected: any, reason: string) => {
+      if (reason === 'time') {
+        await sent.delete().catch(() => undefined);
+        await message.reply('Confirmation expired.').catch(() => undefined);
+        resolve({ confirmed: false });
+      }
+    });
+  });
+}

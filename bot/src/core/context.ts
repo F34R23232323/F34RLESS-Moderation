@@ -23,6 +23,7 @@ import type { SlowmodeScheduler } from '../management/slowmodeScheduler';
 import type { AntiRaidService } from '../security/antiRaid';
 import type { SavedMessageService } from '../services/savedMessageService';
 import type { DashboardLogService } from '../services/dashboardLogService';
+import type { ApiCaseService } from '../services/apiCaseService';
 import type { ArchiveService } from '../services/archiveService';
 import type { MessageLogService } from '../services/messageLogService';
 import type { RoleConnectionsService } from '../services/roleConnections';
@@ -31,6 +32,7 @@ import type { CustomCommandRunner } from './customCommandRunner';
 import type { MusicService } from '../music/MusicService';
 import type { AppealService } from '../services/appealService';
 import type { NsfwModerationService } from '../nsfw/service';
+import type { ReplyPingProtectionService } from '../services/replyPingProtection/service';
 
 export interface App {
   config: BotConfig;
@@ -67,12 +69,14 @@ export interface App {
   messages: SavedMessageService;
   messageCache: MessageContentCache;
   dashboardLogs: DashboardLogService;
+  apiCases: ApiCaseService;
   archives: ArchiveService;
   messageLogs: MessageLogService;
   roleConnections: RoleConnectionsService;
   music: MusicService;
   appeals: AppealService;
   nsfw: NsfwModerationService;
+  replyPingProtection: ReplyPingProtectionService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;
