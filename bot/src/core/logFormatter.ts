@@ -57,6 +57,9 @@ import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, stri
   webhook_create: 'Webhook Created',
   webhook_update: 'Webhook Updated',
   webhook_delete: 'Webhook Deleted',
+  emergency_ping_triggered: 'Emergency Ping Triggered',
+  emergency_access_granted: 'Emergency Access Granted',
+  emergency_access_denied: 'Emergency Access Denied',
 };
 
 export function friendlyEventName(event: string): string {
@@ -152,7 +155,8 @@ const LABELS: Record<string, string> = {
   boostCount: 'Boost Count',
   boostTier: 'Boost Tier',
   oldTier: 'Old Tier',
-  newTier: 'New Tier',
+  usesToday: 'Uses (24h)',
+  threshold: 'Threshold',
 };
 
 const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'targetUser', 'inviter', 'actorId']);
@@ -287,6 +291,9 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   webhook_create: 0x57f287,
   webhook_update: 0x5865f2,
   webhook_delete: 0xed4245,
+  emergency_ping_triggered: 0xed4245,
+  emergency_access_granted: 0x57f287,
+  emergency_access_denied: 0xfee75c,
 };
 
 export function logAccent(event: string): number {

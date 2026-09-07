@@ -492,6 +492,14 @@ export const configSchema = z
         log_channel_id: snowflake.optional(),
         log_thread_id: snowflake.optional(),
         bulk_delete_quiet_seconds: z.number().int().min(1).max(30).default(5),
+        owner_alerts: z
+          .object({
+            enabled: boolean.default(true),
+            role_ids: snowflakeArray,
+            cooldown_seconds: z.number().int().min(5).max(3600).default(300),
+          })
+          .strict()
+          .default({}),
         modules: z
           .object({
             spam: z
@@ -551,6 +559,13 @@ export const configSchema = z
               })
               .strict()
               .default(() => ({ enabled: false, action_chain: [...DEFAULT_WARN_CHAIN], immune_roles: [], channel_ignore_list: [], suppress_repeat_response_seconds: 30, suppressed_response_mode: 'silent' as const, shadow_mode: false, max_mentions: 5, spam_threshold: 3, spam_window_seconds: 60 })),
+            scam_images: z
+              .object({
+                ...automodModuleBase,
+                hamming_distance_threshold: z.number().int().min(0).max(64).default(10),
+              })
+              .strict()
+              .default(() => ({ enabled: true, action_chain: [...DEFAULT_ACTION_CHAIN], immune_roles: [], channel_ignore_list: [], suppress_repeat_response_seconds: 0, suppressed_response_mode: 'silent' as const, shadow_mode: false, hamming_distance_threshold: 10 })),
           })
           .strict(),
         risk_scoring: z
@@ -1082,6 +1097,338 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    economy: z
+      .object({
+        enabled: boolean.default(false),
+        currency: z
+          .object({
+            name_singular: z.string().min(1).default('coin'),
+            name_plural: z.string().min(1).default('coins'),
+            symbol: z.string().min(1).default('$'),
+            symbol_placement: z.enum(['before', 'after']).default('before'),
+            thousands_separator: z.string().default(','),
+            starting_wallet: z.number().int().min(0).default(100),
+            starting_bank: z.number().int().min(0).default(0),
+            max_wallet: z.number().int().min(0).default(10_000_000),
+            max_bank: z.number().int().min(0).default(100_000_000),
+          })
+          .strict()
+          .default({}),
+        banking: z
+          .object({
+            enabled: boolean.default(true),
+            deposit_limit: z.number().int().min(0).default(1_000_000),
+            withdraw_limit: z.number().int().min(0).default(1_000_000),
+            interest_enabled: boolean.default(false),
+            interest_rate_bps: z.number().int().min(0).max(10000).default(0),
+            interest_interval_hours: z.number().int().min(1).default(24),
+            max_interest_amount: z.number().int().min(0).default(10_000),
+          })
+          .strict()
+          .default({}),
+        transfers: z
+          .object({
+            enabled: boolean.default(true),
+            min_amount: z.number().int().min(1).default(1),
+            max_amount: z.number().int().min(1).default(1_000_000),
+            fee_percentage_bps: z.number().int().min(0).max(10000).default(0),
+            fee_min: z.number().int().min(0).default(0),
+            fee_max: z.number().int().min(0).default(10_000),
+            cooldown_seconds: z.number().int().min(0).default(10),
+            require_confirmation_above: z.number().int().min(0).default(10_000),
+          })
+          .strict()
+          .default({}),
+        daily: z
+          .object({
+            enabled: boolean.default(true),
+            min_reward: z.number().int().min(0).default(100),
+            max_reward: z.number().int().min(0).default(500),
+            streak_bonus_per_day_bps: z.number().int().min(0).max(10000).default(500),
+            streak_bonus_max_bps: z.number().int().min(0).max(50000).default(10000),
+            grace_tokens: z.number().int().min(0).max(7).default(1),
+            timezone: z.string().default('UTC'),
+          })
+          .strict()
+          .default({}),
+        weekly: z
+          .object({
+            enabled: boolean.default(true),
+            min_reward: z.number().int().min(0).default(1000),
+            max_reward: z.number().int().min(0).default(5000),
+            streak_bonus_per_week_bps: z.number().int().min(0).max(10000).default(1000),
+            grace_tokens: z.number().int().min(0).max(4).default(1),
+            timezone: z.string().default('UTC'),
+          })
+          .strict()
+          .default({}),
+        work: z
+          .object({
+            enabled: boolean.default(true),
+            default_cooldown_seconds: z.number().int().min(0).default(300),
+            xp_per_work: z.number().int().min(0).default(10),
+          })
+          .strict()
+          .default({}),
+        shops: z
+          .object({
+            enabled: boolean.default(true),
+            max_shops: z.number().int().min(1).default(50),
+            max_items_per_shop: z.number().int().min(1).default(100),
+            restock_interval_minutes: z.number().int().min(1).default(60),
+            purchase_public: boolean.default(false),
+          })
+          .strict()
+          .default({}),
+        trading: z
+          .object({
+            enabled: boolean.default(true),
+            max_active_trades: z.number().int().min(1).default(5),
+            trade_expiry_minutes: z.number().int().min(1).default(30),
+            require_confirmation: boolean.default(true),
+          })
+          .strict()
+          .default({}),
+        marketplace: z
+          .object({
+            enabled: boolean.default(true),
+            max_listings_per_user: z.number().int().min(1).default(20),
+            listing_fee_bps: z.number().int().min(0).max(10000).default(500),
+            sale_tax_bps: z.number().int().min(0).max(10000).default(500),
+            min_price: z.number().int().min(1).default(1),
+            max_price: z.number().int().min(1).default(10_000_000),
+            listing_duration_hours: z.number().int().min(1).default(168),
+          })
+          .strict()
+          .default({}),
+        stealing: z
+          .object({
+            enabled: boolean.default(false),
+            cooldown_seconds: z.number().int().min(60).default(3600),
+            daily_attempt_limit: z.number().int().min(1).default(5),
+            daily_stolen_cap: z.number().int().min(0).default(5000),
+            min_amount: z.number().int().min(1).default(10),
+            max_amount: z.number().int().min(1).default(500),
+            max_percentage_bps: z.number().int().min(1).max(10000).default(2000),
+            failure_fine: z.number().int().min(0).default(100),
+            min_attacker_balance: z.number().int().min(0).default(100),
+            min_victim_balance: z.number().int().min(0).default(50),
+            victim_grace_minutes: z.number().int().min(0).default(60),
+            allow_bank_steal: boolean.default(false),
+            max_bank_percentage_bps: z.number().int().min(1).max(10000).default(500),
+            steal_from_banks: boolean.default(false),
+          })
+          .strict()
+          .default({}),
+        quests: z
+          .object({
+            enabled: boolean.default(true),
+            max_active_quests: z.number().int().min(1).default(5),
+            daily_quest_count: z.number().int().min(1).default(3),
+            weekly_quest_count: z.number().int().min(1).default(2),
+            refresh_cooldown_seconds: z.number().int().min(0).default(300),
+          })
+          .strict()
+          .default({}),
+        achievements: z
+          .object({
+            enabled: boolean.default(true),
+          })
+          .strict()
+          .default({}),
+        collections: z
+          .object({
+            enabled: boolean.default(true),
+          })
+          .strict()
+          .default({}),
+        crafting: z
+          .object({
+            enabled: boolean.default(true),
+            max_concurrent: z.number().int().min(1).default(5),
+          })
+          .strict()
+          .default({}),
+        leaderboards: z
+          .object({
+            enabled: boolean.default(true),
+            refresh_interval_minutes: z.number().int().min(1).default(60),
+            visible_categories: z.array(z.string()).default([]),
+            placement_role_rewards: z
+              .object({
+                enabled: boolean.default(false),
+                top_1_role_id: snowflake.optional(),
+                top_3_role_id: snowflake.optional(),
+                top_10_role_id: snowflake.optional(),
+              })
+              .strict()
+              .default({}),
+          })
+          .strict()
+          .default({}),
+        level: z
+          .object({
+            xp_per_message: z.number().int().min(0).default(5),
+            xp_per_command: z.number().int().min(0).default(10),
+            xp_curve_multiplier: z.number().min(1).default(1.5),
+            level_up_role_rewards: z
+              .object({
+                enabled: boolean.default(false),
+                roles: z
+                  .array(
+                    z.object({
+                      level: z.number().int().min(1),
+                      role_id: snowflake,
+                    }),
+                  )
+                  .default([]),
+              })
+              .strict()
+              .default({}),
+          })
+          .strict()
+          .default({}),
+        role_rewards: z
+          .object({
+            enabled: boolean.default(true),
+            max_role_rewards: z.number().int().min(1).default(50),
+            dangerous_permission_bits: z.array(z.string()).default([
+              'Administrator',
+              'ManageGuild',
+              'ManageRoles',
+              'ManageChannels',
+              'ManageMessages',
+              'ManageWebhooks',
+              'BanMembers',
+              'KickMembers',
+              'ManageNicknames',
+            ]),
+          })
+          .strict()
+          .default({}),
+        stealing_config: z
+          .object({
+            protection_items: z
+              .array(z.string())
+              .default(['wallet_lock', 'alarm', 'shield']),
+            tool_items: z
+              .array(z.string())
+              .default(['lockpick', 'disguise_kit']),
+          })
+          .strict()
+          .default({}),
+        anti_abuse: z
+          .object({
+            max_transfers_per_hour: z.number().int().min(1).default(20),
+            max_transfers_per_day: z.number().int().min(1).default(100),
+            circular_transfer_detection: boolean.default(true),
+            mule_transfer_threshold: z.number().int().min(2).default(5),
+            mule_window_minutes: z.number().int().min(1).default(60),
+            suspicious_activity_freeze: boolean.default(false),
+            suspicious_activity_threshold: z.number().int().min(1).default(100_000),
+          })
+          .strict()
+          .default({}),
+        activity_rewards: z
+          .object({
+            enabled: boolean.default(false),
+            min_message_length: z.number().int().min(1).default(10),
+            min_interval_seconds: z.number().int().min(10).default(60),
+            max_per_hour: z.number().int().min(1).default(20),
+            max_per_day: z.number().int().min(1).default(200),
+            reward_min: z.number().int().min(0).default(1),
+            reward_max: z.number().int().min(0).default(5),
+            ignored_channels: snowflakeArray,
+            ignored_roles: snowflakeArray,
+            bot_messages_excluded: boolean.default(true),
+            deleted_messages_excluded: boolean.default(true),
+          })
+          .strict()
+          .default({}),
+        minigames: z
+          .object({
+            enabled: boolean.default(true),
+            trivia: z
+              .object({
+                enabled: boolean.default(true),
+                reward_min: z.number().int().min(0).default(50),
+                reward_max: z.number().int().min(0).default(200),
+                cooldown_seconds: z.number().int().min(0).default(60),
+                timeout_seconds: z.number().int().min(10).default(30),
+              })
+              .strict()
+              .default({}),
+            memory: z
+              .object({
+                enabled: boolean.default(true),
+                reward_min: z.number().int().min(0).default(50),
+                reward_max: z.number().int().min(0).default(150),
+                cooldown_seconds: z.number().int().min(0).default(60),
+                sequence_length: z.number().int().min(3).max(8).default(5),
+              })
+              .strict()
+              .default({}),
+            reaction: z
+              .object({
+                enabled: boolean.default(true),
+                reward_min: z.number().int().min(0).default(30),
+                reward_max: z.number().int().min(0).default(100),
+                cooldown_seconds: z.number().int().min(0).default(30),
+              })
+              .strict()
+              .default({}),
+          })
+          .strict()
+          .default({}),
+        notifications: z
+          .object({
+            enabled: boolean.default(true),
+            max_inbox: z.number().int().min(1).default(50),
+            expiry_days: z.number().int().min(1).default(30),
+          })
+          .strict()
+          .default({}),
+        logging: z
+          .object({
+            enabled: boolean.default(true),
+            channel_id: snowflake.optional(),
+            events: z
+              .object({
+                balance_changes: boolean.default(true),
+                purchases: boolean.default(true),
+                trades: boolean.default(true),
+                marketplace: boolean.default(true),
+                stealing: boolean.default(true),
+                role_rewards: boolean.default(true),
+                admin_actions: boolean.default(true),
+                quest_achievements: boolean.default(true),
+                item_usage: boolean.default(true),
+                scheduled_jobs: boolean.default(false),
+              })
+              .strict()
+              .default({}),
+          })
+          .strict()
+          .default({}),
+        guild_overrides: z
+          .record(
+            z.string(),
+            z
+              .object({
+                enabled: boolean.optional(),
+                currency_name_singular: z.string().optional(),
+                currency_name_plural: z.string().optional(),
+                currency_symbol: z.string().optional(),
+                starting_wallet: z.number().int().min(0).optional(),
+                max_wallet: z.number().int().min(0).optional(),
+              })
+              .strict(),
+          )
+          .default({}),
+      })
+      .strict()
+      .default({}),
+
     ops: z
       .object({
         backups_enabled: boolean.default(true),
@@ -1102,6 +1449,7 @@ export type NsfwModerationConfig = z.infer<typeof configSchema.shape.nsfw_modera
 export type ReplyPingProtectionConfig = z.infer<typeof configSchema.shape.reply_ping_protection>;
 export type EscalationActionConfig = z.infer<typeof escalationActionSchema>;
 export type PunishmentDmTypeConfig = z.infer<typeof punishmentDmTypeSchema>;
+export type EconomyConfig = z.infer<typeof configSchema.shape.economy>;
 
 export const PUNISHMENT_TYPES = ['warn', 'mute', 'kick', 'ban', 'timeout', 'unban', 'unmute', 'case_closed'] as const;
 export type PunishmentType = (typeof PUNISHMENT_TYPES)[number];
@@ -1150,5 +1498,23 @@ export const LOG_EVENT_NAMES = [
   'webhook_create',
   'webhook_update',
   'webhook_delete',
+  'economy_balance_change',
+  'economy_purchase',
+  'economy_sale',
+  'economy_trade',
+  'economy_marketplace',
+  'economy_steal',
+  'economy_role_reward',
+  'economy_admin_action',
+  'economy_quest',
+  'economy_achievement',
+  'economy_item_use',
+  'economy_daily',
+  'economy_work',
+  'economy_job',
+  'economy_craft',
+  'economy_gift',
+  'economy_reversal',
+  'economy_error',
 ] as const;
 export type LogEventName = (typeof LOG_EVENT_NAMES)[number];

@@ -17,6 +17,7 @@ import { createRoleConnectionsRouter } from './routes/roleConnections';
 import { createAppealsRouter } from './routes/appeals';
 import { createGdprRouter } from './routes/gdpr';
 import { createExternalApiRouter } from './routes/external';
+import { createEconomyRouter } from './routes/economy';
 import { createWebSocketServer } from './ws';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
@@ -83,6 +84,7 @@ async function main(): Promise<void> {
   protectedApi.use('/archives', createArchivesRouter(ctx));
   protectedApi.use('/message-log', createMessageLogRouter(ctx));
   protectedApi.use('/role-connections', createRoleConnectionsRouter(ctx));
+  protectedApi.use('/economy', createEconomyRouter(ctx));
   protectedApi.use('/', createMiscRouter(ctx));
   app.use('/api', protectedApi);
 

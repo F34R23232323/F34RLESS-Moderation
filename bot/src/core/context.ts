@@ -33,6 +33,10 @@ import type { MusicService } from '../music/MusicService';
 import type { AppealService } from '../services/appealService';
 import type { NsfwModerationService } from '../nsfw/service';
 import type { ReplyPingProtectionService } from '../services/replyPingProtection/service';
+import type { AntiNukeService } from '../antinuke';
+import type { EmojiManager } from '../emoji';
+import type { ScamHashStore } from '../automod/scamHashStore';
+import type { EconomyService } from '../economy/service';
 
 export interface App {
   config: BotConfig;
@@ -77,6 +81,10 @@ export interface App {
   appeals: AppealService;
   nsfw: NsfwModerationService;
   replyPingProtection: ReplyPingProtectionService;
+  antiNuke: AntiNukeService;
+  emojiManager: EmojiManager;
+  scamHashStore: ScamHashStore;
+  economy: EconomyService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;

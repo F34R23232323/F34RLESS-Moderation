@@ -2,6 +2,7 @@ import type { Interaction } from 'discord.js';
 import type { App } from '../core/context';
 import { dispatchComponent } from '../core/componentLoader';
 import { v2Reply } from '../utils/v2';
+import { emojiPrefix } from '../emoji';
 
 export async function handleInteractionCreate(app: App, interaction: Interaction): Promise<void> {
   try {
@@ -34,7 +35,7 @@ async function handleSlash(app: App, interaction: any): Promise<void> {
     app.userCommands.has(interaction.commandName);
   if (custom && custom.enabled && !shadowsBuiltin) {
     if (custom.slash === false) {
-      await v2Reply(interaction, 'This command is disabled for slash.', { ephemeral: true });
+      await v2Reply(interaction, `${emojiPrefix('disabled')}This command is disabled for slash.`, { ephemeral: true });
       return;
     }
     await app.customCommands.runSlash(app, interaction, interaction.commandName);
@@ -45,7 +46,7 @@ async function handleSlash(app: App, interaction: any): Promise<void> {
   if (!command) return;
   const cfg = app.config.commands[command.name];
   if (cfg && cfg.slash === false) {
-    await v2Reply(interaction, 'This command is disabled for slash.', { ephemeral: true });
+    await v2Reply(interaction, `${emojiPrefix('disabled')}This command is disabled for slash.`, { ephemeral: true });
     return;
   }
 
@@ -53,7 +54,7 @@ async function handleSlash(app: App, interaction: any): Promise<void> {
   if (member && 'permissions' in member) {
     const guard = app.modGuard.hasRequiredPermissions(member, command);
     if (!guard.ok) {
-      await v2Reply(interaction, `You cannot use that command: ${guard.reason}`, { ephemeral: true });
+      await v2Reply(interaction, `${emojiPrefix('Denied')}You cannot use that command: ${guard.reason}`, { ephemeral: true });
       return;
     }
     if (command.ownerOnly && !app.modGuard.isOwner(interaction.user.id)) return;
@@ -62,7 +63,7 @@ async function handleSlash(app: App, interaction: any): Promise<void> {
   const cooldown = cfg?.cooldown_seconds ?? app.config.command_defaults.cooldown_seconds;
   if (!app.cooldowns.tryConsume('cmd', interaction.user.id, command.name, cooldown)) {
     const remaining = app.cooldowns.remainingSeconds('cmd', interaction.user.id, command.name);
-    await v2Reply(interaction, `Slow down! Try again in ${remaining}s.`, { ephemeral: true });
+    await v2Reply(interaction, `${emojiPrefix('Warning')}Slow down! Try again in ${remaining}s.`, { ephemeral: true });
     return;
   }
 
@@ -74,7 +75,7 @@ async function handleSlash(app: App, interaction: any): Promise<void> {
     app.metrics.incCommand(false);
     app.logger.error(`Slash command ${command.name} failed:`, err);
     await app.logManager.reportError(`Slash command ${command.name}`, err);
-    await v2Reply(interaction, 'An error occurred while running this command.', { ephemeral: true });
+    await v2Reply(interaction, `${emojiPrefix('vyxia_cross')}An error occurred while running this command.`, { ephemeral: true });
   } finally {
     await app.logManager.logCommandUsage({
       guildId: interaction.guildId,

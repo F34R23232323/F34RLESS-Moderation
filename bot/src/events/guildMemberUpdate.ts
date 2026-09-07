@@ -18,6 +18,8 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
       : null;
 
     if (rolesChanged) {
+      await app.antiNuke.observe({ guild, type: 'member_role_update', targetType: newMember.user.bot ? 'bot' : 'member', targetId: newMember.id,
+        before: { roleIds: [...oldRoles] }, after: { roleIds: [...newRoles], addedRoleIds: addedRoles, removedRoleIds: removedRoles } });
       const both = addedRoles.length > 0 && removedRoles.length > 0;
       const event = both ? 'role_change' : addedRoles.length > 0 ? 'role_add' : 'role_remove';
       const verb = both ? 'roles updated' : addedRoles.length > 0 ? 'was given roles' : 'lost roles';

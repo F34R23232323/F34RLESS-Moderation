@@ -3,6 +3,9 @@ import type { App } from '../core/context';
 
 export async function handleInviteCreate(app: App, invite: Invite): Promise<void> {
   const guildId = invite.guild?.id ?? '0';
+  const guild = invite.guild ? app.client.guilds.cache.get(invite.guild.id) : null;
+  if (guild) await app.antiNuke.observe({ guild, type: 'invite_create', targetType: 'invite', targetId: invite.code,
+    after: { channelId: invite.channel?.id ?? null, maxUses: invite.maxUses } });
   await app.logManager.log({
     event: 'invite_create',
     guildId,

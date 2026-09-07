@@ -15,6 +15,11 @@
     "build:bot": "tsc -p tsconfig.node.json",
     "typecheck": "tsc -p tsconfig.node.json --noEmit && tsc -p dashboard/web --noEmit",
     "test": "tsx --test \"bot/tests/**/*.test.ts\"",
+    "test:antinuke": "vitest run tests/antinuke/unit tests/antinuke/integration",
+    "test:antinuke:concurrency": "vitest run tests/antinuke/concurrency",
+    "test:antinuke:fuzz": "vitest run tests/antinuke/fuzz",
+    "test:antinuke:coverage": "vitest run --coverage tests/antinuke",
+    "validate:migrations": "tsx scripts/validate-migrations.ts",
     "start:bot": "node dist-node/bot/src/index.js",
     "start:dashboard": "node dist-node/dashboard/server/src/index.js"
   },
@@ -50,9 +55,12 @@
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
     "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^3.2.4",
     "@vitejs/plugin-react": "^4.3.2",
     "tsx": "^4.23.12",
+    "fast-check": "^4.3.0",
     "typescript": "^5.9.3",
-    "vite": "^5.4.9"
+    "vite": "^5.4.9",
+    "vitest": "^3.2.4"
   }
 }

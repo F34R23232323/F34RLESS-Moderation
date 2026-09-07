@@ -14,6 +14,7 @@ import {
   type Message,
   type MessageCreateOptions,
 } from 'discord.js';
+import { applicationEmoji, emojiPrefix } from '../emoji';
 
 // ---------------------------------------------------------------------------
 // Report card
@@ -60,11 +61,11 @@ const ACCENT: Record<string, number> = {
   false: 0xed4245,     // red
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  open: '🏅 New report',
-  actioned: '✅ Report accepted',
-  ignored: '❌ Report ignored',
-  false: '❌ Report ignored',
+const STATUS_LABEL: Record<string, { emojiName: string; label: string }> = {
+  open: { emojiName: 'vyxia_notify', label: 'New report' },
+  actioned: { emojiName: 'success', label: 'Report accepted' },
+  ignored: { emojiName: 'vyxia_ignore', label: 'Report ignored' },
+  false: { emojiName: 'vyxia_cross', label: 'Report ignored' },
 };
 
 function relTime(unixSeconds: number): string {
@@ -77,7 +78,8 @@ export function buildReportCard(opts: ReportCardOptions): { components: unknown[
   const container = new ContainerBuilder().setAccentColor(accentColor as never);
 
   // ── Header ────────────────────────────────────────────────────────────────
-  const headerLabel = STATUS_LABEL[opts.status] ?? STATUS_LABEL.open;
+  const headerStatus = STATUS_LABEL[opts.status] ?? STATUS_LABEL.open;
+  const headerLabel = `${emojiPrefix(headerStatus.emojiName)}${headerStatus.label}`;
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(`**${headerLabel}**`),
   );
@@ -157,25 +159,25 @@ export function buildReportCard(opts: ReportCardOptions): { components: unknown[
   if (opts.status === 'open') {
     const row = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new ButtonBuilder()
+        setResolvedEmoji(new ButtonBuilder()
           .setCustomId(`report:action:${opts.reportId}`)
           .setLabel('Take action')
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
+          .setStyle(ButtonStyle.Danger), 'vyxia_mod'),
+        setResolvedEmoji(new ButtonBuilder()
           .setCustomId(`report:ignore:${opts.reportId}`)
           .setLabel('Ignore')
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
+          .setStyle(ButtonStyle.Secondary), 'vyxia_ignore'),
+        setResolvedEmoji(new ButtonBuilder()
           .setCustomId(`report:userinfo:${opts.reportId}`)
           .setLabel('User info')
-          .setStyle(ButtonStyle.Secondary),
+          .setStyle(ButtonStyle.Secondary), 'vyxiaUser'),
       );
     const archiveRow = new ActionRowBuilder<ButtonBuilder>()
       .addComponents(
-        new ButtonBuilder()
+        setResolvedEmoji(new ButtonBuilder()
           .setCustomId(`report:archive:${opts.reportId}`)
           .setLabel('Archive Messages')
-          .setStyle(ButtonStyle.Success),
+          .setStyle(ButtonStyle.Success), 'Folders'),
       );
     container.addActionRowComponents(row as never);
     container.addActionRowComponents(archiveRow as never);
@@ -195,7 +197,7 @@ export function buildReportCard(opts: ReportCardOptions): { components: unknown[
 export interface V2MessageOptions {
   imageUrl?: string;
   imageUrls?: string[];
-  buttons?: Array<{ customId?: string; label: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
+  buttons?: Array<{ customId?: string; label: string; emojiName?: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
   accentColor?: string;
   allowedMentions?: MessageCreateOptions['allowedMentions'];
 }
@@ -212,6 +214,7 @@ export function buildV2Content(content: string, opts: V2MessageOptions = {}): { 
     const row = new ActionRowBuilder<ButtonBuilder>();
     for (const b of opts.buttons.slice(0, 5)) {
       const btn = new ButtonBuilder().setLabel(b.label).setDisabled(b.disabled ?? false);
+      if (b.emojiName) setResolvedEmoji(btn, b.emojiName);
       if (b.url) {
         btn.setStyle(b.style ?? ButtonStyle.Link).setURL(b.url);
       } else {
@@ -238,7 +241,7 @@ export interface RichV2Options {
   text: string;
   footer?: string;
   mediaUrls?: string[];
-  buttons?: Array<{ customId?: string; label: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
+  buttons?: Array<{ customId?: string; label: string; emojiName?: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
 }
 
 export function buildRichV2(opts: RichV2Options): { components: unknown[]; flags: number } {
@@ -258,6 +261,7 @@ export function buildRichV2(opts: RichV2Options): { components: unknown[]; flags
     const row = new ActionRowBuilder<ButtonBuilder>();
     for (const b of opts.buttons.slice(0, 5)) {
       const btn = new ButtonBuilder().setLabel(b.label).setDisabled(b.disabled ?? false);
+      if (b.emojiName) setResolvedEmoji(btn, b.emojiName);
       if (b.url) {
         btn.setStyle(b.style ?? ButtonStyle.Link).setURL(b.url);
       } else {
@@ -283,6 +287,11 @@ export function hexToInt(hex: string | undefined): number | undefined {
   if (!hex) return undefined;
   const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
   return m ? parseInt(m[1], 16) : undefined;
+}
+
+function setResolvedEmoji(button: ButtonBuilder, name: string): ButtonBuilder {
+  const resolved = applicationEmoji(name);
+  return resolved ? button.setEmoji(resolved) : button;
 }
 
 export function v2Send(channel: any, content: string, opts: V2MessageOptions = {}) {

@@ -188,7 +188,8 @@ async function handlePrefix(app: App, message: Message): Promise<void> {
 
   const builtin = resolveCommand(app, cmdName.toLowerCase());
   if (builtin) {
-    await runCommand(app, message, builtin, args);
+    const builtinArgs = cmdName.toLowerCase() === 'ria' ? ['ignore', 'all', ...args] : args;
+    await runCommand(app, message, builtin, builtinArgs);
     return;
   }
 

@@ -5,6 +5,7 @@ import {
   Settings, Braces, Clock, BarChart3, History, KeyRound, Download,
   Shapes, Archive as ArchiveIcon, MessageSquareText, Sun, Moon, Users,
   Menu, X, Search, WifiOff, PanelLeftClose, PanelLeftOpen, Scale,
+  Coins,
 } from 'lucide-react';
 import { raw } from './api';
 import Login from './pages/Login';
@@ -27,6 +28,7 @@ import MessageLog from './pages/MessageLog';
 import Privacy from './pages/Privacy';
 import GdprPage from './pages/Gdpr';
 import RoleConnections from './pages/RoleConnections';
+import Economy from './pages/Economy';
 import ErrorBoundary from './components/ErrorBoundary';
 import AppealsAdmin from './pages/AppealsAdmin';
 import AppealsApp from './appeals/AppealsApp';
@@ -49,6 +51,12 @@ const NAV_GROUPS = [
       { to: '/punishments', label: 'Punishments', icon: Timer },
       { to: '/message-log', label: 'Message Log', icon: MessageSquareText },
       { to: '/archives', label: 'Archives', icon: ArchiveIcon },
+    ],
+  },
+  {
+    label: 'Community',
+    items: [
+      { to: '/economy', label: 'Economy', icon: Coins },
     ],
   },
   {
@@ -297,6 +305,7 @@ export default function App() {
               <Route path="/" element={<Home />} />
               <Route path="/builder" element={<Builder />} />
               <Route path="/role-connections" element={<RoleConnections />} />
+              <Route path="/economy" element={<Economy />} />
               <Route path="/logs" element={<Logs />} />
               <Route path="/automod" element={<AutomodLogs />} />
               <Route path="/cases" element={<Cases />} />

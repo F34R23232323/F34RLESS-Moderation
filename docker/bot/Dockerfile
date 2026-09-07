@@ -24,14 +24,18 @@ COPY bot/ bot/
 COPY dashboard/server/ dashboard/server/
 COPY dashboard/web/ dashboard/web/
 COPY scripts/ scripts/
+COPY emojis/ emojis/
 
 # npm install (all deps) lets npx tsc find TypeScript and ensures native
 # addons (sharp, tfjs-node, ffmpeg-static) download their binaries.
 # npm ci --omit=dev replaces with a clean production install (scripts still
-# run so platform binaries are fetched).  npm rebuild is a safety net.
+# run so platform binaries are fetched).  sharp is reinstalled explicitly
+# because --omit=dev can strip its prebuilt binaries.  npm rebuild is a
+# safety net for any remaining native addons.
 RUN npm install --no-audit --no-fund \
   && npx tsc -p tsconfig.node.json \
   && npm ci --omit=dev \
+  && npm install sharp --no-audit --no-fund --omit=dev \
   && npm rebuild
 
 ENV NODE_ENV=production

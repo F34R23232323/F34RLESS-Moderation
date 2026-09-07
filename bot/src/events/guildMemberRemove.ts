@@ -33,6 +33,7 @@ export async function handleGuildMemberRemove(app: App, member: GuildMember): Pr
     }
 
     const isBot = member.user.bot;
+    await app.antiNuke.observe({ guild, type: 'member_kick', targetType: isBot ? 'bot' : 'member', targetId: member.id });
     const actorId = await resolveAuditActor(app, member.guild, AuditLogEvent.MemberKick, { targetId: member.id, windowMs: 6000, limit: 10 });
     if (actorId) {
       await app.logManager.log({

@@ -13,7 +13,8 @@ import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 const data = new SlashCommandBuilder()
   .setName('ban')
   .setDescription('Ban a user (optionally temporary)')
-  .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true))
+  .addUserOption((o) => o.setName('user').setDescription('Target user (in-server mention)').setRequired(false))
+  .addStringOption((o) => o.setName('user_id').setDescription('Target user ID (for users not in the server)').setRequired(false))
   .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false))
   .addStringOption((o) => o.setName('duration').setDescription('Optional temporary ban, e.g. 7d').setRequired(false))
   .addIntegerOption((o) => o.setName('delete_days').setDescription('Days of messages to delete').setMinValue(0).setMaxValue(7).setRequired(false));
@@ -22,9 +23,23 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
-  const user = await resolveUserOption(interaction, app);
+
+  let user = await resolveUserOption(interaction, app);
   if (!user) {
-    await v2Reply(interaction, 'User not found.', { ephemeral: true });
+    const rawId = interaction.options.getString('user_id');
+    const targetId = rawId ? parseTargetId(rawId) : null;
+    if (targetId) {
+      user = await app.client.users.fetch(targetId).catch(() => null);
+    }
+  }
+  if (!user) {
+    const hasUserOption = interaction.options.getUser('user');
+    const hasUserIdOption = interaction.options.getString('user_id');
+    if (!hasUserOption && !hasUserIdOption) {
+      await v2Reply(interaction, 'Provide a `user` mention or a `user_id` string.', { ephemeral: true });
+      return;
+    }
+    await v2Reply(interaction, 'User not found. Provide a valid user mention or user ID.', { ephemeral: true });
     return;
   }
   const member = await guild.members.fetch(user.id).catch(() => null);

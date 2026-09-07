@@ -4,6 +4,7 @@ import type { PunishmentType } from '../../../shared/src/index';
 import { renderPlaceholders, humanizeDuration } from '../../../shared/src/index';
 import { buildV2Content } from '../utils/v2';
 import { notificationDmGuard } from './notificationDmGuard';
+import { emojiPrefix } from '../emoji';
 
 export interface PunishmentDmContext {
   guild: Guild;
@@ -47,7 +48,8 @@ export class PunishmentDmManager {
       appeal_instructions: 'you can contact a staff member to appeal',
     };
 
-    const content = renderPlaceholders(typeCfg.content, placeholders);
+    const dmEmoji = type === 'ban' ? '7club_ban' : type === 'warn' ? 'vyxia_WarnFlash' : type === 'mute' || type === 'timeout' ? 'vyxia_ignore' : 'vyxia_mod';
+    const content = `${emojiPrefix(dmEmoji)}${renderPlaceholders(typeCfg.content, placeholders)}`;
     try {
       const dm = await ctx.user.createDM();
       const payload = buildV2Content(content);

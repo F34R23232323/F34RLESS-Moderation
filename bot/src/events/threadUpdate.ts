@@ -10,6 +10,9 @@ export async function handleThreadUpdate(app: App, oldThread: ThreadChannel, new
   if (oldThread.rateLimitPerUser !== newThread.rateLimitPerUser) changes.push(`Slowmode: ${oldThread.rateLimitPerUser} -> ${newThread.rateLimitPerUser}`);
   if (changes.length === 0) return;
   const guild = newThread.guild;
+  await app.antiNuke.observe({ guild, type: 'thread_update', targetType: 'thread', targetId: newThread.id,
+    before: { name: oldThread.name, archived: oldThread.archived, locked: oldThread.locked },
+    after: { name: newThread.name, archived: newThread.archived, locked: newThread.locked } });
   const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.ThreadUpdate, { targetId: newThread.id }) : null;
   await app.logManager.log({
     event: 'thread_update',

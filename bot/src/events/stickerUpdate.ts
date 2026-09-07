@@ -8,6 +8,8 @@ export async function handleStickerUpdate(app: App, oldSticker: Sticker, newStic
   if (oldSticker.name !== newSticker.name) changes.push(`Name: ${oldSticker.name} -> ${newSticker.name}`);
   if (oldSticker.description !== newSticker.description) changes.push('Description changed');
   const guild = newSticker.guildId ? app.client.guilds.cache.get(newSticker.guildId) : null;
+  if (guild) await app.antiNuke.observe({ guild, type: 'sticker_update', targetType: 'sticker', targetId: newSticker.id,
+    before: { name: oldSticker.name }, after: { name: newSticker.name } });
   const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.StickerUpdate, { targetId: newSticker.id }) : null;
   await app.logManager.log({
     event: 'sticker_update',

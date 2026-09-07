@@ -54,6 +54,9 @@ export class ActionChainExecutor {
         await this.executeStep(step, chain, trigger, member, result, suppressSeconds, suppressMode);
       } catch (err) {
         result.actionsFailed.push({ step: step.type, error: (err as Error).message });
+        if (['mute', 'timeout', 'kick', 'ban'].includes(step.type)) {
+          await this.notifyOwnerOfFailedPunishment(trigger, member, step.type, err);
+        }
       }
     }
 
@@ -301,6 +304,59 @@ export class ActionChainExecutor {
       text,
       footer: spec?.footer ?? `${trigger.guild.name} • Automated moderation`,
     });
+  }
+
+  private async notifyOwnerOfFailedPunishment(
+    trigger: ChainTrigger,
+    member: GuildMember | null | undefined,
+    action: string,
+    error: unknown,
+  ): Promise<void> {
+    const cfg = this.app.config.automod.owner_alerts;
+    if (!cfg.enabled) return;
+
+    const owner = await trigger.guild.fetchOwner().catch(() => null);
+    if (!owner || owner.id === trigger.user.id) return;
+
+    const matchedRoles = member
+      ? cfg.role_ids.filter((roleId) => member.roles.cache.has(roleId))
+      : [];
+    const guardKey = `owner-alert:${trigger.guild.id}:${trigger.user.id}:${action}`;
+    if (!notificationDmGuard.allow(owner.id, guardKey, 5, cfg.cooldown_seconds)) return;
+
+    const channelText = trigger.channel ? `<#${trigger.channel.id}>` : 'Unknown channel';
+    const messageLink = trigger.channel && trigger.message
+      ? `https://discord.com/channels/${trigger.guild.id}/${trigger.channel.id}/${trigger.message.id}`
+      : null;
+    const text = [
+      '**Security warning**',
+      `AutoMod triggered for <@${trigger.user.id}>, but the bot could not apply **${action}**.`,
+      '',
+      `**Rule:** ${trigger.rule}`,
+      `**Module:** ${trigger.module}`,
+      `**Trigger reason:** ${trigger.reason ?? 'No reason supplied'}`,
+      `**Discord error:** ${(error as Error).message || String(error)}`,
+      `**Channel:** ${channelText}`,
+      matchedRoles.length > 0
+        ? `**Privileged role detected:** ${matchedRoles.map((roleId) => `<@&${roleId}>`).join(', ')}`
+        : '**Privileged role detected:** No configured alert role matched',
+      messageLink ? `**Message:** ${messageLink}` : null,
+      '',
+      'This can indicate an incorrect role hierarchy, missing moderation permissions, or privileged-user abuse. Review the member, role hierarchy, and audit log immediately.',
+    ].filter((line): line is string => line !== null).join('\n');
+
+    try {
+      const dm = await owner.user.createDM();
+      const payload = buildRichV2({
+        accentColor: 0xed4245,
+        header: 'AutoMod Punishment Failed',
+        text,
+        footer: `${trigger.guild.name} • Owner security alert`,
+      });
+      await dm.send(payload as never);
+    } catch {
+      notificationDmGuard.release(owner.id, guardKey);
+    }
   }
 
   private async sendFormatted(

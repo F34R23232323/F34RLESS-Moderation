@@ -1,6 +1,7 @@
 import { AuditLogEvent, PermissionsBitField, type Role } from 'discord.js';
 import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
+import { PermissionRiskService } from '../antinuke';
 
 function permNames(bits: bigint): string[] {
   return new PermissionsBitField(bits).toArray();
@@ -25,6 +26,10 @@ export async function handleRoleUpdate(app: App, oldRole: Role, newRole: Role): 
   }
 
   if (changes.length === 0) return;
+  const permissionRisk = new PermissionRiskService().analyze(oldRole.permissions, newRole.permissions);
+  await app.antiNuke.observe({ guild: newRole.guild, type: 'role_update', targetType: 'role', targetId: newRole.id,
+    before: { name: oldRole.name, permissions: oldRole.permissions.bitfield.toString() },
+    after: { name: newRole.name, permissions: newRole.permissions.bitfield.toString(), dangerousPermissionsAdded: permissionRisk.added, dangerousPermissionsRemoved: permissionRisk.removed } });
   const actorId = await resolveAuditActor(app, newRole.guild, AuditLogEvent.RoleUpdate, { targetId: newRole.id, retries: 2 });
   await app.logManager.log({
     event: 'role_update',

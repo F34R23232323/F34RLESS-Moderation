@@ -5,6 +5,8 @@ import { resolveAuditActor } from '../utils/auditLog';
 export async function handleInviteDelete(app: App, invite: Invite): Promise<void> {
   const guildId = invite.guild?.id ?? '0';
   const guild = guildId !== '0' ? app.client.guilds.cache.get(guildId) ?? null : null;
+  if (guild) await app.antiNuke.observe({ guild, type: 'invite_delete', targetType: 'invite', targetId: invite.code,
+    before: { channelId: invite.channel?.id ?? null } });
   const actorId = guild
     ? await resolveAuditActor(app, guild, AuditLogEvent.InviteDelete, {
         match: (e) => e.targetId === invite.code || (e.extra as { code?: string } | null)?.code === invite.code,

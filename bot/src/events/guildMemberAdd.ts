@@ -10,6 +10,8 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
     await app.messageLogs.upsertUser(guild.id, member.user, member);
 
     if (isBot) {
+      await app.antiNuke.observe({ guild, type: 'bot_add', targetType: 'bot', targetId: member.id,
+        after: { username: member.user.username } });
       for (const roleId of app.config.join_roles.bot_roles) {
         await member.roles.add(roleId, 'Bot join role').catch(() => undefined);
       }

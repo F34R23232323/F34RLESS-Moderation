@@ -19,8 +19,10 @@ import { createTypingSpeedModule } from '../heuristics/typingSpeed';
 import { createMassIdenticalJoinsModule } from '../heuristics/massIdenticalJoins';
 import { createNewAccountVelocityModule } from '../heuristics/newAccountVelocity';
 import { createSpamRejoinsModule } from '../heuristics/spamRejoins';
+import { createScamImagesModule } from './scamImages';
+import type { ScamHashStore } from '../scamHashStore';
 
-export function registerAutomodModules(app: App, manager: AutomodManager): void {
+export function registerAutomodModules(app: App, manager: AutomodManager, scamHashStore: ScamHashStore): void {
   const tracker = new MessageTracker();
   const invites = new InviteResolver(app.client);
 
@@ -39,6 +41,7 @@ export function registerAutomodModules(app: App, manager: AutomodManager): void 
     createMassPingModule(),
     createRegexEngineModule(),
     createTypingSpeedModule(),
+    createScamImagesModule(scamHashStore),
   ];
 
   for (const m of modules) {

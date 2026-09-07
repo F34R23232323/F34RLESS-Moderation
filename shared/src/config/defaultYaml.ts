@@ -319,6 +319,10 @@ automod:
   log_channel_id: "000000000000000000"
   # log_thread_id: "000000000000000000"
   bulk_delete_quiet_seconds: 5          # reset on each hit; purge once the burst stops
+  owner_alerts:
+    enabled: true
+    role_ids: []
+    cooldown_seconds: 300
   modules:
     spam:
       enabled: true
@@ -539,6 +543,18 @@ automod:
         - type: warn
           reason: "Automod: mass ping ({rule})"
         - type: run_escalation_check
+    scam_images:
+      enabled: true
+      hamming_distance_threshold: 10            # bits of tolerance (0 = exact, 64 = match everything)
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 0
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: delete_message
+        - type: kick
+          reason: "Automod: scam image detected ({rule})"
   # Composite risk scoring: several signals feed a rolling per-user score.
   risk_scoring:
     enabled: false
@@ -1017,4 +1033,238 @@ ops:
   backup_retention_count: 7
   usage_analytics: true
   snipe_retention_seconds: 600
+
+# =============================================================================
+# Economy system — fictional server currency, shops, jobs, quests, trading.
+# Disabled by default. Enable per-guild through the dashboard or prefix command.
+# =============================================================================
+economy:
+  # Master switch. When false the economy module is completely inactive.
+  enabled: false
+
+  # ── Currency display ────────────────────────────────────────────────────
+  currency:
+    name_singular: "coin"           # display name for 1 unit
+    name_plural: "coins"            # display name for >1 units
+    symbol: "$"                     # symbol shown with amounts
+    symbol_placement: "before"      # "before" ($100) or "after" (100$)
+    thousands_separator: ","        # thousands grouping character
+    starting_wallet: 100            # new economy accounts start with this wallet balance
+    starting_bank: 0                # new economy accounts start with this bank balance
+    max_wallet: 10000000            # maximum wallet balance (integer units)
+    max_bank: 100000000             # maximum bank balance (integer units)
+
+  # ── Banking ─────────────────────────────────────────────────────────────
+  banking:
+    enabled: true
+    deposit_limit: 1000000          # max single deposit
+    withdraw_limit: 1000000         # max single withdraw
+    interest_enabled: false         # bank interest accrual
+    interest_rate_bps: 0            # basis points per interval (100 = 1%)
+    interest_interval_hours: 24     # how often interest accrues
+    max_interest_amount: 10000      # cap per accrual
+
+  # ── Transfers / payments ────────────────────────────────────────────────
+  transfers:
+    enabled: true
+    min_amount: 1
+    max_amount: 1000000
+    fee_percentage_bps: 0           # transfer fee in basis points (0 = no fee)
+    fee_min: 0
+    fee_max: 10000
+    cooldown_seconds: 10
+    require_confirmation_above: 10000
+
+  # ── Daily reward ────────────────────────────────────────────────────────
+  daily:
+    enabled: true
+    min_reward: 100
+    max_reward: 500
+    streak_bonus_per_day_bps: 500   # bonus per streak day (500 = +5% per day)
+    streak_bonus_max_bps: 10000     # max cumulative streak bonus (100%)
+    grace_tokens: 1                 # missed days before streak resets
+    timezone: "UTC"
+
+  # ── Weekly reward ───────────────────────────────────────────────────────
+  weekly:
+    enabled: true
+    min_reward: 1000
+    max_reward: 5000
+    streak_bonus_per_week_bps: 1000
+    grace_tokens: 1
+    timezone: "UTC"
+
+  # ── Jobs / work ─────────────────────────────────────────────────────────
+  work:
+    enabled: true
+    default_cooldown_seconds: 300
+    xp_per_work: 10
+
+  # ── Shops ───────────────────────────────────────────────────────────────
+  shops:
+    enabled: true
+    max_shops: 50
+    max_items_per_shop: 100
+    restock_interval_minutes: 60
+    purchase_public: false          # show purchase announcements publicly
+
+  # ── Trading ─────────────────────────────────────────────────────────────
+  trading:
+    enabled: true
+    max_active_trades: 5
+    trade_expiry_minutes: 30
+    require_confirmation: true
+
+  # ── Marketplace ─────────────────────────────────────────────────────────
+  marketplace:
+    enabled: true
+    max_listings_per_user: 20
+    listing_fee_bps: 500            # 5% listing fee
+    sale_tax_bps: 500               # 5% sale tax
+    min_price: 1
+    max_price: 10000000
+    listing_duration_hours: 168     # 7 days
+
+  # ── Stealing / robbery ──────────────────────────────────────────────────
+  # Optional feature. Disabled by default. Wallet-only stealing.
+  stealing:
+    enabled: false
+    cooldown_seconds: 3600
+    daily_attempt_limit: 5
+    daily_stolen_cap: 5000
+    min_amount: 10
+    max_amount: 500
+    max_percentage_bps: 2000        # max 20% of victim's wallet
+    failure_fine: 100
+    min_attacker_balance: 100
+    min_victim_balance: 50
+    victim_grace_minutes: 60
+    allow_bank_steal: false
+    max_bank_percentage_bps: 500
+    steal_from_banks: false
+
+  # ── Quests ──────────────────────────────────────────────────────────────
+  quests:
+    enabled: true
+    max_active_quests: 5
+    daily_quest_count: 3
+    weekly_quest_count: 2
+    refresh_cooldown_seconds: 300
+
+  # ── Achievements ────────────────────────────────────────────────────────
+  achievements:
+    enabled: true
+
+  # ── Collections ─────────────────────────────────────────────────────────
+  collections:
+    enabled: true
+
+  # ── Crafting ────────────────────────────────────────────────────────────
+  crafting:
+    enabled: true
+    max_concurrent: 5
+
+  # ── Leaderboards ────────────────────────────────────────────────────────
+  leaderboards:
+    enabled: true
+    refresh_interval_minutes: 60
+    visible_categories: []
+    placement_role_rewards:
+      enabled: false
+      # top_1_role_id: "000000000000000000"
+      # top_3_role_id: "000000000000000000"
+      # top_10_role_id: "000000000000000000"
+
+  # ── Economy levels ──────────────────────────────────────────────────────
+  level:
+    xp_per_message: 5
+    xp_per_command: 10
+    xp_curve_multiplier: 1.5
+    level_up_role_rewards:
+      enabled: false
+      roles: []
+      # - level: 10
+      #   role_id: "000000000000000000"
+
+  # ── Role rewards ────────────────────────────────────────────────────────
+  role_rewards:
+    enabled: true
+    max_role_rewards: 50
+    dangerous_permission_bits:
+      - "Administrator"
+      - "ManageGuild"
+      - "ManageRoles"
+      - "ManageChannels"
+      - "ManageMessages"
+      - "ManageWebhooks"
+      - "BanMembers"
+      - "KickMembers"
+      - "ManageNicknames"
+
+  # ── Anti-abuse ──────────────────────────────────────────────────────────
+  anti_abuse:
+    max_transfers_per_hour: 20
+    max_transfers_per_day: 100
+    circular_transfer_detection: true
+    mule_transfer_threshold: 5
+    mule_window_minutes: 60
+    suspicious_activity_freeze: false
+    suspicious_activity_threshold: 100000
+
+  # ── Activity rewards (message-based earning) ─────────────────────────────
+  activity_rewards:
+    enabled: false
+    min_message_length: 10
+    min_interval_seconds: 60
+    max_per_hour: 20
+    max_per_day: 200
+    reward_min: 1
+    reward_max: 5
+    ignored_channels: []
+    ignored_roles: []
+    bot_messages_excluded: true
+    deleted_messages_excluded: true
+
+  # ── Minigames ───────────────────────────────────────────────────────────
+  minigames:
+    enabled: true
+    trivia:
+      enabled: true
+      reward_min: 50
+      reward_max: 200
+      cooldown_seconds: 60
+      timeout_seconds: 30
+    memory:
+      enabled: true
+      reward_min: 50
+      reward_max: 150
+      cooldown_seconds: 60
+      sequence_length: 5
+    reaction:
+      enabled: true
+      reward_min: 30
+      reward_max: 100
+      cooldown_seconds: 30
+
+  # ── Notifications ───────────────────────────────────────────────────────
+  notifications:
+    enabled: true
+    max_inbox: 50
+    expiry_days: 30
+
+  # ── Economy logging ─────────────────────────────────────────────────────
+  logging:
+    enabled: true
+    # channel_id: "000000000000000000"
+    events:
+      balance_changes: true
+      purchases: true
+      trades: true
+      marketplace: true
+      stealing: true
+      role_rewards: true
+      admin_actions: true
+      quest_achievements: true
+      item_usage: true
+      scheduled_jobs: false
 `;

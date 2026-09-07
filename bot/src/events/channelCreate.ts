@@ -3,6 +3,8 @@ import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleChannelCreate(app: App, channel: GuildChannel): Promise<void> {
+  await app.antiNuke.observe({ guild: channel.guild, type: 'channel_create', targetType: 'channel', targetId: channel.id,
+    after: { name: channel.name, type: channel.type } });
   const actorId = await resolveAuditActor(app, channel.guild, AuditLogEvent.ChannelCreate, { targetId: channel.id });
   await app.logManager.log({
     event: 'channel_create',

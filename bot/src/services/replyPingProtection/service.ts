@@ -125,13 +125,9 @@ export class ReplyPingProtectionService {
     const cfg = this.config;
     if (!cfg.enabled) return;
 
-    // Only care about reply messages
-    if (!message.reference?.messageId) return;
-
     const content = message.content ?? '';
     if (!content) return;
 
-    // Check if any protected user or role is mentioned
     const mentionedUserIds = extractMentionedUserIds(content);
     const blockedUserId = mentionedUserIds.find((id) => cfg.protected_users.includes(id));
 
@@ -146,8 +142,10 @@ export class ReplyPingProtectionService {
 
     if (this.isExempt(userId, member, channelId)) return;
 
+    const isReply = Boolean(message.reference?.messageId);
+
     this.app.logger.info(
-      `[ReplyPingProtection] messageCreate hit — user=${userId} channel=${channelId} blockedUser=${blockedUserId ?? 'none'} blockedRole=${blockedRoleId ?? 'none'} content="${content.slice(0, 80)}"`,
+      `[ReplyPingProtection] messageCreate hit — user=${userId} channel=${channelId} blockedUser=${blockedUserId ?? 'none'} blockedRole=${blockedRoleId ?? 'none'} isReply=${isReply} content="${content.slice(0, 80)}"`,
     );
 
     // Delete the offending message

@@ -324,6 +324,45 @@ commands:
     enabled: true
   block-appeal-user:
     enabled: true
+  emergency:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 3600
+    permissions: []
+    immune_roles: []
+    aliases:
+      - estaff
+      - eping
+  emergencyaccess:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases:
+      - eaccess
+      - eagree
+  economy:
+    enabled: true
+    slash: false
+    prefix: true
+    cooldown_seconds: 3
+    permissions: []
+    immune_roles: []
+    aliases:
+      - economyenable
+  economyadmin:
+    enabled: true
+    slash: false
+    prefix: true
+    cooldown_seconds: 3
+    permissions: []
+    immune_roles: []
+    aliases:
+      - ecoadmin
+      - ea
 command_defaults:
   cooldown_seconds: 3
 # Global logging exclusions: suppress events by channel, category, user, or role
@@ -541,6 +580,15 @@ logging:
   moderation_action:
     enabled: true
     channel_id: "1540115016420823173"
+  emergency_ping_triggered:
+    enabled: true
+    channel_id: "1546281343292416060"
+  emergency_access_granted:
+    enabled: true
+    channel_id: "1546281343292416060"
+  emergency_access_denied:
+    enabled: true
+    channel_id: "1546281343292416060"
 warnings:
   escalation_ladder:
     - count: 2
@@ -713,6 +761,11 @@ automod:
     - "1520031216651210773"
   log_channel_id: "1467185464124510319"
   bulk_delete_quiet_seconds: 5
+  owner_alerts:
+    enabled: true
+    role_ids:
+      - "1490439698416402613"
+    cooldown_seconds: 300
   modules:
     spam:
       enabled: true
@@ -841,6 +894,21 @@ automod:
         - type: delete_message
         - type: warn
           reason: "Automod: image spam ({rule})"
+        - type: run_escalation_check
+    scam_images:
+      enabled: true
+      hamming_distance_threshold: 10
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+      suppress_repeat_response_seconds: 0
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: warn
+          reason: "[AUTOMOD] Scam image detected ({rule})"
         - type: run_escalation_check
     executable_files:
       enabled: false
@@ -1003,8 +1071,8 @@ automod:
         - type: run_escalation_check
     mass_ping:
       enabled: true
-      max_mentions: 5
-      spam_threshold: 3
+      max_mentions: 6
+      spam_threshold: 5
       spam_window_seconds: 60
       immune_roles:
         - "1520031216651210773"
@@ -2661,7 +2729,21 @@ punishment_dms:
 # -----------------------------------------------------------------------------
 native_automod:
   enabled: true
-  responses: []
+  responses:
+    - enabled: true
+      rule_id: "1528109018227150969"
+      on: block_message
+      channel_id: "1467185464124510319"
+      format: components_v2
+      title: "Mention Blocked"
+      description: |-
+        A message was blocked by AutoMod for mentioning a protected user in a reply.
+
+        **Original Message:**
+        > ${originmessagecontent}
+      content: "Original message: ${originmessagecontent}"
+      accent_color: "#FEE75C"
+      delete_after_seconds: 30
 reply_ping_protection:
   enabled: true
   native_rule_id: "1528109018227150969"

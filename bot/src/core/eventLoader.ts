@@ -32,6 +32,7 @@ export async function loadEvents(app: App): Promise<void> {
 
 async function runEvent(app: App, name: string, run: BotEvent['run'], args: unknown[]): Promise<void> {
   try {
+    if (name !== 'ready') await app.emojiManager.waitUntilReady();
     // Every handler is authored as (app, ...eventArgs); the App is always the
     // first argument regardless of which discord.js event fired.
     await run(app, ...args);

@@ -282,6 +282,25 @@ private async loadReport(reportId: number): Promise<RowDataPacket | null> {
     }
   }
 
+  public async ignoreAllOpen(guildId: string, resolvedBy: string): Promise<number> {
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      "SELECT id FROM reports WHERE guild_id = ? AND status = 'open' ORDER BY id ASC",
+      [guildId],
+    );
+    for (const row of rows) {
+      await this.resolve(Number(row.id), 'ignored', resolvedBy);
+    }
+    return rows.length;
+  }
+
+  public async countOpen(guildId: string): Promise<number> {
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      "SELECT COUNT(*) AS count FROM reports WHERE guild_id = ? AND status = 'open'",
+      [guildId],
+    );
+    return Number(rows[0]?.count ?? 0);
+  }
+
   private async postArchivedCard(
     reportId: number,
     guildId: string,

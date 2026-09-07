@@ -150,6 +150,8 @@ export async function handleChannelUpdate(app: App, oldChannel: GuildChannel, ne
   if (permChanges.length > 0) changes['Permissions'] = permChanges.join('; ');
 
   if (Object.keys(changes).length === 0) return;
+  await app.antiNuke.observe({ guild: newChannel.guild, type: permChanges.length > 0 ? 'channel_overwrite_update' : 'channel_update', targetType: 'channel', targetId: newChannel.id,
+    before: { name: oldChannel.name, type: oldChannel.type }, after: { name: newChannel.name, type: newChannel.type, changes } });
   const actorId = await resolveAuditActor(app, newChannel.guild, AuditLogEvent.ChannelUpdate, { targetId: newChannel.id, retries: 2 });
   await app.logManager.log({
     event: 'channel_update',

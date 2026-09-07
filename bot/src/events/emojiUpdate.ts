@@ -4,6 +4,8 @@ import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleEmojiUpdate(app: App, oldEmoji: GuildEmoji, newEmoji: GuildEmoji): Promise<void> {
   if (oldEmoji.name === newEmoji.name && oldEmoji.roles.cache.size === newEmoji.roles.cache.size) return;
+  await app.antiNuke.observe({ guild: newEmoji.guild, type: 'emoji_update', targetType: 'emoji', targetId: newEmoji.id,
+    before: { name: oldEmoji.name }, after: { name: newEmoji.name } });
   const changes: string[] = [];
   if (oldEmoji.name !== newEmoji.name) changes.push(`Name: ${oldEmoji.name} -> ${newEmoji.name}`);
   if (oldEmoji.roles.cache.size !== newEmoji.roles.cache.size) changes.push('Restricted roles changed');

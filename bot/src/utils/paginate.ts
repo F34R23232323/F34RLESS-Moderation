@@ -34,9 +34,9 @@ export async function paginateV2(opts: PaginateOptions): Promise<void> {
     return buildV2Content(content, {
       accentColor: opts.accentColor,
       buttons: [
-        { customId: `${id}_prev`, label: '◀ Prev', style: ButtonStyle.Secondary, disabled: disabled || p === 0 },
+        { customId: `${id}_prev`, label: 'Previous', emojiName: 'vyxia_arrowLeft', style: ButtonStyle.Secondary, disabled: disabled || p === 0 },
         { customId: `${id}_page`, label: `Page ${p + 1}/${total}`, style: ButtonStyle.Secondary, disabled: true },
-        { customId: `${id}_next`, label: 'Next ▶', style: ButtonStyle.Secondary, disabled: disabled || p === total - 1 },
+        { customId: `${id}_next`, label: 'Next', emojiName: 'vyxia_arrowRight', style: ButtonStyle.Secondary, disabled: disabled || p === total - 1 },
       ],
     });
   };

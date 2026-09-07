@@ -33,6 +33,7 @@ export class SchedulerService {
     this.scheduleChannelSync();
     this.scheduleRoleConnections();
     this.scheduleSnapshotPurge();
+    this.scheduleEconomyJobs();
     this.app.logger.info('Scheduler started');
   }
 
@@ -220,5 +221,96 @@ private scheduleBackups(): void {
       const trust = await import('../management/trustLevels');
       await trust.checkAll(this.app);
     });
+  }
+
+  private scheduleEconomyJobs(): void {
+    if (!this.app.config.economy.enabled) return;
+
+    // Expire marketplace listings every 5 minutes
+    this.addCron('economy-marketplace-expire', '*/5 * * * *', async () => {
+      try {
+        const expired = await this.app.economy.marketplace.expireListings();
+        if (expired > 0) this.app.logger.info(`Expired ${expired} marketplace listings`);
+      } catch (err) {
+        this.app.logger.error('Economy marketplace expiry failed:', err);
+      }
+    });
+
+    // Expire trades every 5 minutes
+    this.addCron('economy-trade-expire', '*/5 * * * *', async () => {
+      try {
+        const expired = await this.app.economy.trading.expireStaleTrades();
+        if (expired > 0) this.app.logger.info(`Expired ${expired} trades`);
+      } catch (err) {
+        this.app.logger.error('Economy trade expiry failed:', err);
+      }
+    });
+
+    // Clean expired item effects every 10 minutes
+    this.addCron('economy-effects-cleanup', '*/10 * * * *', async () => {
+      try {
+        const removed = await this.app.economy.items.cleanupExpiredEffects();
+        if (removed > 0) this.app.logger.info(`Cleaned up ${removed} expired item effects`);
+      } catch (err) {
+        this.app.logger.error('Economy effects cleanup failed:', err);
+      }
+    });
+
+    // Expire bank interest every hour
+    this.addCron('economy-bank-interest', '0 * * * *', async () => {
+      if (!this.app.config.economy.banking.interest_enabled) return;
+      try {
+        const rateBps = this.app.config.economy.banking.interest_rate_bps;
+        const maxInterest = this.app.config.economy.banking.max_interest_amount;
+        if (rateBps <= 0) return;
+        const [rows] = await this.app.db.query<import('mysql2/promise').RowDataPacket[]>(
+          'SELECT user_id, bank FROM economy_profiles WHERE guild_id IN (SELECT guild_id FROM economy_config WHERE enabled = 1) AND bank > 0',
+        );
+        for (const row of rows) {
+          const interest = Math.min(Math.floor((row.bank * rateBps) / 10000), maxInterest);
+          if (interest > 0) {
+            await this.app.economy.ledger.credit(
+              row.guild_id ?? '', 'system', row.user_id, interest, 'bank_interest',
+              { reason: 'Bank interest accrual', source: 'scheduled' },
+            );
+          }
+        }
+      } catch (err) {
+        this.app.logger.error('Economy interest accrual failed:', err);
+      }
+    });
+
+    // Daily statistics snapshot at midnight
+    this.addCron('economy-stats-snapshot', '5 0 * * *', async () => {
+      try {
+        const [guildRows] = await this.app.db.query<import('mysql2/promise').RowDataPacket[]>(
+          'SELECT guild_id FROM economy_config WHERE enabled = 1',
+        );
+        for (const gRow of guildRows) {
+          const gid = gRow.guild_id;
+          const today = new Date().toISOString().split('T')[0];
+          const [stats] = await this.app.db.query<import('mysql2/promise').RowDataPacket[]>(
+            `SELECT
+              COALESCE(SUM(wallet + bank), 0) as total_supply,
+              COALESCE(SUM(wallet), 0) as wallet_total,
+              COALESCE(SUM(bank), 0) as bank_total,
+              COUNT(*) as active_users
+             FROM economy_profiles WHERE guild_id = ? AND status = 'active'`,
+            [gid],
+          );
+          const s = stats[0] as any;
+          await this.app.db.execute(
+            `INSERT INTO economy_statistics (guild_id, stat_date, total_supply, wallet_total, bank_total, active_users)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE total_supply = VALUES(total_supply), wallet_total = VALUES(wallet_total), bank_total = VALUES(bank_total), active_users = VALUES(active_users)`,
+            [gid, today, s.total_supply, s.wallet_total, s.bank_total, s.active_users],
+          );
+        }
+      } catch (err) {
+        this.app.logger.error('Economy stats snapshot failed:', err);
+      }
+    });
+
+    this.app.logger.info('Economy background jobs scheduled');
   }
 }

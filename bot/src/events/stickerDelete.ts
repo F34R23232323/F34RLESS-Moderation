@@ -4,6 +4,7 @@ import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleStickerDelete(app: App, sticker: Sticker): Promise<void> {
   const guild = sticker.guildId ? app.client.guilds.cache.get(sticker.guildId) : null;
+  if (guild) await app.antiNuke.observe({ guild, type: 'sticker_delete', targetType: 'sticker', targetId: sticker.id, before: { name: sticker.name } });
   const actorId = guild ? await resolveAuditActor(app, guild, AuditLogEvent.StickerDelete, { targetId: sticker.id }) : null;
   await app.logManager.log({
     event: 'sticker_delete',

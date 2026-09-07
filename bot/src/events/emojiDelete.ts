@@ -3,6 +3,7 @@ import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleEmojiDelete(app: App, emoji: GuildEmoji): Promise<void> {
+  await app.antiNuke.observe({ guild: emoji.guild, type: 'emoji_delete', targetType: 'emoji', targetId: emoji.id, before: { name: emoji.name } });
   const actorId = await resolveAuditActor(app, emoji.guild, AuditLogEvent.EmojiDelete, { targetId: emoji.id });
   await app.logManager.log({
     event: 'emoji_delete',

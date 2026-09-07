@@ -39,6 +39,10 @@ import type { App } from './core/context';
 import { MusicService } from './music/MusicService';
 import { NsfwModerationService } from './nsfw/service';
 import { ReplyPingProtectionService } from './services/replyPingProtection/service';
+import { AntiNukeService } from './antinuke';
+import { EmojiManager, installEmojiOutboundNormalizer } from './emoji';
+import { ScamHashStore } from './automod/scamHashStore';
+import { EconomyService } from './economy/service';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -77,6 +81,7 @@ async function main(): Promise<void> {
   }
 
   const logManager = new LogManager(db);
+  installEmojiOutboundNormalizer();
   const cooldowns = new CooldownManager();
   const components = new ComponentRegistry();
   const customCommands = new CustomCommandRunner();
@@ -123,6 +128,10 @@ async function main(): Promise<void> {
     appeals: null as unknown as AppealService,
     nsfw: null as unknown as NsfwModerationService,
     replyPingProtection: null as unknown as ReplyPingProtectionService,
+    antiNuke: null as unknown as AntiNukeService,
+    emojiManager: null as unknown as EmojiManager,
+    scamHashStore: null as unknown as ScamHashStore,
+    economy: null as unknown as EconomyService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -137,6 +146,10 @@ async function main(): Promise<void> {
 
   const client = new BotClient(app);
   app.client = client;
+  app.emojiManager = new EmojiManager(client, logger.child('emoji'), process.cwd());
+  app.scamHashStore = new ScamHashStore(db);
+  await app.scamHashStore.load();
+  logger.info(`Loaded ${app.scamHashStore.count()} scam image hashes`);
   logManager.app = app;
 
   app.caseService = new CaseService(db);
@@ -162,10 +175,13 @@ async function main(): Promise<void> {
   app.appeals = new AppealService(app);
   app.nsfw = new NsfwModerationService(app);
   app.replyPingProtection = new ReplyPingProtectionService(app);
+  app.logger.warn('Anti-nuke Redis adapter is unavailable; enforcement remains alert-only');
+  app.antiNuke = new AntiNukeService(app, null, app.startedAt);
+  app.economy = new EconomyService(app);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
-  registerAutomodModules(app, app.automod);
+  registerAutomodModules(app, app.automod, app.scamHashStore);
   installGlobalHandlers(app);
   installRateLimitReporter(app);
 
@@ -181,6 +197,7 @@ async function main(): Promise<void> {
   await registerSlashCommands(app);
 
   client.once('ready', async () => {
+    await app.emojiManager.waitUntilReady();
     app.logger.info(`Logged in as ${client.user?.tag}`);
     app.scheduler.start();
     void app.music.restoreAll().then(() => app.logger.info('Music 24/7 sessions restored'));
@@ -216,6 +233,7 @@ async function main(): Promise<void> {
   process.once('SIGTERM', shutdown);
 
   await client.login(env.DISCORD_TOKEN);
+  await app.emojiManager.waitUntilReady();
   app.logger.info('Bot started');
 }
 

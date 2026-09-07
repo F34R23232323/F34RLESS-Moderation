@@ -26,6 +26,33 @@ function v2Ephemeral(text: string): { components: unknown[]; flags: number } {
   return { components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
 }
 
+export function buildIgnoreAllConfirmation(count: number, actorId: string, ephemeral = true): { components: unknown[]; flags: number } {
+  const container = new ContainerBuilder()
+    .setAccentColor(0xed4245)
+    .addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `**Ignore all open reports?**\n\nThis will mark **${count}** report(s) as ignored and move their cards to the configured report archive. This cannot be undone automatically.`,
+      ),
+    )
+    .addSeparatorComponents(new SeparatorBuilder())
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`report:ignore-all:confirm:${actorId}`)
+          .setLabel(`Ignore all ${count} reports`)
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId(`report:ignore-all:cancel:${actorId}`)
+          .setLabel('Cancel')
+          .setStyle(ButtonStyle.Secondary),
+      ) as never,
+    );
+  return {
+    components: [container] as unknown[],
+    flags: MessageFlags.IsComponentsV2 | (ephemeral ? MessageFlags.Ephemeral : 0),
+  };
+}
+
 async function resolve(app: App, interaction: ButtonInteraction | ModalSubmitInteraction, reportId: number) {
   const guild = interaction.guild;
   const cfg = app.config.reports;
@@ -221,6 +248,31 @@ const ignore = {
   },
 };
 
+const ignoreAll = {
+  type: 'button',
+  id: 'report:ignore-all:',
+  async run(app: App, interaction: ButtonInteraction) {
+    const [, , decision, actorId] = interaction.customId.split(':');
+    if (interaction.user.id !== actorId) {
+      await interaction.reply(v2Ephemeral('Only the moderator who opened this confirmation can use it.') as never);
+      return;
+    }
+    if (!(await resolve(app, interaction, 0))) return;
+    if (decision === 'cancel') {
+      await interaction.update({ content: 'Bulk report ignore cancelled.', components: [] });
+      return;
+    }
+    if (decision !== 'confirm' || !interaction.guild) {
+      await interaction.update({ content: 'Invalid bulk report action.', components: [] });
+      return;
+    }
+
+    await interaction.deferUpdate();
+    const count = await app.reporting.ignoreAllOpen(interaction.guild.id, interaction.user.id);
+    await interaction.editReply({ content: `Ignored and archived ${count} open report(s).`, components: [] });
+  },
+};
+
 // False report
 const falseReport = {
   type: 'button',
@@ -357,4 +409,4 @@ const archive = {
   },
 };
 
-export default [action, pick, modal, ignore, falseReport, userinfo, archive];
+export default [action, pick, modal, ignoreAll, ignore, falseReport, userinfo, archive];

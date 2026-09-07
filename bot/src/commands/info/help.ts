@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
+import { emojiPrefix } from '../../emoji';
 
 function commandDetails(app: App, cmd: BotCommand): string {
   const cfg = app.config.commands[cmd.name];
@@ -31,7 +32,7 @@ function commandList(app: App, category?: string | null): string {
     byCategory.set(cat, list);
   }
 
-  const lines = ['**Commands**', ''];
+  const lines = [`**${emojiPrefix('vyxia_info')}Commands**`, ''];
   for (const [cat, list] of byCategory) {
     lines.push(`__${cat}__`);
     lines.push(list.join('  '));

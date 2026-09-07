@@ -10,6 +10,9 @@ export async function handleGuildUpdate(app: App, oldGuild: Guild, newGuild: Gui
   if (oldGuild.verificationLevel !== newGuild.verificationLevel) changes.push(`Verification: ${oldGuild.verificationLevel} -> ${newGuild.verificationLevel}`);
   if (oldGuild.premiumTier !== newGuild.premiumTier) changes.push(`Boost tier: ${oldGuild.premiumTier} -> ${newGuild.premiumTier}`);
   if (changes.length === 0) return;
+  await app.antiNuke.observe({ guild: newGuild, type: 'guild_update', targetType: 'guild', targetId: newGuild.id,
+    before: { name: oldGuild.name, icon: oldGuild.icon, banner: oldGuild.banner, verificationLevel: oldGuild.verificationLevel },
+    after: { name: newGuild.name, icon: newGuild.icon, banner: newGuild.banner, verificationLevel: newGuild.verificationLevel } });
   const actorId = await resolveAuditActor(app, newGuild, AuditLogEvent.GuildUpdate, { targetId: newGuild.id });
   await app.logManager.log({
     event: 'guild_update',

@@ -3,6 +3,8 @@ import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleChannelDelete(app: App, channel: GuildChannel): Promise<void> {
+  await app.antiNuke.observe({ guild: channel.guild, type: 'channel_delete', targetType: 'channel', targetId: channel.id,
+    before: { name: channel.name, type: channel.type } });
   const actorId = await resolveAuditActor(app, channel.guild, AuditLogEvent.ChannelDelete, { targetId: channel.id });
   await app.logManager.log({
     event: 'channel_delete',

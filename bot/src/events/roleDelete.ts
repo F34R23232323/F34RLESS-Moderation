@@ -4,6 +4,8 @@ import { resolveAuditActor } from '../utils/auditLog';
 
 export async function handleRoleDelete(app: App, role: Role): Promise<void> {
   if (role.managed) return;
+  await app.antiNuke.observe({ guild: role.guild, type: 'role_delete', targetType: 'role', targetId: role.id,
+    before: { name: role.name, permissions: role.permissions.bitfield.toString() } });
   const actorId = await resolveAuditActor(app, role.guild, AuditLogEvent.RoleDelete, { targetId: role.id });
   await app.logManager.log({
     event: 'role_delete',
