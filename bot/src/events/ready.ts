@@ -8,6 +8,7 @@ export async function handleReady(app: App): Promise<void> {
   }
   await app.messages.syncChannels();
   await app.messages.syncRoles();
+  await app.stickyMessages.syncConfigured();
 }
 
 export default { name: 'ready', once: true, run: handleReady };

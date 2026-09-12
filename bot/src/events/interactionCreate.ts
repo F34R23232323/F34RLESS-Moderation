@@ -3,6 +3,7 @@ import type { App } from '../core/context';
 import { dispatchComponent } from '../core/componentLoader';
 import { v2Reply } from '../utils/v2';
 import { emojiPrefix } from '../emoji';
+import { resolveGroupedSlashCommand } from '../core/slashCommandGroups';
 
 export async function handleInteractionCreate(app: App, interaction: Interaction): Promise<void> {
   try {
@@ -28,21 +29,25 @@ export async function handleInteractionCreate(app: App, interaction: Interaction
 }
 
 async function handleSlash(app: App, interaction: any): Promise<void> {
-  const custom = app.config.custom_commands[interaction.commandName];
+  const commandName = resolveGroupedSlashCommand(
+    interaction.commandName,
+    interaction.options.getSubcommand(false) ?? '',
+  ) ?? interaction.commandName;
+  const custom = app.config.custom_commands[commandName];
   const shadowsBuiltin =
-    app.commands.has(interaction.commandName) ||
-    app.messageCommands.has(interaction.commandName) ||
-    app.userCommands.has(interaction.commandName);
+    app.commands.has(commandName) ||
+    app.messageCommands.has(commandName) ||
+    app.userCommands.has(commandName);
   if (custom && custom.enabled && !shadowsBuiltin) {
     if (custom.slash === false) {
       await v2Reply(interaction, `${emojiPrefix('disabled')}This command is disabled for slash.`, { ephemeral: true });
       return;
     }
-    await app.customCommands.runSlash(app, interaction, interaction.commandName);
+    await app.customCommands.runSlash(app, interaction, commandName);
     return;
   }
 
-  const command = app.commands.get(interaction.commandName);
+  const command = app.commands.get(commandName);
   if (!command) return;
   const cfg = app.config.commands[command.name];
   if (cfg && cfg.slash === false) {

@@ -84,41 +84,49 @@ export function createMessagesRouter(ctx: DashboardContext): Router {
       res.status(400).json({ error: 'channelId and guildId required' });
       return;
     }
-    const [rows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT id, guild_id FROM saved_messages WHERE id = ?',
-      [req.params.id],
-    );
-    if (rows.length === 0) {
-      res.status(404).json({ error: 'message template not found' });
-      return;
+    try {
+      const [rows] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT id, guild_id FROM saved_messages WHERE id = ?',
+        [req.params.id],
+      );
+      if (rows.length === 0) {
+        res.status(404).json({ error: 'message template not found' });
+        return;
+      }
+      const mode = body.mode === 'edit' ? 'edit' : 'send';
+      const [result] = await ctx.db.execute(
+        "INSERT INTO message_send_requests (saved_message_id, guild_id, channel_id, mode, target_message_id, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+        [req.params.id, body.guildId, body.channelId, mode, body.targetMessageId ?? null],
+      );
+      res.json({ requestId: (result as { insertId: number }).insertId });
+    } catch {
+      res.status(500).json({ error: 'send_failed' });
     }
-    const mode = body.mode === 'edit' ? 'edit' : 'send';
-    const [result] = await ctx.db.execute(
-      "INSERT INTO message_send_requests (saved_message_id, guild_id, channel_id, mode, target_message_id, status) VALUES (?, ?, ?, ?, ?, 'pending')",
-      [req.params.id, body.guildId, body.channelId, mode, body.targetMessageId ?? null],
-    );
-    res.json({ requestId: (result as { insertId: number }).insertId });
   });
 
   router.get('/requests/:id', async (req, res) => {
-    const [rows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT id, saved_message_id, channel_id, mode, target_message_id, status, error, created_at, processed_at FROM message_send_requests WHERE id = ?',
-      [req.params.id],
-    );
-    const row = rows[0];
-    if (!row) {
-      res.status(404).json({ error: 'not found' });
-      return;
-    }
-    const rec = row as unknown as Record<string, unknown>;
-    if (rec.status === 'done') {
-      const [sent] = await ctx.db.query<RowDataPacket[]>(
-        'SELECT message_id FROM sent_messages WHERE saved_message_id = ? ORDER BY id DESC LIMIT 1',
-        [rec.saved_message_id],
+    try {
+      const [rows] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT id, saved_message_id, channel_id, mode, target_message_id, status, error, created_at, processed_at FROM message_send_requests WHERE id = ?',
+        [req.params.id],
       );
-      rec.message_id = sent[0]?.message_id ?? null;
+      const row = rows[0];
+      if (!row) {
+        res.status(404).json({ error: 'not found' });
+        return;
+      }
+      const rec = row as unknown as Record<string, unknown>;
+      if (rec.status === 'done') {
+        const [sent] = await ctx.db.query<RowDataPacket[]>(
+          'SELECT message_id FROM sent_messages WHERE saved_message_id = ? ORDER BY id DESC LIMIT 1',
+          [rec.saved_message_id],
+        );
+        rec.message_id = sent[0]?.message_id ?? null;
+      }
+      res.json({ request: rec });
+    } catch {
+      res.status(500).json({ error: 'request_lookup_failed' });
     }
-    res.json({ request: rec });
   });
 
   return router;

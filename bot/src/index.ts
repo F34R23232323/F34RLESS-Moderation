@@ -1,4 +1,5 @@
 import { REST, Routes, SlashCommandBuilder, ActivityType } from 'discord.js';
+import { buildGroupedSlashCommands, SLASH_COMMAND_GROUPS } from './core/slashCommandGroups';
 import { createDbPool, loadConfig, formatConfigError, buildDatabaseUrl, waitForDb, runMigrations, migrations } from '../../shared/src/index';
 import { BotClient } from './client/BotClient';
 import { Logger } from './core/logger';
@@ -43,6 +44,8 @@ import { AntiNukeService } from './antinuke';
 import { EmojiManager, installEmojiOutboundNormalizer } from './emoji';
 import { ScamHashStore } from './automod/scamHashStore';
 import { EconomyService } from './economy/service';
+import { SuggestionService } from './suggestions/service';
+import { StickyMessageService } from './services/stickyMessageService';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -132,6 +135,8 @@ async function main(): Promise<void> {
     emojiManager: null as unknown as EmojiManager,
     scamHashStore: null as unknown as ScamHashStore,
     economy: null as unknown as EconomyService,
+    suggestions: null as unknown as SuggestionService,
+    stickyMessages: null as unknown as StickyMessageService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -178,6 +183,9 @@ async function main(): Promise<void> {
   app.logger.warn('Anti-nuke Redis adapter is unavailable; enforcement remains alert-only');
   app.antiNuke = new AntiNukeService(app, null, app.startedAt);
   app.economy = new EconomyService(app);
+  app.suggestions = new SuggestionService(db, config);
+  app.stickyMessages = new StickyMessageService(app);
+  app.suggestions.setClient(client);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
 
@@ -244,18 +252,33 @@ async function registerSlashCommands(app: App): Promise<void> {
   // Categories that should be registered as guild-local commands (staff-only, no
   // need for global discovery) — this lets us use both the 100-guild and 100-global
   // slots for a combined ceiling of 200 application commands.
-  const GUILD_CATEGORIES = new Set(['moderation', 'admin']);
+  const GUILD_CATEGORIES = new Set(['moderation', 'admin', 'social']);
 
   const guildBodies: object[] = [];
   const globalBodies: object[] = [];
   const skipped: string[] = [];
   const failed: string[] = [];
 
+  const slashEnabled = (name: string): boolean => config.commands[name]?.slash !== false;
+  const groupedResult = buildGroupedSlashCommands(app.commands, slashEnabled);
+  const guildGroupNames = new Set(
+    SLASH_COMMAND_GROUPS
+      .filter((group) => group.members.some((member) => {
+        const name = typeof member === 'string' ? member : member.command;
+        return GUILD_CATEGORIES.has(app.commands.get(name)?.category ?? '');
+      }))
+      .map((group) => group.name),
+  );
+  for (const body of groupedResult.bodies) {
+    (guildGroupNames.has(body.name) ? guildBodies : globalBodies).push(body);
+  }
+
   for (const cmd of app.commands.values()) {
     if (config.commands[cmd.name]?.slash === false) {
       skipped.push(cmd.name);
       continue;
     }
+    if (groupedResult.grouped.has(cmd.name)) continue;
     try {
       const body = cmd.data.toJSON();
       if (GUILD_CATEGORIES.has(cmd.category)) {
@@ -299,6 +322,8 @@ async function registerSlashCommands(app: App): Promise<void> {
   }
 
   app.logger.info(`Slash command totals — guild: ${guildBodies.length}/100, global: ${globalBodies.length}/100`);
+
+  app.logger.info(`Combined ${groupedResult.grouped.size} commands into ${groupedResult.bodies.length} slash command groups`);
 
   if (guildBodies.length > 100) {
     app.logger.error(`GUILD COMMAND LIMIT EXCEEDED: ${guildBodies.length} > 100. Excess commands will NOT be registered.`);

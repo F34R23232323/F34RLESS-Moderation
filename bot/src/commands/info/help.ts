@@ -5,6 +5,7 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
 import { emojiPrefix } from '../../emoji';
+import { slashPathForCommand } from '../../core/slashCommandGroups';
 
 function commandDetails(app: App, cmd: BotCommand): string {
   const cfg = app.config.commands[cmd.name];
@@ -12,6 +13,7 @@ function commandDetails(app: App, cmd: BotCommand): string {
   return [
     `**${cmd.name}** — ${cmd.description}`,
     `Category: ${cmd.category}`,
+    `Slash path: \`${slashPathForCommand(cmd.name)}\``,
     `Slash: ${cfg?.slash ?? true ? 'enabled' : 'disabled'} | Prefix: ${cfg?.prefix ?? true ? 'enabled' : 'disabled'}`,
     `Cooldown: ${cfg?.cooldown_seconds ?? app.config.command_defaults.cooldown_seconds}s`,
     aliases.length > 0 ? `Aliases: ${aliases.map((a) => `\`${a}\``).join(', ')}` : 'Aliases: none',
@@ -28,7 +30,7 @@ function commandList(app: App, category?: string | null): string {
     if (!enabled) continue;
     const list = byCategory.get(cat) ?? [];
     const aliases = [...(cmd.aliases ?? []), ...(cfg?.aliases ?? [])];
-    list.push(`\`${cmd.name}\`${aliases.length > 0 ? ` (${aliases.map((a) => `\`${a}\``).join(', ')})` : ''}`);
+    list.push(`\`${slashPathForCommand(cmd.name)}\`${aliases.length > 0 ? ` (${aliases.map((a) => `\`${a}\``).join(', ')})` : ''}`);
     byCategory.set(cat, list);
   }
 

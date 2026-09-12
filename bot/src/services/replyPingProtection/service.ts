@@ -1,5 +1,6 @@
 import type { AutoModerationActionExecution, GuildTextBasedChannel, Message } from 'discord.js';
-import { AutoModerationActionType } from 'discord.js';
+import { AutoModerationActionType, ContainerBuilder, MessageFlags, TextDisplayBuilder } from 'discord.js';
+import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../../core/context';
 import type { ReplyPingProtectionConfig } from '../../../../shared/src/index';
 import { ReplyPingEscalation } from './escalation';
@@ -31,6 +32,17 @@ export class ReplyPingProtectionService {
   isTrackedRule(ruleId: string): boolean {
     const cfg = this.config;
     return cfg.enabled && cfg.native_rule_id === ruleId;
+  }
+
+  private async getViolationCount(guildId: string, userId: string): Promise<number> {
+    const cfg = this.config;
+    if (!cfg.escalation.enabled) return 0;
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      `SELECT COUNT(*) AS cnt FROM reply_ping_incidents
+       WHERE guild_id = ? AND user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)`,
+      [guildId, userId, cfg.escalation.window_seconds],
+    );
+    return (rows[0] as any).cnt as number;
   }
 
   async handleExecution(execution: AutoModerationActionExecution): Promise<void> {
@@ -72,8 +84,39 @@ export class ReplyPingProtectionService {
     this.app.logger.info(`${logPrefix} handling — channel=${channelId} content="${execution.content?.slice(0, 80) ?? ''}"`);
 
     const content = execution.content ?? '';
-
     const sanitized = sanitizeContent(content);
+
+    // Count existing violations before recording this one
+    const previousViolations = await this.getViolationCount(execution.guild.id, execution.userId);
+    const inWarningPhase = previousViolations < cfg.warning_threshold;
+
+    if (inWarningPhase) {
+      // Warning phase: record incident but send a warning notice instead of enforcement
+      await this.recordIncident(execution.guild.id, execution.userId, channelId, execution.messageId ?? null, content, sanitized);
+
+      const noticeChannelId = cfg.notice_channel_id ?? channelId;
+      const noticeChannel = execution.guild.channels.cache.get(noticeChannelId)
+        ?? (await execution.guild.channels.fetch(noticeChannelId).catch(() => null));
+
+      if (noticeChannel && 'send' in noticeChannel) {
+        const violatorUser = execution.user;
+        const violatorTag = violatorUser ? violatorUser.tag : execution.userId;
+        await (noticeChannel as GuildTextBasedChannel).send({
+          components: [
+            new ContainerBuilder()
+              .setAccentColor(0xfee75c as never)
+              .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(`**Reply Mention Warning**\n<@${execution.userId}> (${violatorTag}): ${cfg.warning_message}`),
+              ),
+          ],
+          flags: MessageFlags.IsComponentsV2,
+          allowedMentions: { parse: [] },
+        } as never).catch(() => undefined);
+      }
+      return;
+    }
+
+    // Enforcement phase: record, notice, log, escalate
 
     const incidentId = await this.recordIncident(
       execution.guild.id,
@@ -128,13 +171,20 @@ export class ReplyPingProtectionService {
     const content = message.content ?? '';
     if (!content) return;
 
-    const mentionedUserIds = extractMentionedUserIds(content);
-    const blockedUserId = mentionedUserIds.find((id) => cfg.protected_users.includes(id));
+    const mentionedUserIds = [
+      ...extractMentionedUserIds(content),
+      ...[...message.mentions.users.keys()],
+    ];
+    const uniqueMentionedUserIds = [...new Set(mentionedUserIds)];
+    const blockedUserId = uniqueMentionedUserIds.find((id) => cfg.protected_users.includes(id));
 
     const mentionedRoleIds = [...message.mentions.roles.keys()];
     const blockedRoleId = mentionedRoleIds.find((id) => cfg.protected_roles.includes(id));
 
     if (!blockedUserId && !blockedRoleId) return;
+
+    // Only trigger on reply pings — not direct mentions
+    if (!message.reference?.messageId) return;
 
     const userId = message.author.id;
     const channelId = message.channelId;
@@ -142,18 +192,32 @@ export class ReplyPingProtectionService {
 
     if (this.isExempt(userId, member, channelId)) return;
 
-    const isReply = Boolean(message.reference?.messageId);
-
     this.app.logger.info(
-      `[ReplyPingProtection] messageCreate hit — user=${userId} channel=${channelId} blockedUser=${blockedUserId ?? 'none'} blockedRole=${blockedRoleId ?? 'none'} isReply=${isReply} content="${content.slice(0, 80)}"`,
+      `[ReplyPingProtection] messageCreate hit — user=${userId} channel=${channelId} blockedUser=${blockedUserId ?? 'none'} blockedRole=${blockedRoleId ?? 'none'} content="${content.slice(0, 80)}"`,
     );
 
-    // Delete the offending message
+    // Count existing violations before recording this one
+    const previousViolations = await this.getViolationCount(message.guildId, userId);
+    const inWarningPhase = previousViolations < cfg.warning_threshold;
+
+    const sanitized = sanitizeContent(content);
+
+    if (inWarningPhase) {
+      // Warning phase: don't delete, don't escalate — just warn
+      await message.reply({
+        content: cfg.warning_message,
+        allowedMentions: { parse: [], repliedUser: true },
+      }).catch(() => undefined);
+
+      // Still record the incident for counting
+      await this.recordIncident(message.guildId, userId, channelId, message.id, content, sanitized);
+      return;
+    }
+
+    // Enforcement phase: delete message, escalate
     await message.delete().catch((err) =>
       this.app.logger.warn(`[ReplyPingProtection] Failed to delete message ${message.id}:`, err),
     );
-
-    const sanitized = sanitizeContent(content);
 
     const incidentId = await this.recordIncident(
       message.guildId,
@@ -164,7 +228,7 @@ export class ReplyPingProtectionService {
       sanitized,
     );
 
-    // Build a synthetic notice/log using available channel info
+    // Send notice to configured channel or fallback to incident channel
     const noticeChannelId = cfg.notice_channel_id ?? channelId;
     const noticeChannel = message.guild.channels.cache.get(noticeChannelId) ??
       await message.guild.channels.fetch(noticeChannelId).catch(() => null);
@@ -223,8 +287,7 @@ export class ReplyPingProtectionService {
     sanitized: string,
     incidentId: number,
   ): Promise<void> {
-    const logChannelId = cfg.log_channel_id;
-    if (!logChannelId) return;
+    const logChannelId = cfg.log_channel_id ?? channelId;
     const channel = guild.channels.cache.get(logChannelId) ??
       await guild.channels.fetch(logChannelId).catch(() => null);
     if (!channel || !('send' in channel)) return;
@@ -261,8 +324,6 @@ export class ReplyPingProtectionService {
 
     if (member) {
       if (cfg.exempt_roles.some((r) => member.roles?.cache?.has(r))) return true;
-      if (member.permissions?.has?.('ManageMessages')) return true;
-      if (member.permissions?.has?.('Administrator')) return true;
     }
 
     return false;
@@ -336,10 +397,10 @@ export class ReplyPingProtectionService {
     sanitized: string,
     incidentId: number,
   ): Promise<void> {
-    const logChannelId = cfg.log_channel_id;
-    if (!logChannelId) return;
+    const logChannelId = cfg.log_channel_id ?? execution.channelId ?? '';
 
     const guild = execution.guild;
+    if (!logChannelId) return;
     const channel = guild.channels.cache.get(logChannelId)
       ?? (await guild.channels.fetch(logChannelId).catch(() => null));
     if (!channel || !('send' in channel)) return;

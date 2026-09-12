@@ -2,7 +2,7 @@ const BASE = '';
 
 // Requests that take longer than this are treated as failures (the server is
 // likely hung or unreachable) instead of leaving pages spinning forever.
-const REQUEST_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 // --- Global error reporting ---------------------------------------------------
 // A tiny event bus so fetch failures anywhere in the app can surface as

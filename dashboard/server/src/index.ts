@@ -19,9 +19,38 @@ import { createGdprRouter } from './routes/gdpr';
 import { createExternalApiRouter } from './routes/external';
 import { createEconomyRouter } from './routes/economy';
 import { createWebSocketServer } from './ws';
+import type { Request, Response, NextFunction } from 'express';
 import { waitForDb, runMigrations, migrations } from '../../../shared/src/index';
 
-function cookieMiddleware(req: express.Request, _res: express.Response, next: express.NextFunction): void {
+// ---------------------------------------------------------------------------
+// Request deadline middleware — guarantees every /api request gets a response
+// within DEADLINE_MS, regardless of what happens inside route handlers (stuck
+// DB pool, unhandled async throw, slow Discord API, etc.).
+//
+// Express 4 silently drops async rejections, leaving requests hanging until the
+// client gives up.  Rather than chasing every code path with wrappers, this
+// middleware arms a timer on every request.  If res.end() hasn't fired by the
+// deadline, it logs the stall and sends a 504.
+// ---------------------------------------------------------------------------
+// Keep well below Cloudflare's 100 s proxy timeout so we always win the race.
+const DEADLINE_MS = 12_000;
+
+function requestDeadline(req: Request, res: Response, next: NextFunction): void {
+  const timer = setTimeout(() => {
+    if (res.headersSent) return;
+    console.error(`[dashboard] TIMEOUT ${req.method} ${req.originalUrl} after ${DEADLINE_MS}ms`);
+    res.status(504).json({ error: 'request_timed_out' });
+  }, DEADLINE_MS);
+  timer.unref?.();
+  // Cancel the timer once the response is actually finished.
+  res.on('finish', () => clearTimeout(timer));
+  res.on('close', () => clearTimeout(timer));
+  next();
+}
+
+
+
+function cookieMiddleware(req: Request, _res: Response, next: NextFunction): void {
   const header = req.headers.cookie;
   const cookies: Record<string, string> = {};
   if (header) {
@@ -39,6 +68,10 @@ function cookieMiddleware(req: express.Request, _res: express.Response, next: ex
 }
 
 async function main(): Promise<void> {
+  process.on('unhandledRejection', (reason) => {
+    console.error('[dashboard] unhandled promise rejection:', reason);
+  });
+
   const ctx = loadDashboardContext();
   try {
     await waitForDb(ctx.db, 90_000);
@@ -55,6 +88,10 @@ async function main(): Promise<void> {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
   app.use(cookieMiddleware);
+
+  // All /api and /oauth requests get a hard deadline.
+  app.use('/api', requestDeadline);
+  app.use('/oauth', requestDeadline);
 
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
   app.use('/oauth', (req, _res, next) => {
@@ -87,6 +124,13 @@ async function main(): Promise<void> {
   protectedApi.use('/economy', createEconomyRouter(ctx));
   protectedApi.use('/', createMiscRouter(ctx));
   app.use('/api', protectedApi);
+
+  // Global error handler — catches errors passed via next(err).
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction): void => {
+    if (res.headersSent) { next(err); return; }
+    console.error('[dashboard] unhandled error:', err);
+    res.status(500).json({ error: 'internal_server_error' });
+  });
 
   // Resolve the repo root by walking up to package.json — works from source (tsx),
   // compiled (dist-node), and inside Docker (/app).

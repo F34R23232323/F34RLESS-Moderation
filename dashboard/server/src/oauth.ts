@@ -1,5 +1,4 @@
 import { Router, type Request, type Response } from 'express';
-import type { RowDataPacket } from 'mysql2/promise';
 import type { DashboardContext } from './context';
 import {
   createSession,
@@ -242,15 +241,18 @@ export function createAuthRouter(ctx: DashboardContext): Router {
   });
 
   router.get('/appeals-me', async (req: Request, res: Response) => {
-    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
-    if (!session) {
+    try {
+      const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
+      if (!session) {
+        res.json({ authenticated: false });
+        return;
+      }
+      res.json({ authenticated: true, userId: session.userId });
+    } catch {
+      // readSession timed out or the DB was unreachable — treat as unauthenticated
+      // rather than hanging the response, so the frontend can render the login prompt.
       res.json({ authenticated: false });
-      return;
     }
-    res.json({
-      authenticated: true,
-      userId: session.userId,
-    });
   });
 
   router.post('/logout', async (req: Request, res: Response) => {
@@ -261,23 +263,15 @@ export function createAuthRouter(ctx: DashboardContext): Router {
   });
 
   router.get('/me', async (req: Request, res: Response) => {
-    const cookie = req.cookies?.[SESSION_COOKIE_NAME] as string | undefined;
-    if (!cookie) {
-      res.json({ authenticated: false });
-      return;
+    try {
+      const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
+      const authenticated = Boolean(session && session.userId === ctx.ownerUserId);
+      res.json({ authenticated, userId: session?.userId ?? null });
+    } catch {
+      // readSession timed out (DB unreachable) — return unauthenticated so the
+      // frontend renders the login page rather than spinning forever.
+      res.json({ authenticated: false, userId: null });
     }
-    const [token] = cookie.split('.');
-    if (!token) {
-      res.json({ authenticated: false });
-      return;
-    }
-    const [rows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT user_id, revoked FROM sessions WHERE token = ?',
-      [token],
-    );
-    const session = rows[0] as { user_id: string; revoked: number } | undefined;
-    const authenticated = Boolean(session && session.revoked === 0 && session.user_id === ctx.ownerUserId);
-    res.json({ authenticated, userId: session?.user_id ?? null });
   });
 
   return router;

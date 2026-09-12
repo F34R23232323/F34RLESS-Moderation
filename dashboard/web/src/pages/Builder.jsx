@@ -247,20 +247,25 @@ export default function Builder() {
   }
 
   async function pollStatus(requestId) {
+    // Poll up to 12 times × 1.5 s = 18 s maximum.
     for (let i = 0; i < 12; i++) {
       await new Promise((r) => setTimeout(r, 1500));
       const res = await api(`/messages/requests/${requestId}`).catch(() => null);
       if (!res?.request) continue;
       if (res.request.status === 'done') {
-        setStatus({ kind: 'ok', text: `Sent. Message ID ${res.request.message_id ?? ''}` });
+        setStatus({ kind: 'ok', text: `Sent ✓${res.request.message_id ? ` — message ID ${res.request.message_id}` : ''}` });
         return;
       }
       if (res.request.status === 'failed') {
-        setStatus({ kind: 'err', text: `Failed: ${res.request.error}` });
+        setStatus({ kind: 'err', text: `Failed: ${res.request.error ?? 'unknown error'}` });
         return;
       }
     }
+    // If the poll exhausts without a terminal status the bot likely isn't running
+    // or is very slow. Tell the user instead of leaving the status stuck.
+    setStatus({ kind: 'err', text: 'Timed out waiting for the bot — check Discord to see if the message was sent.' });
   }
+
 
   const payload = current?.payload;
 

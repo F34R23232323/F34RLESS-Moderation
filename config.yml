@@ -120,6 +120,16 @@ commands:
     aliases:
       - bi
       - about
+  statuspages:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases:
+      - status
+      - sp
   stats:
     enabled: true
     slash: true
@@ -363,6 +373,185 @@ commands:
     aliases:
       - ecoadmin
       - ea
+  kiss:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  hug:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  slap:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  pat:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  poke:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  bite:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  cuddle:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  tickle:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  kill:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  lick:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  blush:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  wave:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  dance:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  cry:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  smile:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  angry:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  comfy:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  fluff:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  lay:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  pout:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  tail:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases: []
+  ship:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    immune_roles: []
+    aliases:
+      - relationship
+      - compat
+      - love
 command_defaults:
   cooldown_seconds: 3
 # Global logging exclusions: suppress events by channel, category, user, or role
@@ -775,6 +964,7 @@ automod:
         - "1520031216651210773"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: batched_summary
       shadow_mode: false
@@ -808,6 +998,7 @@ automod:
         - "1520031216651210773"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -840,6 +1031,7 @@ automod:
         - discord.gg
       denylist: []
       immune_roles:
+        - "1466990155339661389"
         - "1520031216651210773"
         - "1467103806561980528"
         - "1467223539953303705"
@@ -854,6 +1046,7 @@ automod:
         - "1466990155352113309"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
         - "1467119486489595987"
         - "1467121220976644107"
         - "1466990156690227319"
@@ -886,6 +1079,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -901,6 +1095,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 0
       suppressed_response_mode: silent
       shadow_mode: false
@@ -927,6 +1122,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -943,6 +1139,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -960,6 +1157,7 @@ automod:
         - "1520031216651210773"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
         - "1467119486489595987"
         - "1466990156690227319"
         - "1467121220976644107"
@@ -993,6 +1191,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1010,6 +1209,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1026,6 +1226,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1044,6 +1245,7 @@ automod:
         - "1520031216651210773"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1078,6 +1280,7 @@ automod:
         - "1520031216651210773"
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 60
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1104,6 +1307,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1120,6 +1324,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1136,6 +1341,7 @@ automod:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       suppress_repeat_response_seconds: 30
       suppressed_response_mode: silent
       shadow_mode: false
@@ -1159,6 +1365,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1198,6 +1405,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1246,6 +1454,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1308,6 +1517,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1363,6 +1573,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1440,6 +1651,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1491,6 +1703,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1527,6 +1740,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1572,6 +1786,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1617,6 +1832,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1654,6 +1870,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1705,6 +1922,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1749,6 +1967,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1798,6 +2017,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1841,6 +2061,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1877,6 +2098,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1945,6 +2167,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -1982,6 +2205,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2011,6 +2235,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2077,6 +2302,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2117,6 +2343,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2156,6 +2383,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2185,6 +2413,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: send_channel_message
@@ -2238,6 +2467,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2278,6 +2508,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2341,6 +2572,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2375,6 +2607,9 @@ regex_engine:
       immune_roles:
         - "1467103806561980528"
         - "1490439698416402613"
+      channel_ignore_list:
+        - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: send_channel_message
@@ -2407,6 +2642,9 @@ regex_engine:
       immune_roles:
         - "1490439698416402613"
         - "1467103806561980528"
+      channel_ignore_list:
+        - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: send_channel_message
@@ -2442,6 +2680,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2477,6 +2716,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2510,6 +2750,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2543,6 +2784,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2575,6 +2817,7 @@ regex_engine:
       immune_roles: []
       channel_ignore_list:
         - "1518277392727015646"
+        - "1466990156690227319"
       action_chain:
         - type: create_report
         - type: delete_message
@@ -2733,7 +2976,6 @@ native_automod:
     - enabled: true
       rule_id: "1528109018227150969"
       on: block_message
-      channel_id: "1467185464124510319"
       format: components_v2
       title: "Mention Blocked"
       description: |-
@@ -2751,35 +2993,33 @@ reply_ping_protection:
     - "1075077561454973020"
   protected_roles: []
   exempt_users: []
-  exempt_roles: []
+  exempt_roles: ["1520031216651210773"]
   exempt_channels: []
-  notice_channel_id: "1467185464124510319"
   log_channel_id: "1467185464124510319"
   notice_title: "Reply Mention Blocked"
   notice_description: "This reply mentions a protected user or role and has been blocked. Pinging staff or protected entities in replies is not allowed."
   notice_accent_color: "#FEE75C"
   notice_delete_after_seconds: 0
+  warning_threshold: 3
+  warning_message: "Please stop reply-pinging protected users. Further violations will result in punishment."
   escalation:
     enabled: true
-    window_seconds: 3600
+    window_seconds: 86400
     levels:
       - level: 1
-        violation_count: 2
+        violation_count: 3
         action_type: warn
       - level: 2
-        violation_count: 3
-        action_type: timeout
-        action_duration: "1h"
-      - level: 3
         violation_count: 5
         action_type: timeout
-        action_duration: "24h"
+        action_duration: "10m"
+      - level: 3
+        violation_count: 8
+        action_type: timeout
+        action_duration: "1h"
       - level: 4
-        violation_count: 7
-        action_type: kick
-      - level: 5
-        violation_count: 10
-        action_type: ban
+        violation_count: 12
+        action_type: warn
 escalation:
   enabled: true
   window_seconds: 3600
@@ -2814,9 +3054,18 @@ welcome:
   enabled: true
   channel_id: "1466990155922542723"
   message: |-
-    Welcome to the Empire, {mention}!
-    **Welcome to The SnowHaven Empire!**
-    We are incredibly excited to have you here, {mention}. Step in from the cold, grab a warm drink, and make yourself at home! **Here is how to get started:**
+    # Welcome to f34rless.hq {mention}
+
+    We're thrilled to have you join our community! This is a safe space for everyone, and we're excited to see you here.
+
+    **To get started:**
+    > Check out the rules in the welcome channel to know what's up.
+    > Grab your roles in <#1466990155922542723> to unlock channels.
+    > Introduce yourself in <#1466990156199362879> — we'd love to meet you!
+
+    We have tons of channels for gaming, music, art, and just hanging out. Don't be shy — jump in and say hi! If you need help, just ping a staff member.
+
+    Enjoy your stay in **f34rless.hq** — we're glad you're here! :)
 goodbye:
   enabled: true
   channel_id: "1466990156199362878"
@@ -2903,8 +3152,33 @@ anti_raid:
   account_age_days: 7
   cooldown_seconds: 3600
 sticky_messages:
-  enabled: false
+  enabled: true
   re_post_after_messages: 5
+  conversation_detection: true
+  conversation_window_seconds: 60
+  conversation_min_messages: 4
+  quiet_period_seconds: 30
+  min_interval_seconds: 60
+  max_reposts_per_hour: 12
+  delete_previous: true
+  configured:
+    - channel_id: "1547774562895405076"
+      title: "Suggestion Guidelines"
+      description: |-
+        Have an idea that could improve the server? Send it directly in this channel.
+
+        **Requirements**
+        - Suggestions must be at least **10 characters** and no more than **2,000 characters**.
+        - Explain your idea clearly and include enough detail for staff to understand it.
+        - Please submit one suggestion at a time and avoid duplicates.
+
+        Once submitted, your original message will be deleted and reposted as a formatted suggestion. A discussion thread will be created automatically, and staff will review it there.
+      color: "#5865F2"
+      repost_after_messages: 1
+      delay_min_seconds: 240
+      delay_max_seconds: 300
+      count_bot_messages: true
+      conversation_detection: false
 slowmode_scheduler:
   enabled: false
   threshold_messages_per_minute: 30
@@ -2988,8 +3262,27 @@ community:
     channel_id: "000000000000000000"
     threshold: 3
   suggestions:
-    enabled: false
-    channel_id: "000000000000000000"
+    enabled: true
+    channel_id: "1547774562895405076"
+    staff_role_ids: ["1467103806561980528"]
+    cooldown_seconds: 60
+    min_length: 10
+    max_length: 2000
+    thread_name_prefix: "Suggestion"
+    statuses:
+      - name: "Open"
+      - name: "Accepted"
+        color: "#57f287"
+      - name: "Denied"
+        color: "#ed4245"
+      - name: "In Development"
+        color: "#5865f2"
+      - name: "Implemented"
+        color: "#fee75c"
+    default_status: "Open"
+    blacklisted_channels: []
+    blacklisted_roles: []
+    bypass_roles: ["1491407923291619388"]
   giveaways:
     enabled: false
   levels:
@@ -3029,855 +3322,708 @@ ops:
   usage_analytics: true
   snipe_retention_seconds: 600
 custom_commands:
-  ticket:
-    enabled: true
-    slash: false
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - ticket
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
+  ticket-guide:
+    description: "Explain how to get support"
+    aliases: ["support", "help-ticket"]
     actions:
       - type: send_message
         embeds:
-          - title: Ã¢â€žÂ¹Ã¯Â¸Â Information
-            description: |-
-              For support, go to <#1467119424455704760>
-              For staff applications, go to <#1467133723148419103>
-            color: "#3498db"
-            footer:
-              text: Recommended By {username}
-              icon_url: "{useravatarurl}"
-  reporthelp:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - reporthelp
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
-    actions:
-      - type: send_message
-        embeds:
-          - title: <a:1456058683455963176:1456689407196139736> What if I see someone breaking the rules?
-            description: If you notice a user **breaking server rules**, **harassing others**, or **doing something suspicious**, please report it instead of engaging.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🎫 Get Support"
+            description: "Need help? Open a ticket from the server's support panel and describe the issue clearly."
+            color: "#5865F2"
             fields:
-              - name: <:blue_pin:1216132453098459336> How to Report
-                value: |-
-                  Use the </report:1532041403742425280> command with <@1531976584276480070> to submit a report.
+              - name: "✅ Include"
+                value: "What happened, what you expected, relevant screenshots, and any error messages."
+              - name: "⏳ Response times"
+                value: "Please be patient and avoid opening duplicate tickets or privately messaging staff."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+            timestamp: true
 
-                  You can also **right-click a message or user Ã¢â€ â€™ Apps Ã¢â€ â€™ Report message/user**.
-              - name: <:link:908747871136919622> What to Include
-                value: |-
-                  Ã¢â‚¬Â¢ A clear reason for the report
-                  Ã¢â‚¬Â¢ Message links or screenshots (if possible)
-                  Ã¢â‚¬Â¢ Any relevant context that helps staff understand the situation
-              - name: <:shield:865895492047470604> What Happens Next?
-                value: Our staff team will **review the report privately** and take appropriate action if needed. False reports or abuse of the system may result in punishment.
-            footer:
-              text: Recommended By {username}
-              icon_url: "{useravatarurl}"
-  reason-aliases:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - reason-aliases
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
+  report-guide:
+    description: "Explain how to report rule-breaking"
+    aliases: ["reporthelp", "howtoreport"]
     actions:
       - type: send_message
         embeds:
-          - title: <:shield:865895492047470604> Moderation Aliases & Quick Codes
-            description: Use these shortcodes when warning, muting, kicking, or banning users. Select a category from the dropdown below for detailed definitions.
-            color: "#5865f2"
-            timestamp: true
+          - title: "🚨 Reporting a Problem"
+            description: "Use the report command or the Apps menu on a message or user. Do not confront the person yourself."
+            color: "#ED4245"
             fields:
-              - name: <:bell:865895492327702539> Advertising & Spam
-                value: |-
-                  `ADV` - General Ad
-                  `DM4` - DM Ad
-                  `SPM` - Text Spam
-                  `LNK` - Link Spam
-                  `PNG` - Ping Spam
-                  `GST` - Ghost Ping
-                inline: true
-              - name: <:sapphAngry:909084942573662248> Behavior & Harassment
-                value: |-
-                  `TOX` - Toxicity
-                  `HAR` - Harassment
-                  `HAT` - Hate Speech
-                  `TRL` - Trolling
-                  `TWC` - Threats
-                  `SUB` - Filter Bypass
-                inline: true
-              - name: <:18plus:1493505512812187819> Content Violations
-                value: |-
-                  `SFW` - SFW Bypass
-                  `NSFW` - NSFW Media
-                  `GORE` - Gore/Violence
-                  `SCM` - Scams/Phishing
-                  `PIR` - Piracy
-                inline: true
-              - name: <:mute:865894188360269834> Voice Chat
-                value: |-
-                  `VC1` - Mic Spam
-                  `VC2` - Soundboard
-                  `VC3` - Illegal Recording
-                inline: true
-              - name: <:shield:865895492047470604> Server Integrity
-                value: |-
-                  `TOS` - Platform TOS
-                  `U13` - Underage
-                  `B-EV` - Ban Evasion
-                  `M-EV` - Mute Evasion
-                  `IMP` - Impersonation
-                  `RAD` - Raiding
-                inline: true
-              - name: <:blue_hexagon:993968389133451335> Profile & Identity
-                value: |-
-                  `NICK` - Bad Nickname
-                  `AVT` - Bad Avatar
-                  `STAT` - Bad Status
-                  `BLN` - Blank Name
-                inline: true
-              - name: <:book:865895492583555082> Ticket & Reporting Abuse
-                value: |-
-                  `TKT1` - Ticket Spam
-                  `TKT2` - Troll Tickets
-                  `TKT3` - Staff Harassment
-                  `RPT-S` - Report Spam
-                  `RPT-F` - False Report
-                inline: true
-              - name: <:sapphCelebrate:998232786643210250> Trading & Economy
-                value: |-
-                  `RWT` - Real World Trade
-                  `SCA` - Scamming
-                  `FARM` - Economy Farming
-                  `ALT-F` - Alt Farming
-                inline: true
-              - name: <:key:865895492612128778> Privacy & Cyber Security
-                value: |-
-                  `DOX` - Doxxing
-                  `DDOS` - Network Threats
-                  `MAL` - Malware
-                  `EXT` - Extortion
-                inline: true
-            footer:
-              text: Internal Staff Documentation Ã¢â‚¬Â¢ Select a category below
-        components:
-          - components:
-              - type: select
-                id: s0
-                placeholder: Select a category to view detailed rules...
-                min_values: 1
-                max_values: 1
-                options:
-                  - label: Advertising & Spam
-                    value: cat_spam
-                    description: View detailed reasons for ADV, DM4, SPM, LNK, etc.
-                  - label: Behavior & Harassment
-                    value: cat_behavior
-                    description: View detailed reasons for TOX, HAR, HAT, TRL, etc.
-                  - label: Content Violations
-                    value: cat_content
-                    description: View detailed reasons for SFW, NSFW, GORE, etc.
-                  - label: Voice Chat
-                    value: cat_voice
-                    description: View detailed reasons for VC1, VC2, VC3.
-                  - label: Server Integrity
-                    value: cat_integrity
-                    description: View detailed reasons for TOS, U13, B-EV, etc.
-                  - label: Profile & Identity
-                    value: cat_profile
-                    description: View detailed reasons for NICK, AVT, STAT, BLN.
-                  - label: Ticket & Reporting Abuse
-                    value: cat_tickets
-                    description: View detailed reasons for TKT1, TKT2, RPT-S, RPT-F, etc.
-                  - label: Trading & Economy
-                    value: cat_economy
-                    description: View detailed reasons for RWT, SCA, FARM, ALT-F.
-                  - label: Privacy & Cyber Security
-                    value: cat_security
-                    description: View detailed reasons for DOX, DDOS, MAL, EXT.
-  about-bot:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - about-bot
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: true
-    actions:
-      - type: send_message
-        embeds:
-          - title: <a:1456058683455963176:1456689407196139736> About Our Bot
-            description: If you were wondering about <@1531976584276480070>, it is actually a **custom branded Sapphire bot** used to help manage and moderate our server.
-            color: "#5865f2"
+              - name: "📎 Useful evidence"
+                value: "Add message links, screenshots, dates, and a short explanation of what happened."
+              - name: "🔒 Privacy"
+                value: "Reports are reviewed privately. Deliberately false or abusive reports may be moderated."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
             timestamp: true
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:shield:865895492047470604> Ownership & Operation
-                value: "**f34rless.dev** (the server owner) **does not own** the bot or its core code. We simply utilize the custom branding feature provided by Sapphire to give the bot our own unique identity in this server."
-              - name: Ã¢Â­Â Infinite Limits Subscription
-                value: Our server is powered by Sapphire's **Infinite Limits subscription**! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
-              - name: <:link:908747871136919622> Get Your Own Custom Bot
-                value: |-
-                  Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
 
-                  Ã¢â‚¬Â¢ **Get Custom Branding:** [sapph.xyz/custom-branding](https://sapph.xyz/custom-branding)
-                  Ã¢â‚¬Â¢ **Sapphire Main Website:** [sapph.xyz](https://sapph.xyz)
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  use-support:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - use-support
-      - u-s
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+  mod-codes:
+    description: "Show common moderation reason codes"
+    aliases: ["reason-aliases", "reasoncodes"]
+    permissions: ["ManageMessages"]
     actions:
       - type: send_message
         embeds:
-          - title: <:blue_pin:1216132453098459336> Support Ticket Required
-            description: We do not provide support in this channel. If you need help, you must open a dedicated support ticket.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🛡️ Moderation Reason Codes"
+            description: "Use consistent codes in moderation reasons, followed by a short human-readable explanation."
+            color: "#5865F2"
             fields:
-              - name: <:link:908747871136919622> Where to get help
-                value: Please head over to <#1467119424455704760> and open a ticket.
-              - name: <:shield:865895492047470604> Moderation Warning
-                value: Continuing to ask for support outside of the proper ticket system disrupts the chat. In line with our strict punishment escalation tiers, ignoring this warning will result in moderation actions against your account.
-            footer:
-              text: Actioned By {username}
-              icon_url: "{useravatarurl}"
+              - name: "📣 Spam and advertising"
+                value: "ADV — advertising\nDMADV — DM advertising\nSPAM — message spam\nPING — mention spam\nGHOST — ghost ping"
+                inline: true
+              - name: "⚠️ Conduct"
+                value: "TOX — toxicity\nHAR — harassment\nHATE — hate speech\nTHREAT — threats\nEVASION — filter evasion"
+                inline: true
+              - name: "🔞 Unsafe content"
+                value: "NSFW — explicit content\nGORE — graphic content\nSCAM — scam or phishing\nMALWARE — malicious files"
+                inline: true
+              - name: "👤 Account issues"
+                value: "ALT — prohibited alternate account\nBANEV — ban evasion\nIMPERSONATE — impersonation\nUNDERAGE — age-policy violation"
+                inline: true
+            footer: { text: "Staff reference • Requested by {username}" }
+            timestamp: true
+
+  about:
+    description: "Show information about the community bot"
+    aliases: ["about-bot"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🤖 About the Bot"
+            description: "This community bot provides moderation, safety, support, utility, music, and economy features."
+            color: "#5865F2"
+            fields:
+              - name: "🧰 Features"
+                value: "Automoderation, reports, appeals, tickets, verification, reminders, community tools, and more."
+              - name: "🔐 Privacy"
+                value: "Only use commands with information you are comfortable sharing with the server and its staff."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  wrong-channel:
+    description: "Redirect a conversation to the appropriate channel"
+    aliases: ["move-topic", "use-channel"]
+    permissions: ["ManageMessages"]
+    suppress_reply: true
+    delete_input: 1
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🧭 Please Use the Right Channel"
+            description: "This conversation belongs in a different channel. Check the channel names and descriptions, then continue it in the most relevant place."
+            color: "#FEE75C"
+            footer: { text: "Guidance from {username}", icon_url: "{useravatarurl}" }
+
   english-only:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - english-only
-      - e-o
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
+    description: "Remind members to use English in public channels"
+    aliases: ["english"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
+    delete_input: 1
     actions:
       - type: send_message
         embeds:
-          - title: <:shield:865895492047470604> English Only Policy
-            description: To ensure effective moderation and keep the community inclusive for everyone, we enforce a strict **English-only** rule in all public channels.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🌐 English in Public Channels"
+            description: "Please use English in public channels so members and moderators can understand the conversation."
+            color: "#FEE75C"
             fields:
-              - name: Why is this a rule?
-                value: Our automated filters and staff team need to be able to read and understand all messages to enforce the rules correctly.
-              - name: What you need to do
-                value: Please translate your messages to English before sending them. Continued use of other languages will trigger our automated moderation and result in a mute.
-            footer:
-              text: Actioned By {username}
-              icon_url: "{useravatarurl}"
+              - name: "💬 What to do"
+                value: "Translate your message before reposting it. Continued violations may lead to moderation."
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
   ticket-reminder:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - ticket-reminder
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
+    description: "Remind a member to update an inactive ticket"
+    aliases: ["ticket-update"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
+    delete_input: 1
     actions:
       - type: send_message
         embeds:
-          - title: <:blue_pin:1216132453098459336> Ticket Inactivity Reminder
-            description: It looks like it has been a little quiet in here recently. We want to make sure your inquiry gets fully resolved!
-            color: "#9812ff"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "⏰ Ticket Update Needed"
+            description: "Please reply with an update so staff can continue helping. If the issue is resolved, you may close the ticket."
+            color: "#FEE75C"
             fields:
-              - name: Action Required
-                value: Please reply to this ticket with an update so our staff team can continue assisting you. If your issue has already been resolved, you can safely close this ticket.
-              - name: <:shield:865895492047470604> Auto-Close Warning
-                value: If there is no response soon, this ticket may be automatically closed to keep our support system organized.
-            footer:
-              text: Ticket System | f34rless.dev
-              icon_url: "{guildiconurl}"
-  staff-application:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - staff-application
-      - s-a
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+              - name: "📌 Inactivity"
+                value: "Inactive tickets may be closed to keep the support queue organised."
+            footer: { text: "Support team • {username}", icon_url: "{useravatarurl}" }
+            timestamp: true
+
+  staff-apps:
+    description: "Explain how staff applications work"
+    aliases: ["staff-application", "apply-staff"]
+    permissions: ["ManageMessages"]
     actions:
       - type: send_message
         embeds:
-          - title: <:shield:865895492047470604> Staff Applications & Inquiries
-            description: Please do not ask current staff members for roles, promotions, or to become a staff member. Asking or begging for a staff position will automatically disqualify you.
-            color: "#9812ff"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "📝 Staff Applications"
+            description: "Staff openings are announced through official server channels. Please do not ask individual staff members for roles or promotions."
+            color: "#5865F2"
             fields:
-              - name: <:blue_pin:1216132453098459336> How to Apply
-                value: When we are looking to expand our team, all official recruitments and forms are handled through <#1467133723148419103>. Please check that channel for any open positions instead of asking in chat.
-              - name: <:exclamation_mark_orange:892823499205406760> Moderation Warning
-                value: Continuing to ask for staff roles after receiving this warning violates our server rules. Ignoring this will trigger our punishment escalation tiers and result in further moderation action.
-            footer:
-              text: Actioned By {username}
-              icon_url: "{useravatarurl}"
-  computa:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - computa
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
-    actions:
-      - type: send_message
-        content: computa is ?rules
+              - name: "✅ Applying"
+                value: "Wait for an official application form, read its requirements, and submit one honest application."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
   read-rules:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - read-rules
-      - r-r
-      - rules
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
+    description: "Remind members to read the server rules"
+    aliases: ["rules-guide", "know-the-rules"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
+    delete_input: 1
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Server Rules & Guidelines
-            description: To ensure a safe and welcoming environment for everyone, please make sure you are fully caught up on our server rules.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "📖 Read the Server Rules"
+            description: "Please review the server's rules and channel guidelines before continuing."
+            color: "#5865F2"
             fields:
-              - name: <:blue_pin:1216132453098459336> Where to Read the Rules
-                value: |-
-                  All of our server rules, policies, and moderation guidelines are strictly detailed in <#1466990155922542722>.
+              - name: "⚖️ Responsibility"
+                value: "Every member is responsible for knowing and following the rules. Ask staff if a rule is unclear."
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
 
-                  Please head over there and read through them carefully.
-              - name: <:shield:865895492047470604> Why it Matters
-                value: |-
-                  Ã¢â‚¬Â¢ You are responsible for knowing and following these rules.
-                  Ã¢â‚¬Â¢ **Ignorance is never a valid defence** if you break a rule.
-                  Ã¢â‚¬Â¢ By participating in this server, you agree to abide by everything listed.
-              - name: <:link:908747871136919622> Need Clarification?
-                value: If you are confused about a specific rule or policy, don't guess! Feel free to ask a staff member for clarification to avoid future infractions.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  appeal:
-    enabled: true
-    slash: false
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - appeal
-      - app
-      - ap
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+  appeal-guide:
+    description: "Explain how to appeal a moderation action"
+    aliases: ["appealhelp", "howtoappeal"]
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> How to Appeal a Punishment
-            description: If you have received a moderation action (such as a mute, warning, or ban) and believe it was unjust, you can submit a formal appeal for staff review.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "⚖️ Appealing a Moderation Action"
+            description: "Use the server's official appeal system and provide the case reference, relevant context, and a calm explanation."
+            color: "#5865F2"
             fields:
-              - name: <:blue_pin:1216132453098459336> The Appeals Portal
-                value: |-
-                  All appeals must be submitted through our official platform. We do not accept appeals through any other channel.
+              - name: "🚫 Please avoid"
+                value: "Do not open duplicate appeals, ask friends to appeal for you, or privately pressure staff."
+              - name: "⏳ Review"
+                value: "Appeals are reviewed when staff are available. Submitting an appeal does not guarantee reversal."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
 
-                  **Ã°Å¸â€â€” [Submit an Appeal Here](https://appeal.gg/s/1466990155020898413)**
-              - name: <:shield:865895492047470604> Important Guidelines
-                value: |-
-                  Ã¢â‚¬Â¢ **Do not** DM staff members about your punishment or appeal.
-                  Ã¢â‚¬Â¢ **Do not** have friends or third parties submit an appeal on your behalf.
-                  Ã¢â‚¬Â¢ Be patient. Staff will review your submission and provide a final, binding decision.
-              - name: <:link:908747871136919622> Zero Appeal Rights
-                value: Please note that certain severe infractionsÃ¢â‚¬â€such as hate speech, CSAM, doxxing, and threatsÃ¢â‚¬â€carry **zero appeal rights** under any circumstances.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  alts:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - alts
-      - alt
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+  alt-policy:
+    description: "Explain the alternate-account policy"
+    aliases: ["alts"]
+    permissions: ["ManageMessages"]
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Alt Account Policy
-            description: To maintain server security and prevent rule evasion, **alternate accounts (alts) are strictly prohibited** in this server.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "👥 Alternate Account Policy"
+            description: "Do not use alternate accounts to evade moderation, bypass restrictions, manipulate rewards, or mislead members."
+            color: "#ED4245"
             fields:
-              - name: <:shield:865895492047470604> Detection & Verification
-                value: Our verification system actively blocks alt accounts from joining by checking IP addresses and analyzing various other backend security factors.
-              - name: <:blue_pin:1216132453098459336> Strict Consequences
-                value: There is zero tolerance for alt accounts. If you are discovered using one, **both the alt account AND your main account will be permanently banned**.
-              - name: <:link:908747871136919622> Approved Exceptions
-                value: The *only* permitted exception to this policy is for the server owner, `f34rless.dev`, who uses authorized alt accounts exclusively for testing bots, AutoMod, and server functionality.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  authority:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - authority
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+              - name: "✅ Legitimate use"
+                value: "If you have a genuine reason for another account, ask staff before using it here."
+            footer: { text: "Policy reminder from {username}", icon_url: "{useravatarurl}" }
+
+  staff-authority:
+    description: "Explain staff decisions and escalation"
+    aliases: ["authority", "staff-decision"]
+    permissions: ["ManageMessages"]
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Staff Authority & Discretion
-            description: To effectively maintain a safe and orderly environment, the moderation team operates with full discretion over server enforcement.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🛡️ Staff Decisions"
+            description: "Follow reasonable staff instructions. If you disagree, use the proper ticket or appeal route instead of arguing in public."
+            color: "#FEE75C"
             fields:
-              - name: <:shield:865895492047470604> Right to Action
-                value: Staff members reserve the right to warn, mute, kick, or ban any user at any time, without prior warning or notice, if they deem it necessary to protect the server.
-              - name: <:blue_pin:1216132453098459336> Evidence Provision
-                value: Moderators are **not obligated** to provide users with screenshots, logs, or any other form of evidence regarding their infractions. Internal evidence standards are for staff use only.
-              - name: <:link:908747871136919622> Further Information
-                value: |-
-                  For a comprehensive breakdown of our moderation principles and staff jurisdiction, please read the full policy here:
-                  **Ã°Å¸â€â€” [Staff Authority Guidelines](https://tshe.f34rless.xyz/authority)**
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  secret:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - secret
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
+              - name: "📣 Report concerns"
+                value: "Concerns about staff conduct should include evidence and be submitted privately to senior staff."
+            footer: { text: "Posted by {username}", icon_url: "{useravatarurl}" }
+
+  privacy:
+    description: "Share the community privacy reminder"
+    aliases: ["privacy-guide", "personal-info"]
     actions:
       - type: send_message
-        content: you know, some things have to remain secrets... ,,https://tenor.com/view/secret-agent-skibidi-toilet-secret-agent-skibidi-toilet-some-things-have-to-remain-secret-gif-14227503984140207923
+        embeds:
+          - title: "🔐 Protect Your Privacy"
+            description: "Never post passwords, recovery codes, addresses, phone numbers, private documents, IP addresses, or other sensitive information."
+            color: "#57F287"
+            fields:
+              - name: "🚨 If exposed"
+                value: "Delete the information, secure the affected account, rotate credentials, and contact staff if help is needed."
+            footer: { text: "Safety reminder • Requested by {username}" }
+
   links:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - links
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+    description: "Show official community links"
+    aliases: ["resources"]
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Official Links & Resources
-            description: A comprehensive directory of all official links for The SnowHaven Empire (TSHE), f34rless, and our trusted affiliates.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🔗 Official Links"
+            description: "Use links published in the server's official information channels. Treat unsolicited links and lookalike domains with caution."
+            color: "#5865F2"
             fields:
-              - name: <:blue_pin:1216132453098459336> The SnowHaven Empire (TSHE)
-                value: |-
-                  Ã¢â‚¬Â¢ **[Permanent Invite](https://url.f34rless.xyz/tshe)** - Share the server!
-                  Ã¢â‚¬Â¢ **[Official Website](https://url.f34rless.xyz/tshe-website)**
-                  Ã¢â‚¬Â¢ **[Server Rules](https://url.f34rless.xyz/tshe-website-rules)**
-                  Ã¢â‚¬Â¢ **[Punishment Guide](https://url.f34rless.xyz/tshe-website-punishments)**
-                  Ã¢â‚¬Â¢ **[AutoMod Information](https://url.f34rless.xyz/tshe-website-automod)**
-              - name: <:shield:865895492047470604> f34rless.dev
-                value: |-
-                  Ã¢â‚¬Â¢ **[Portfolio](https://url.f34rless.xyz/f34rless-portfolio)**
-                  Ã¢â‚¬Â¢ **[GitHub](https://url.f34rless.xyz/f34rless-github)**
-                  Ã¢â‚¬Â¢ **[Store](https://url.f34rless.xyz/f34rless-store)**
-                  Ã¢â‚¬Â¢ **[Email Contact](https://url.f34rless.xyz/email-f34rless)**
-              - name: <:link:908747871136919622> Bots & Affiliates
-                value: |-
-                  Ã¢â‚¬Â¢ **[TSHE Moderation Bot (Sapphire)](https://url.f34rless.xyz/tshe-moderation-bot)**
-                  Ã¢â‚¬Â¢ **[Get Sapphire Custom Branding](https://url.f34rless.xyz/get-tshe-moderation-bot)**
-                  Ã¢â‚¬Â¢ **[Noxx Bot](https://url.f34rless.xyz/noxx)**
-                  Ã¢â‚¬Â¢ **[Noxx Dashboard](https://url.f34rless.xyz/noxx-dashboard)**
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
+              - name: "🌍 Main site"
+                value: "https://f34rless.dev"
+              - name: "☕ Support the project"
+                value: "https://url.f34rless.xyz/donate"
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
   credits:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - credits
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
-    suppress_reply: true
+    description: "Show project credits"
+    aliases: ["contributors"]
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Server Credits & About Our Bot
-            description: |-
-              The SnowHaven Empire is built on the hard work, dedication, and passion of an amazing team. Before we dive into the technical side of what powers this server, we want to give a massive shoutout to the people behind the scenes.
+          - title: "✨ Credits"
+            description: "Thanks to the developers, moderators, contributors, testers, supporters, and community members who help improve the server."
+            color: "#EB459E"
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
 
-              **Thank you to everyone who makes this possible.**
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:crown:1440802004606910504> Leadership & Co-Founders
-                value: |-
-                  **<@1383571174910595134>**
-                  > Incredible partner and Co-Owner. Your endless support, dedication, and shared vision keep this community thriving every single day.
-                  **<@985444871722631199>**
-                  > Co-Founder. Thank you for stepping up and helping lay down the essential foundations of the Empire.
-                  **<@1079418173402660884>**
-                  > Co-Founder. Bringing brilliant ideas and an unwavering commitment to our server's growth.
-              - name: <:hammer:865893950061543455> Development, Management & Moderation
-                value: |-
-                  **<@1362230160463495190>**
-                  > Staff Manager & Administrator. Keeping the team organized and running seamlessly.
-                  **<@1272505564433223711>**
-                  > Developer & Visionary. Conceptualizing and developing the bots and innovative ideas that power us.
-                  **<@981981692149501952>**
-                  > Bot Developer & Xyron Co-Founder. Crafting amazing features across all our bots.
-                  **<@1313220608292687923>**
-                  > Bot Developer. Ensuring all of our custom bots operate flawlessly behind the scenes.
-                  **<@1373774168725655684>**
-                  > Moderator. Enforcing our standards and keeping the community safe through hard work and dedication.
-              - name: <:shield:865895492047470604> The Bot Behind The Empire
-                value: |-
-                  Alongside our incredible team, you might have noticed our bot, <@1531976584276480070>. 
-
-                  **f34rless.dev** (the server owner) **does not own** the bot or its core code. We utilize the **custom branding** feature provided by Sapphire to give the moderation bot our own unique identity in this server.
-              - name: <:topggStar:930089990812229692> Infinite Limits Subscription
-                value: Our server is heavily powered by Sapphire's **Infinite Limits** subscription! This means our custom bot operates with absolutely **no limits** on its features, modules, or configurations, allowing us to provide a premium, unrestricted experience for the community.
-              - name: <:link:908747871136919622> Get Your Own Custom Bot
-                value: |-
-                  Want to set up a custom branded bot with no limits for your own server? Check out the links below to get started and learn more about Sapphire:
-
-                  <:blue_link:1216132639568826408> **[Get Custom Branding](https://sapph.xyz/custom-branding)**
-                  <:search:865893351193968680> **[Sapphire Main Website](https://sapph.xyz)**
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
   ghost-ping:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - ghost-ping
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
+    description: "Explain why ghost pings are not allowed"
+    aliases: ["ghostping"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
-    actions:
-      - type: send_message
-        embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Excessive & Mass Pinging
-            description: You are pinging too many users, pinging too frequently, or attempting to mass-ping roles. **This must stop immediately.**
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:shield:865895492047470604> Spam & Disruption
-                value: Mass pinging floods users with notifications and heavily disrupts the chat. This is a direct violation of our anti-spam rules.
-              - name: <:blue_pin:1216132453098459336> Enforcement
-                value: Our AutoMod systems and staff team take spam pinging very seriously. Continuing this behavior will result in an immediate mute, kick, or ban to protect the community from notification spam.
-              - name: <:link:908747871136919622> What You Should Do
-                value: Cease all pinging immediately. If you need to speak to a group, send a standard message without mentions, or wait for active users to reply naturally.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  excessive-pinging:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - excessive-pinging
-    ephemeral: false
     delete_input: 1
-    delete_output: false
-    suppress_reply: true
     actions:
       - type: send_message
         embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Excessive & Mass Pinging
-            description: You are pinging too many users, pinging too frequently, or attempting to mass-ping roles. **This must stop immediately.**
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "👻 Please Do Not Ghost Ping"
+            description: "Mentioning someone and immediately deleting the message creates a notification without useful context."
+            color: "#FEE75C"
             fields:
-              - name: <:shield:865895492047470604> Spam & Disruption
-                value: Mass pinging floods users with notifications and heavily disrupts the chat. This is a direct violation of our anti-spam rules.
-              - name: <:blue_pin:1216132453098459336> Enforcement
-                value: Our AutoMod systems and staff team take spam pinging very seriously. Continuing this behavior will result in an immediate mute, kick, or ban to protect the community from notification spam.
-              - name: <:link:908747871136919622> What You Should Do
-                value: Cease all pinging immediately. If you need to speak to a group, send a standard message without mentions, or wait for active users to reply naturally.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  pinging-with-no-reason:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - pinging-with-no-reason
-    ephemeral: false
+              - name: "✅ Better approach"
+                value: "Only mention someone when necessary and leave enough context for them to understand why."
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
+  ping-spam:
+    description: "Warn against excessive mentions"
+    aliases: ["excessive-pinging", "mention-spam"]
+    permissions: ["ManageMessages"]
+    suppress_reply: true
     delete_input: 1
-    delete_output: false
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🔔 Avoid Excessive Pinging"
+            description: "Do not repeatedly mention users, roles, or staff. One relevant mention is enough."
+            color: "#FEE75C"
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
+  ping-context:
+    description: "Ask members to include context when pinging"
+    aliases: ["pinging-with-no-reason", "ping-reason"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
-    actions:
-      - type: send_message
-        embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Unnecessary Pinging
-            description: Please avoid pinging users without providing a clear reason or context in your message.
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:blue_pin:1216132453098459336> Context is Key
-                value: If you need to get someone's attention, include your question or statement in the same message as the ping. Pinging someone just to say "hi" or waiting for them to respond before asking your question wastes their time.
-              - name: <:shield:865895492047470604> Be Respectful
-                value: Remember that every ping sends a notification. Be mindful of other people's time and only ping when absolutely necessary.
-              - name: <:link:908747871136919622> Action Required
-                value: Simply type out what you need in full. Repeatedly pinging users pointlessly may be considered spam and could result in moderation action.
-            footer:
-              text: Requested By {username}
-              icon_url: "{useravatarurl}"
-  mod-ping:
-    enabled: false
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - mod-ping
-    ephemeral: true
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
-    actions:
-      - type: send_message
-        embeds:
-          - description: |-
-              ## Information on <@&1485003903891275977>
-
-              ### 1Ã¯Â¸ÂÃ¢Æ’Â£ The moderator emergency ping should be used when ...
-              > ... important <#1466990155922542722> are violated. Including:
-              > - A user is acting very disrespectful
-              > - A user posts NSFW content
-              > - A user sends spam / scam / harmful advertisements
-
-              ### 2Ã¯Â¸ÂÃ¢Æ’Â£ Do NOT use the emergency ping when ...
-              > **... you are in need of anything**, users use channels incorrectly, user don't speak English or for other minor infractions. Moderators are usually checking in from time to time to take care of these issues. 
-              > Please use </report:1532041403742425280> for minor infractions.
-
-              ### 3Ã¯Â¸ÂÃ¢Æ’Â£ **Always reply** to the message you want to report ...
-              > ... so a moderator can take action immediately. 
-
-              # <:exclamation_mark_red:866413651177897984> **Misuse will result in a ban** <:exclamation_mark_red:866413651177897984>
-            color: "#ff0000"
-            footer:
-              text: After clicking the green button below you will be able to ping the emergency role.
-        components:
-          - components:
-              - type: button
-                id: b0
-                label: I read and understood the above
-                style: success
-              - type: button
-                id: b1
-                label: Decline
-                style: danger
-  patreon:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - patreon
-    ephemeral: false
     delete_input: 1
-    delete_output: false
-    suppress_reply: true
     actions:
       - type: send_message
         embeds:
-          - title: Ã°Å¸â€™Å“ Unlock Exclusive Sneak Peeks & Perks!
-            description: Want to support the dev infrastructure and get behind-the-scenes access to my latest web apps, deep neon purple UI designs, and Docker setups? Check out the membership tiers on Ko-fi!
-            color: "#5865f2"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:link:908747871136919622> How to Gain Access
-                value: |-
-                  Subscribe to any tier at **[https://url.f34rless.xyz/donate](https://url.f34rless.xyz/donate)**.
+          - title: "💬 Include Context With Mentions"
+            description: "Do not send a bare mention. Put your question or reason in the same message so the recipient knows what you need."
+            color: "#FEE75C"
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
 
-                  Make sure your Discord account is linked to your Ko-fi to automatically claim your roles and exclusive channels! :3
-              - name: <:sapphTada:998232812324913223> Instant Perks (All Tiers)
-                value: Subscribing to **ANY** tier instantly unlocks embed permissions, image permissions, and more across the entire server.
-              - name: Ã°Å¸â€™Å“ Amethyst Supporter (Ã‚Â£3/mo)
-                value: Basic support to keep the servers running! Gets you the **Amethyst Supporter** role and access to the private Ã°Å¸â€™Å“Ã£Æ’Â»amethyst-lounge.
-              - name: Ã°Å¸â€™Â» Dev Insider (Ã‚Â£10/mo)
-                value: Behind-the-scenes access! Gets you the **Dev Insider** role and Ã°Å¸â€ºÂ Ã¯Â¸ÂÃ£Æ’Â»dev-insider-drops for exclusive Docker configs, snippets, and UI previews.
-              - name: Ã°Å¸â€˜â€˜ Root Admin (Ã‚Â£25/mo)
-                value: The ultimate VIP access! Gets you the **Root Admin** role, priority help in Ã°Å¸â€˜â€˜Ã£Æ’Â»root-access, and 10% off any commissions or hosting fees.
-            footer:
-              text: Recommended By {username}
-              icon_url: "{useravatarurl}"
-  square-hosting:
-    enabled: true
-    slash: true
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - square-hosting
-      - sh
-      - sqh
-    ephemeral: false
-    delete_input: false
-    delete_output: false
-    suppress_reply: false
-    actions:
-      - type: send_message
-        embeds:
-          - title: <a:1456058683455963176:1456689407196139736> Square Hosting Links & Resources
-            description: Welcome to **Square Hosting**! We provide a highly reliable Discord bot hosting platform. Host your projects for **100% free**, or check out our incredibly affordable upgrade tiers for when you need that extra power.
-            color: "#5865f2"
-            thumbnail: "{guildiconurl}"
-            fields:
-              - name: <:blue_pin:1216132453098459336> Square Hosting
-                value: |-
-                  Ã¢â‚¬Â¢ **[Official Website](https://url.f34rless.xyz/square-hosting)** - Start hosting your bot today!
-                  Ã¢â‚¬Â¢ **[Support Server](https://url.f34rless.xyz/square-hosting-support)** - Get help and connect with the community.
-              - name: <:shield:865895492047470604> Affiliation & Team
-                value: This server's owner, **f34rless.dev**, works directly for Square Hosting! You are in great hands for all your hosting, development, and support needs.
-        components:
-          - components:
-              - type: button
-                id: b0
-                label: Visit Website
-                style: link
-                url: https://url.f34rless.xyz/square-hosting
-                emoji: Ã°Å¸Å’Â
-              - type: button
-                id: b1
-                label: Get Support
-                style: link
-                url: https://url.f34rless.xyz/square-hosting-support
-                emoji: Ã¢Â­Â
-  suggest:
-    enabled: true
-    slash: false
-    prefix: true
-    allowed_roles:
-      - "1466990155020898413"
-    aliases:
-      - suggest
-    ephemeral: false
-    delete_input: 1
-    delete_output: false
+  staff-ping:
+    description: "Explain when staff should be mentioned"
+    aliases: ["mod-ping", "ping-staff"]
+    permissions: ["ManageMessages"]
     suppress_reply: true
+    delete_input: 1
     actions:
       - type: send_message
         embeds:
-          - title: <:bulb:1008411828965093450> Suggestions Policy
-            description: We love hearing your ideas on how to improve the community! To keep things organized and ensure your feedback is reviewed properly, please follow our suggestion guidelines.
-            color: "#ffd700"
-            timestamp: true
-            thumbnail: "{guildiconurl}"
+          - title: "🚨 When to Ping Staff"
+            description: "Mention staff only for urgent, active safety issues. Use tickets or reports for routine questions and non-urgent problems."
+            color: "#ED4245"
+            footer: { text: "Guidance from {username}", icon_url: "{useravatarurl}" }
+
+  donate:
+    description: "Show ways to support the project"
+    aliases: ["patreon", "support-project"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "💜 Support the Project"
+            description: "Supporting the project helps fund hosting, infrastructure, and continued development."
+            color: "#EB459E"
             fields:
-              - name: Where should I post my suggestion?
-                value: All suggestions must be submitted in the dedicated <#1535379316014325790> channel.
-              - name: Spamming & Bumping Rules
-                value: Please do not discuss, spam, or bump your suggestions in other channels. Spamming or bumping suggestions outside the suggestion channel may lead to moderation action.
-            footer:
-              text: Actioned By {username}
-              icon_url: "{useravatarurl}"
+              - name: "☕ Membership and donations"
+                value: "https://url.f34rless.xyz/donate"
+              - name: "🙏 Thank you"
+                value: "Support is optional and never required to participate in the community."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  hosting:
+    description: "Show Square Hosting resources"
+    aliases: ["square-hosting", "sqh"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "☁️ Square Hosting"
+            description: "Resources for Discord bot hosting and platform support."
+            color: "#5865F2"
+            fields:
+              - name: "🌐 Website"
+                value: "https://url.f34rless.xyz/square-hosting"
+              - name: "🛟 Support"
+                value: "https://url.f34rless.xyz/square-hosting-support"
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  suggestion-guide:
+    description: "Explain how to submit a useful suggestion"
+    aliases: ["suggesthelp", "idea-guide"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "💡 Suggestions"
+            description: "Submit ideas through the server's suggestion system so members and staff can review them."
+            color: "#FEE75C"
+            fields:
+              - name: "✍️ A useful suggestion"
+                value: "Describe the problem, your proposed change, who benefits, and any drawbacks."
+              - name: "🚫 Avoid"
+                value: "Do not spam, repeatedly bump, or pressure others to vote for your idea."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  scam-safety:
+    description: "Share scam and phishing safety advice"
+    aliases: ["scams", "phishing"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🎣 Scam and Phishing Safety"
+            description: "Do not trust unexpected giveaways, free products, urgent account warnings, or requests to scan QR codes."
+            color: "#ED4245"
+            fields:
+              - name: "🔍 Before clicking"
+                value: "Check the full domain, verify the sender independently, and never enter credentials through an unsolicited link."
+              - name: "🚨 If compromised"
+                value: "Change your password, enable multi-factor authentication, revoke sessions, and tell staff."
+            footer: { text: "Safety reminder • Requested by {username}" }
+
+  dm-safety:
+    description: "Share direct-message safety advice"
+    aliases: ["dms", "dm-guide"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "📨 Direct Message Safety"
+            description: "Staff should not ask for passwords, payment credentials, recovery codes, or remote access in DMs."
+            color: "#57F287"
+            fields:
+              - name: "🛡️ Stay safe"
+                value: "Verify identities through the server, block suspicious accounts, and report scams with evidence."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  account-safety:
+    description: "Share account security best practices"
+    aliases: ["security", "secure-account"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🔑 Secure Your Account"
+            description: "Use a unique password, enable multi-factor authentication, save backup codes securely, and review authorised apps."
+            color: "#57F287"
+            fields:
+              - name: "⚠️ Never share"
+                value: "Passwords, login tokens, session cookies, backup codes, QR login screens, or one-time codes."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  self-promo:
+    description: "Remind members about self-promotion"
+    aliases: ["advertising", "no-ads"]
+    permissions: ["ManageMessages"]
+    suppress_reply: true
+    delete_input: 1
+    actions:
+      - type: send_message
+        embeds:
+          - title: "📣 Self-Promotion"
+            description: "Do not advertise servers, services, referral links, social accounts, or private messages unless the rules explicitly allow it."
+            color: "#FEE75C"
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
+  spoiler-warning:
+    description: "Remind members to mark spoilers"
+    aliases: ["spoilers"]
+    permissions: ["ManageMessages"]
+    suppress_reply: true
+    delete_input: 1
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🙈 Mark Spoilers"
+            description: "Use Discord spoiler formatting and clearly label what the spoiler is for before revealing it."
+            color: "#FEE75C"
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
+  keep-civil:
+    description: "Ask members to de-escalate a conversation"
+    aliases: ["calm-down", "conduct"]
+    permissions: ["ManageMessages"]
+    suppress_reply: true
+    delete_input: 1
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🤝 Keep the Conversation Civil"
+            description: "Discuss ideas without insults, harassment, threats, dogpiling, or personal attacks. Step away if the conversation is becoming heated."
+            color: "#FEE75C"
+            footer: { text: "Reminder from {username}", icon_url: "{useravatarurl}" }
+
+  bug-report:
+    description: "Explain how to report a bot or website bug"
+    aliases: ["bug", "report-bug"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🐛 Reporting a Bug"
+            description: "Use the support system and include enough information for the issue to be reproduced."
+            color: "#5865F2"
+            fields:
+              - name: "📋 Include"
+                value: "The command or page, exact steps, expected result, actual result, time of occurrence, and screenshots or errors."
+              - name: "🔐 Remove secrets"
+                value: "Never include tokens, passwords, private keys, session cookies, or personal information."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  partnerships:
+    description: "Explain partnership and collaboration requests"
+    aliases: ["partner", "collab"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🤝 Partnerships"
+            description: "Send partnership or collaboration proposals through the official support system."
+            color: "#5865F2"
+            fields:
+              - name: "📄 Include"
+                value: "Who you represent, the proposal, expected benefits for both communities, relevant links, and a contact method."
+              - name: "⏳ Review"
+                value: "Unsolicited advertising is not a partnership request. Please wait for a response without repeatedly pinging staff."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  commissions:
+    description: "Explain how to ask about development commissions"
+    aliases: ["commission", "hire"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "🛠️ Development Enquiries"
+            description: "Use the official support system for commission or development enquiries."
+            color: "#5865F2"
+            fields:
+              - name: "📋 Helpful details"
+                value: "Project scope, required features, preferred technology, target date, budget range, and examples."
+              - name: "🔒 Payments"
+                value: "Confirm terms through official channels and never send sensitive payment information in public chat."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+
+  faq:
+    description: "Show frequently asked community questions"
+    aliases: ["questions"]
+    actions:
+      - type: send_message
+        embeds:
+          - title: "❓ Frequently Asked Questions"
+            description: "Check the rules, channel descriptions, pinned messages, and official information posts before opening a ticket."
+            color: "#5865F2"
+            fields:
+              - name: "🎫 Still need help?"
+                value: "Open one support ticket with a clear summary and any relevant evidence."
+              - name: "🤖 Bot issue?"
+                value: "Use the bug-report guidance and include the command, error, and reproduction steps."
+            footer: { text: "Requested by {username}", icon_url: "{useravatarurl}" }
+# =============================================================================
+# Economy system — fictional server currency, shops, jobs, quests, trading.
+# =============================================================================
+economy:
+  enabled: true
+
+  currency:
+    name_singular: "coin"
+    name_plural: "coins"
+    symbol: "$"
+    symbol_placement: "before"
+    thousands_separator: ","
+    starting_wallet: 100
+    starting_bank: 0
+    max_wallet: 10000000
+    max_bank: 100000000
+
+  banking:
+    enabled: true
+    deposit_limit: 1000000
+    withdraw_limit: 1000000
+    interest_enabled: true
+    interest_rate_bps: 100
+    interest_interval_hours: 24
+    max_interest_amount: 10000
+
+  transfers:
+    enabled: true
+    min_amount: 1
+    max_amount: 1000000
+    fee_percentage_bps: 0
+    fee_min: 0
+    fee_max: 10000
+    cooldown_seconds: 10
+    require_confirmation_above: 10000
+
+  daily:
+    enabled: true
+    min_reward: 100
+    max_reward: 500
+    streak_bonus_per_day_bps: 500
+    streak_bonus_max_bps: 10000
+    grace_tokens: 1
+    timezone: "UTC"
+
+  weekly:
+    enabled: true
+    min_reward: 1000
+    max_reward: 5000
+    streak_bonus_per_week_bps: 1000
+    grace_tokens: 1
+    timezone: "UTC"
+
+  work:
+    enabled: true
+    default_cooldown_seconds: 300
+    xp_per_work: 10
+
+  shops:
+    enabled: true
+    max_shops: 50
+    max_items_per_shop: 100
+    restock_interval_minutes: 60
+    purchase_public: false
+
+  trading:
+    enabled: true
+    max_active_trades: 5
+    trade_expiry_minutes: 30
+    require_confirmation: true
+
+  marketplace:
+    enabled: true
+    max_listings_per_user: 20
+    listing_fee_bps: 500
+    sale_tax_bps: 500
+    min_price: 1
+    max_price: 10000000
+    listing_duration_hours: 168
+
+  stealing:
+    enabled: true
+    cooldown_seconds: 3600
+    daily_attempt_limit: 5
+    daily_stolen_cap: 5000
+    min_amount: 10
+    max_amount: 500
+    max_percentage_bps: 2000
+    failure_fine: 100
+    min_attacker_balance: 100
+    min_victim_balance: 50
+    victim_grace_minutes: 60
+    allow_bank_steal: false
+    max_bank_percentage_bps: 500
+    steal_from_banks: false
+
+  quests:
+    enabled: true
+    max_active_quests: 5
+    daily_quest_count: 3
+    weekly_quest_count: 2
+    refresh_cooldown_seconds: 300
+
+  achievements:
+    enabled: true
+
+  collections:
+    enabled: true
+
+  crafting:
+    enabled: true
+    max_concurrent: 5
+
+  leaderboards:
+    enabled: true
+    refresh_interval_minutes: 60
+    visible_categories: []
+    placement_role_rewards:
+      enabled: false
+
+  level:
+    xp_per_message: 5
+    xp_per_command: 10
+    xp_curve_multiplier: 1.5
+    level_up_role_rewards:
+      enabled: false
+      roles: []
+
+  role_rewards:
+    enabled: true
+    max_role_rewards: 50
+    dangerous_permission_bits:
+      - "Administrator"
+      - "ManageGuild"
+      - "ManageRoles"
+      - "ManageChannels"
+      - "ManageMessages"
+      - "ManageWebhooks"
+      - "BanMembers"
+      - "KickMembers"
+      - "ManageNicknames"
+
+  anti_abuse:
+    max_transfers_per_hour: 20
+    max_transfers_per_day: 100
+    circular_transfer_detection: true
+    mule_transfer_threshold: 5
+    mule_window_minutes: 60
+    suspicious_activity_freeze: false
+    suspicious_activity_threshold: 100000
+
+  activity_rewards:
+    enabled: true
+    min_message_length: 10
+    min_interval_seconds: 60
+    max_per_hour: 20
+    max_per_day: 200
+    reward_min: 1
+    reward_max: 5
+    ignored_channels: []
+    ignored_roles: []
+    bot_messages_excluded: true
+    deleted_messages_excluded: true
+
+  minigames:
+    enabled: true
+    trivia:
+      enabled: true
+      reward_min: 50
+      reward_max: 200
+      cooldown_seconds: 60
+      timeout_seconds: 30
+    memory:
+      enabled: true
+      reward_min: 50
+      reward_max: 150
+      cooldown_seconds: 60
+      sequence_length: 5
+    reaction:
+      enabled: true
+      reward_min: 30
+      reward_max: 100
+      cooldown_seconds: 30
+
+  notifications:
+    enabled: true
+    max_inbox: 50
+    expiry_days: 30
+
+  logging:
+    enabled: true
+    events:
+      balance_changes: true
+      purchases: true
+      trades: true
+      marketplace: true
+      stealing: true
+      role_rewards: true
+      admin_actions: true
+      quest_achievements: true
+      item_usage: true
+      scheduled_jobs: false
 
 # --- Music system (DisTube) ---
 # Optional per-guild overrides for the music system. Commands: /play /skip /stop /queue /np /loop /shuffle /volume /filter /seek /pause /resume /247 /autoplay /panel

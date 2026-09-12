@@ -47,6 +47,7 @@ export async function destroySession(ctx: DashboardContext, cookie: string): Pro
   const token = cookie.split('.')[0];
   if (token) {
     await ctx.db.execute('UPDATE sessions SET revoked = 1 WHERE token = ?', [token]);
+    sessionCache.delete(token);
   }
 }
 
@@ -56,48 +57,71 @@ export interface SessionInfo {
   revoked: boolean;
 }
 
+const SESSION_CACHE_TTL_MS = 10_000;
+const sessionCache = new Map<string, { result: SessionInfo | null; expiresAt: number }>();
+
 /**
  * Shared session validation. Returns the session info if the cookie is valid
- * and not revoked/expired, otherwise null.
+ * and not revoked/expired, otherwise null. Caches valid results for 10s to
+ * avoid a DB query on every single request.
  */
 export async function readSession(ctx: DashboardContext, cookie: string | undefined): Promise<SessionInfo | null> {
   if (!cookie) return null;
   const [token, mac] = cookie.split('.');
   if (!token || !mac || sign(token, ctx.sessionSecret) !== mac) return null;
-  const query = async (): Promise<RowDataPacket[]> => {
-    const [rows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
-      [token],
-    );
-    return rows;
+
+  const cached = sessionCache.get(token);
+  if (cached && cached.expiresAt > Date.now()) return cached.result;
+
+  const query = async (): Promise<RowDataPacket[] | null> => {
+    try {
+      const [rows] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT user_id, revoked, expires_at FROM sessions WHERE token = ?',
+        [token],
+      );
+      return rows;
+    } catch {
+      return null;
+    }
   };
-  // Never let a slow/queued DB query hang the entire dashboard.
   const timer = new Promise<null>((resolve) => {
     const t = setTimeout(() => resolve(null), 5_000);
     t.unref?.();
   });
   const result = await Promise.race<RowDataPacket[] | null>([query(), timer]);
-  if (!result || result.length === 0) return null;
+  if (!result || result.length === 0) {
+    sessionCache.set(token, { result: null, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+    return null;
+  }
   const session = result[0] as unknown as { user_id: string; revoked: number; expires_at: Date };
-  if (session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) return null;
-  return { userId: session.user_id, sessionToken: token, revoked: false };
+  if (session.revoked === 1 || new Date(session.expires_at).getTime() < Date.now()) {
+    sessionCache.set(token, { result: null, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+    return null;
+  }
+  const info: SessionInfo = { userId: session.user_id, sessionToken: token, revoked: false };
+  sessionCache.set(token, { result: info, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+  return info;
 }
 
 /** Owner-gated auth (existing dashboard behaviour). */
 export function requireAuth(ctx: DashboardContext) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
-    if (!session) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
+    try {
+      const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
+      if (!session) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      if (session.userId !== ctx.ownerUserId) {
+        res.status(403).json({ error: 'forbidden' });
+        return;
+      }
+      (req as unknown as { userId: string }).userId = session.userId;
+      (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
+      next();
+    } catch {
+      res.status(500).json({ error: 'auth_check_failed' });
     }
-    if (session.userId !== ctx.ownerUserId) {
-      res.status(403).json({ error: 'forbidden' });
-      return;
-    }
-    (req as unknown as { userId: string }).userId = session.userId;
-    (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
-    next();
   };
 }
 
@@ -107,14 +131,18 @@ export function requireAuth(ctx: DashboardContext) {
  */
 export function requireUserAuth(ctx: DashboardContext) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
-    if (!session) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
+    try {
+      const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE] as string | undefined);
+      if (!session) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      (req as unknown as { userId: string }).userId = session.userId;
+      (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
+      next();
+    } catch {
+      res.status(500).json({ error: 'auth_check_failed' });
     }
-    (req as unknown as { userId: string }).userId = session.userId;
-    (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
-    next();
   };
 }
 
@@ -124,19 +152,23 @@ export function requireUserAuth(ctx: DashboardContext) {
  */
 export function requireCsrf(ctx: DashboardContext) {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const sessionToken = (req as unknown as { sessionToken?: string }).sessionToken;
-    if (!sessionToken) {
-      res.status(401).json({ error: 'unauthorized' });
-      return;
+    try {
+      const sessionToken = (req as unknown as { sessionToken?: string }).sessionToken;
+      if (!sessionToken) {
+        res.status(401).json({ error: 'unauthorized' });
+        return;
+      }
+      const expected = csrfFor(sessionToken, ctx.sessionSecret);
+      const header = (req.headers['x-csrf-token'] as string | undefined) ?? '';
+      const cookie = (req.cookies?.[CSRF_COOKIE] as string | undefined) ?? '';
+      if (header !== expected || cookie !== expected) {
+        res.status(403).json({ error: 'csrf mismatch' });
+        return;
+      }
+      next();
+    } catch {
+      res.status(500).json({ error: 'csrf_check_failed' });
     }
-    const expected = csrfFor(sessionToken, ctx.sessionSecret);
-    const header = (req.headers['x-csrf-token'] as string | undefined) ?? '';
-    const cookie = (req.cookies?.[CSRF_COOKIE] as string | undefined) ?? '';
-    if (header !== expected || cookie !== expected) {
-      res.status(403).json({ error: 'csrf mismatch' });
-      return;
-    }
-    next();
   };
 }
 

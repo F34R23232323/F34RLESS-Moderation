@@ -34,22 +34,22 @@ async function runPurgeUntil(app: App, interaction: ChatInputCommandInteraction 
   const guild = interaction.guild;
   if (!guild) return;
 
-  let fetched;
+  let target;
   try {
-    fetched = await channel.messages.fetch({ around: targetId, limit: 100 });
+    target = await channel.messages.fetch(targetId);
   } catch {
-    await (interaction as any).reply({ content: 'Could not fetch messages around the target.', ephemeral: true });
-    return;
-  }
-  const target = fetched.get(targetId);
-  if (!target) {
     await (interaction as any).reply({ content: 'Target message not found in this channel.', ephemeral: true });
     return;
   }
 
-  const toDelete = [...fetched.values()]
-    .filter((m: any) => m.createdTimestamp > target.createdTimestamp && m.id !== targetId)
-    .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
+  let toDelete;
+  try {
+    const after = await channel.messages.fetch({ after: targetId, limit: 100 });
+    toDelete = [...after.values()];
+  } catch {
+    await (interaction as any).reply({ content: 'Could not fetch messages after the target.', ephemeral: true });
+    return;
+  }
 
   const count = toDelete.length + 1;
   if (count === 0) {
@@ -60,6 +60,7 @@ async function runPurgeUntil(app: App, interaction: ChatInputCommandInteraction 
   const actionId = storePendingAction({
     action: 'purge',
     targetUserId: targetId,
+    purgeAfterId: targetId,
     guildId: guild.id,
     channelId: channel.id,
     reason: `Purge until ${targetId}`,
@@ -107,22 +108,22 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     return;
   }
 
-  let fetched;
+  let target;
   try {
-    fetched = await (channel as any).messages.fetch({ around: targetId, limit: 100 });
+    target = await (channel as any).messages.fetch(targetId);
   } catch {
-    await v2MessageReply(message, { content: 'Could not fetch messages around the target.' });
-    return;
-  }
-  const target = fetched.get(targetId);
-  if (!target) {
     await v2MessageReply(message, { content: 'Target message not found in this channel.' });
     return;
   }
 
-  const toDelete = [...fetched.values()]
-    .filter((m: any) => m.createdTimestamp > target.createdTimestamp && m.id !== targetId)
-    .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
+  let toDelete;
+  try {
+    const after = await (channel as any).messages.fetch({ after: targetId, limit: 100 });
+    toDelete = [...after.values()];
+  } catch {
+    await v2MessageReply(message, { content: 'Could not fetch messages after the target.' });
+    return;
+  }
 
   const count = toDelete.length + 1;
   if (count === 0) {
@@ -135,14 +136,11 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   try {
-    const fetched = await (channel as any).messages.fetch({ around: targetId, limit: 100 });
-    const toDelete = [...fetched.values()]
-      .filter((m: any) => m.createdTimestamp >= target.createdTimestamp && m.id !== message.id)
-      .sort((a: any, b: any) => a.createdTimestamp - b.createdTimestamp);
-    const ids = toDelete.map((m: any) => m.id);
+    const after = await (channel as any).messages.fetch({ after: targetId, limit: 100 });
+    const ids = [...after.keys()];
     if (ids.length > 0) {
       try { await (channel as any).bulkDelete(ids, true); }
-      catch { for (const m of toDelete) await m.delete().catch(() => undefined); }
+      catch { for (const m of after.values()) await m.delete().catch(() => undefined); }
     }
     await app.logManager.log({
       event: 'moderation_action',
@@ -152,9 +150,11 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
       message: `Purged ${ids.length} messages in <#${channel.id}>`,
       details: { amount: ids.length },
     });
-    await v2MessageReply(message, { content: `✅ Purged ${ids.length} message(s).` });
+    const replyContent = `✅ Purged ${ids.length} message(s).`;
+    await (message.channel as any).send({ content: replyContent, allowedMentions: { parse: [] } }).catch(() => undefined);
   } catch (err) {
-    await v2MessageReply(message, { content: `❌ Purge failed: ${(err as Error).message}` });
+    const errContent = `❌ Purge failed: ${(err as Error).message}`;
+    await (message.channel as any).send({ content: errContent, allowedMentions: { parse: [] } }).catch(() => undefined);
   }
 }
 

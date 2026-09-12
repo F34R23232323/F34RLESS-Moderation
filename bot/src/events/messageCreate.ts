@@ -5,6 +5,7 @@ import type { App } from '../core/context';
 import { buildRichV2, v2Reply } from '../utils/v2';
 import { suggestClosest } from '../../../shared/src/index';
 import { v2MessageReply } from '../utils/v2';
+import { handleSuggestionMessage } from '../suggestions/handler';
 
 export async function handleMessageCreate(app: App, message: Message): Promise<void> {
   try {
@@ -18,6 +19,7 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
         createdAt: Date.now(),
       });
     }
+    if (message.inGuild()) await app.stickyMessages.onMessage(message);
     if (message.author.bot) return;
     if (message.attachments.size > 0) {
       void app.nsfw.handleMessage(message);
@@ -29,6 +31,10 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
       await app.appeals.handleDmReply(message).catch((err) => app.logger.error('appeal DM handler threw:', err));
       return;
     }
+
+    // Handle suggestion channel messages before other processing
+    const handled = await handleSuggestionMessage(app, message).catch(() => false);
+    if (handled) return;
     app.metrics.incMessages();
     app.slowmodeScheduler.onMessage(message.channelId);
 

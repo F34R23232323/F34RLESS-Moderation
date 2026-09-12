@@ -17,6 +17,10 @@ export class ApiError extends Error {
   }
 }
 
+// Requests that take longer than this are aborted so the UI never hangs
+// indefinitely when the server is slow or unreachable.
+const REQUEST_TIMEOUT_MS = 30_000;
+
 export async function appealsApi(path, options = {}) {
   const method = options.method || 'GET';
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
@@ -24,16 +28,24 @@ export async function appealsApi(path, options = {}) {
     const csrf = csrfToken();
     if (csrf) headers['X-CSRF-Token'] = csrf;
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let res;
   try {
     res = await fetch(`/api/appeals${path}`, {
       method,
       headers,
       credentials: 'include',
+      signal: controller.signal,
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     });
   } catch (err) {
-    throw new ApiError(0, { error: 'Network error — is the server reachable?' });
+    const msg = err?.name === 'AbortError'
+      ? 'Request timed out — is the server reachable?'
+      : 'Network error — is the server reachable?';
+    throw new ApiError(0, { error: msg });
+  } finally {
+    clearTimeout(timer);
   }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {

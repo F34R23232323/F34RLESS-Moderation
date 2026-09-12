@@ -4,7 +4,6 @@ import {
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
-  SectionBuilder,
   SeparatorBuilder,
   TextDisplayBuilder,
 } from 'discord.js';
@@ -75,9 +74,7 @@ export function buildOpenAppealCard(data: AppealEmbedData): BuiltPayload {
   if (data.caseModeratorId) caseLines.push(`Moderator: <@${data.caseModeratorId}>`);
   if (data.caseReason) caseLines.push(`Original reason:\n> ${String(data.caseReason).slice(0, 800).replace(/\n/g, '\n> ')}`);
 
-  const section = new SectionBuilder()
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(caseLines.join('\n')));
-  container.addSectionComponents(section as never);
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(caseLines.join('\n')));
 
   container.addSeparatorComponents(new SeparatorBuilder());
 
@@ -129,8 +126,7 @@ export function buildDecidedAppealCard(data: AppealEmbedData): BuiltPayload {
   ];
   if (data.caseModeratorId) caseLines.push(`Moderator: <@${data.caseModeratorId}>`);
 
-  const section = new SectionBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(caseLines.join('\n')));
-  container.addSectionComponents(section as never);
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(caseLines.join('\n')));
 
   container.addSeparatorComponents(new SeparatorBuilder());
 

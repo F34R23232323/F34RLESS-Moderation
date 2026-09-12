@@ -3,6 +3,9 @@ import type { RowDataPacket } from 'mysql2/promise';
 import type { DashboardContext } from '../context';
 import { snowflakeToDate } from '../../../../shared/src/index';
 
+let metricsCache: { data: unknown; expiresAt: number } | null = null;
+const METRICS_CACHE_TTL_MS = 5_000;
+
 export function createMiscRouter(ctx: DashboardContext): Router {
   const router = Router();
 
@@ -16,26 +19,35 @@ export function createMiscRouter(ctx: DashboardContext): Router {
   });
 
   router.get('/metrics', async (_req, res) => {
-    const [msg1m] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT COUNT(*) AS count FROM logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)',
-    );
-    const [msg1h] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT COUNT(*) AS count FROM logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)',
-    );
-    const [triggers] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT COUNT(*) AS count FROM automod_logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)',
-    );
-    const [usage] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT COUNT(*) AS total, SUM(CASE WHEN success = 0 THEN 1 ELSE 0 END) AS failed FROM command_usage WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)',
-    );
-    res.json({
-      messagesPerMinute: Number(msg1m[0]?.count ?? 0),
-      messagesPerHour: Number(msg1h[0]?.count ?? 0),
-      automodTriggersLastHour: Number(triggers[0]?.count ?? 0),
-      commandsLastHour: Number(usage[0]?.total ?? 0),
-      commandsFailedLastHour: Number(usage[0]?.failed ?? 0),
+    if (metricsCache && metricsCache.expiresAt > Date.now()) {
+      res.json(metricsCache.data);
+      return;
+    }
+    const safeQuery = async (sql: string): Promise<number> => {
+      try {
+        const [rows] = await ctx.db.query<RowDataPacket[]>(sql);
+        return Number((rows[0] as RowDataPacket)?.count ?? (rows[0] as RowDataPacket)?.total ?? 0);
+      } catch {
+        return 0;
+      }
+    };
+    const [msgsMin, msgsHour, triggers, totalCmds, failedCmds] = await Promise.all([
+      safeQuery('SELECT COUNT(*) AS count FROM logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)'),
+      safeQuery('SELECT COUNT(*) AS count FROM logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)'),
+      safeQuery('SELECT COUNT(*) AS count FROM automod_logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)'),
+      safeQuery('SELECT COUNT(*) AS total FROM command_usage WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)'),
+      safeQuery('SELECT COUNT(*) AS count FROM command_usage WHERE success = 0 AND created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)'),
+    ]);
+    const data = {
+      messagesPerMinute: msgsMin,
+      messagesPerHour: msgsHour,
+      automodTriggersLastHour: triggers,
+      commandsLastHour: totalCmds,
+      commandsFailedLastHour: failedCmds,
       uptimeSeconds: Math.round(process.uptime()),
-    });
+    };
+    metricsCache = { data, expiresAt: Date.now() + METRICS_CACHE_TTL_MS };
+    res.json(data);
   });
 
   router.get('/punishments', async (_req, res) => {
@@ -117,7 +129,7 @@ export function createMiscRouter(ctx: DashboardContext): Router {
     const snapshot: Record<string, unknown> = {};
     for (const table of tables) {
       try {
-        const [rows] = await ctx.db.query<RowDataPacket[]>(`SELECT * FROM ${table}`);
+        const [rows] = await ctx.db.query<RowDataPacket[]>(`SELECT * FROM ${table} LIMIT 5000`);
         snapshot[table] = rows;
       } catch {
         snapshot[table] = [];

@@ -246,10 +246,18 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
       case 'purge': {
         const channel = guild.channels.cache.get(action.channelId);
         if (!channel || !('bulkDelete' in channel)) { await interaction.update(v2Update('Channel not found.')); return; }
-        const fetched = await (channel as any).messages.fetch({ limit: 100 });
-        const toDelete = fetched.filter((m: any) => m.id !== action.targetUserId).first(100);
+        let toDelete;
+        if (action.purgeAfterId) {
+          const after = await (channel as any).messages.fetch({ after: action.purgeAfterId, limit: 100 });
+          toDelete = [...after.values()];
+        } else {
+          const fetched = await (channel as any).messages.fetch({ limit: 100 });
+          toDelete = fetched.filter((m: any) => m.id !== action.targetUserId).first(100);
+        }
         const ids = toDelete.map((m: any) => m.id);
-        try { await channel.bulkDelete(ids, true); } catch { for (const m of toDelete) await m.delete().catch(() => undefined); }
+        if (ids.length > 0) {
+          try { await channel.bulkDelete(ids, true); } catch { for (const m of toDelete) await m.delete().catch(() => undefined); }
+        }
         const purgeCount = ids.length;
         await app.logManager.log({ event: 'moderation_action', guildId: guild.id, channelId: action.channelId, actorId: action.actorId, message: `Purged ${purgeCount} messages in <#${action.channelId}>`, details: { amount: purgeCount } });
         await interaction.update(v2Update(`✅ Purged ${purgeCount} message(s).`));
@@ -273,6 +281,39 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
 }
 
 export default [confirmButton, cancelButton];
+
+/* ─── User Context Menu Confirmation ─────────────────────────────────────── */
+
+export async function contextUserConfirm(
+  app: App,
+  interaction: any,
+  action: string,
+  reason: string,
+  executeFn: () => Promise<{ ok: boolean; error?: string; case?: { case_code: string } }>,
+  opts?: { durationMs?: number; deleteDays?: number },
+): Promise<void> {
+  const { humanizeDuration } = require('../../../shared/src/index') as typeof import('../../../shared/src/index');
+  const targetId = interaction.targetUser.id;
+  const guild = interaction.guild;
+  if (!guild) { await interaction.reply({ content: 'Not in a guild.', ephemeral: true }); return; }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const actionId = storePendingAction({
+    action,
+    targetUserId: targetId,
+    guildId: guild.id,
+    channelId: interaction.channelId,
+    reason,
+    durationMs: opts?.durationMs,
+    deleteDays: opts?.deleteDays,
+    actorId: interaction.user.id,
+    expiresAt: Date.now() + 60_000,
+  });
+
+  const { components, flags } = buildConfirmEmbed(action, targetId, reason, opts?.durationMs, actionId);
+  await interaction.editReply({ components, flags } as never);
+}
 
 /* ─── CV2 Button Confirmation for Prefix Commands ────────────────────────── */
 

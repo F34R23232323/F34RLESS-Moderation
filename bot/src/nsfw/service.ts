@@ -91,14 +91,15 @@ export class NsfwModerationService {
       if (message.author.bot || message.webhookId) return;
       if (!message.inGuild() || message.attachments.size === 0) return;
       if (cfg.guilds.length > 0 && !cfg.guilds.includes(message.guildId ?? '')) return;
-      if (cfg.ignored_channels.includes(message.channelId)) return;
+      const parentId = 'parentId' in message.channel ? (message.channel as { parentId: string | null }).parentId : null;
+      if (cfg.ignored_channels.includes(message.channelId) || (parentId && cfg.ignored_channels.includes(parentId))) return;
       if (cfg.exempt_roles.length > 0) {
         const roleIds = message.member ? [...message.member.roles.cache.values()].map((r) => r.id) : null;
         if (roleIds && roleIds.some((id) => cfg.exempt_roles.includes(id))) return;
       }
 
       const automodIgnores = this.collectAutomodIgnores();
-      if (automodIgnores.channels.has(message.channelId)) return;
+      if (automodIgnores.channels.has(message.channelId) || (parentId && automodIgnores.channels.has(parentId))) return;
       if (message.member) {
         const memberRoleIds = [...message.member.roles.cache.values()].map((r) => r.id);
         if (memberRoleIds.some((id) => automodIgnores.roles.has(id))) return;

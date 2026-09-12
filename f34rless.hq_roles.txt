@@ -1,0 +1,103 @@
+Role Export — f34rless.hq
+Generated: 2026-09-12 00:38:48 UTC
+==================================================
+
+  Trusted Bypass  (ID: 1520031216651210773)
+  Administrator Permission  (ID: 1490439698416402613)
+  -- SERVER OWNERS --  (ID: 1491407923291619388)
+  ☾✦ Astral Sisters ✦☽  #4B1F8F  (ID: 1543714731171250226)  [hoisted]
+  💜 Rooted Together — Owners  #826BC2  (ID: 1479852874635939880)  [hoisted]
+  Co-Owner  #C4B5FD  (ID: 1534544391811891321)  [hoisted]
+  Lead Administrator  #DC2626  (ID: 1546938257990746183)  [hoisted]
+  Administrator  #EF4444  (ID: 1534545792705237133)  [hoisted]
+  Head Moderator  #A84300  (ID: 1538896865481850992)  [hoisted]
+  Senior Moderator  #E67E22  (ID: 1534546302350659675)  [hoisted]
+  Moderator  #C27C0E  (ID: 1534546666726756373)  [hoisted]
+  Trial Moderator  #F1C40F  (ID: 1534547067501023405)  [hoisted]
+  Security Team  #E879F9  (ID: 1546938772208492634)  [hoisted]
+  All Staff  (ID: 1467103806561980528)
+  Emergency Staff  (ID: 1485003903891275977)
+  Developer  #3498DB  (ID: 1470193399909978304)  [hoisted]
+  Owner’s Friend  #F9A8D4  (ID: 1546891459754463242)  [hoisted]
+  Quarantine  #DC2626  (ID: 1543404020914458634)
+  Unverified  (ID: 1467117236056625317)
+  Server Booster  #FF73FA  (ID: 1467223539953303705)
+  Supporter  #965F7F  (ID: 1536118071381721188)  [hoisted]
+  Contributor  #9E6BFF  (ID: 1467120180860555274)  [hoisted]
+  Trusted  #34D399  (ID: 1546891211757981712)  [hoisted]
+  -- LEVEL ROLES --  (ID: 1485750788008706198)
+  Level 100 • Legend  (ID: 1466990155352113308)  [hoisted]
+  Level 75 • Elite  (ID: 1466990155339661392)  [hoisted]
+  Level 50 • Veteran  (ID: 1466990155339661391)  [hoisted]
+  Level 35 • Dedicated  (ID: 1467272019438469150)  [hoisted]
+  Level 20 • Active  (ID: 1466990155339661390)  [hoisted]
+  Level 10 • Regular  (ID: 1466990155339661389)  [hoisted]
+  Level 5 • Newcomer  (ID: 1467271524233773119)  [hoisted]
+  Member  #94A3B8  (ID: 1466990155339661388)  [hoisted]
+  -- AGE ROLES --  (ID: 1491853864490766367)
+  Prefer Not To Say Age  (ID: 1492166501384323124)
+  Age 18+  (ID: 1491853744785330176)
+  Age 16–17  (ID: 1491853721884164126)
+  Age 13–15  (ID: 1491853703618105375)
+  -- RELATIONSHIP ROLES --  (ID: 1491853244908179517)
+  Taken  (ID: 1491852047178268832)
+  Single  (ID: 1491852065054658682)
+  -- DM STATUS ROLES --  (ID: 1475933760846561290)
+  Ask To DM  (ID: 1466990155339661386)
+  DM's closed  (ID: 1466990155339661385)
+  DM's open  (ID: 1466990155339661384)
+  -- DEVICE ROLES --  (ID: 1475933710720307221)
+  PC  (ID: 1466990155020898420)
+  XBOX  (ID: 1466990155020898419)
+  Playstation  (ID: 1466990155020898418)
+  Switch  (ID: 1466990155020898417)
+  Mobile  (ID: 1466990155020898416)
+  -- PING ROLES --  (ID: 1475933659688206397)
+  Nyxie News  (ID: 1542978015993139270)
+  Announcements  (ID: 1467137548118921286)
+  Bot Updates  (ID: 1467137605870161951)
+  Bot Status  (ID: 1467137629568110633)
+  Server Updates  (ID: 1467137652875595789)
+  Votes  (ID: 1467137680742809746)
+  Dead Chat Revive  (ID: 1467169285616042125)
+  Events Ping  (ID: 1467169328704262316)
+  Giveaways  (ID: 1467171999355764900)
+  Upload Pings  (ID: 1467256397677990069)
+  Partners Ping  (ID: 1467500600244830341)
+  Sneak Peaks  (ID: 1480636653306646612)
+  F34R's News Ping  (ID: 1484674033533321276)
+  Cybersecurity Alerts  (ID: 1506007283639779460)
+  -- PERMISSION OVERRIDES ROLES --  (ID: 1475933522597511321)
+  Bots  (ID: 1466990155020898415)  [hoisted]
+  Image Perms  (ID: 1467264130615349403)
+  Link Perms  (ID: 1467264172470571018)
+  Image And Link Perms  (ID: 1467264208415752307)
+  Approved For Emergency Staff Ping  (ID: 1485003950888456335)
+  -- BOT ROLES (NO PERMS) --  (ID: 1475933573700911209)
+  Cattito  (ID: 1467087608910712868)  [bot]
+  ☽₊˚ Nyxie ˚₊☾  #6D42D8  (ID: 1538977806627774548)  [hoisted]  [bot]
+  ✧◇ Tixia ◇✧  (ID: 1545857536257695767)  [bot]
+  ◇⋆ Vyxia ⋆◇  #3B1678  (ID: 1543444008146309202)  [hoisted]  [bot]
+  DISBOARD.org  (ID: 1467178163711905969)  [bot]
+  OwO  (ID: 1468748704092655629)  [bot]
+  Top.gg  (ID: 1494890760300920885)  [bot]
+  Page F34R  (ID: 1518028908501536830)  [bot]
+  TSHE Verification  (ID: 1525232907122249949)  [bot]
+  Noxx  (ID: 1526579551084478584)  [bot]
+  Sleeping Lofi  (ID: 1529551583598084177)  [bot]
+  Lofi Boy  (ID: 1529553104767287409)  [bot]
+  F34RLESS Lanyard  (ID: 1529874273869758687)  [bot]
+  OneBump  (ID: 1534529992505954455)  [bot]
+  Bumper  (ID: 1534532392960790551)  [bot]
+  Bump4You  (ID: 1534533334418591747)  [bot]
+  🌌 World Bump  (ID: 1534535204004298765)  [bot]
+  Ko-fi Bot  (ID: 1536106530196291675)  [bot]
+  TSHE Suggestions  (ID: 1535381784030748745)  [bot]
+  Hampter Catcher  (ID: 1542191540066320448)  [bot]
+  HQ Sentinel  (ID: 1543713451376115834)  [bot]
+  test  (ID: 1544122144286576660)
+  Vyxia Quarantined  (ID: 1544128448283279412)
+@everyone  (ID: 1466990155020898413)
+
+==================================================
+Total: 96 roles (including @everyone)

@@ -37,11 +37,13 @@ export class GuildAccessService {
     try {
       const res = await fetch(`https://discord.com/api/v10${path}`, {
         headers: { Authorization: `Bot ${this.token}` },
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(7_000),
       });
       if (res.status === 429) {
         const retry = Number(res.headers.get('retry-after') ?? '1');
-        await new Promise((r) => setTimeout(r, Math.min(retry * 1000, 5000)));
+        // Cap the sleep at 2s so a single rate-limited request can't stall the
+        // server for the full retry-after window (which can be up to 10s+).
+        await new Promise((r) => setTimeout(r, Math.min(retry * 1000, 2000)));
       }
       if (res.status === 204) return { status: res.status, body: null };
       const body = (await res.json().catch(() => null)) as T | null;
@@ -74,7 +76,10 @@ export class GuildAccessService {
     if (cached && Date.now() - cached.at < TTL_MS) return cached.value;
     const { status } = await this.discordGet<never>(`/guilds/${guildId}/members/${userId}`);
     const member = status === 200;
-    this.members.set(key, { value: member, at: Date.now() });
+    // On network error (status 0) cache the negative for a short period so
+    // we don't hammer a dead Discord endpoint on every concurrent request.
+    const ttl = status === 0 ? 10_000 : TTL_MS;
+    this.members.set(key, { value: member, at: Date.now() - (TTL_MS - ttl) });
     return member;
   }
 
@@ -85,7 +90,8 @@ export class GuildAccessService {
     if (cached && Date.now() - cached.at < TTL_MS) return cached.value;
     const { status, body } = await this.discordGet<{ roles: string[] }>(`/guilds/${guildId}/members/${userId}`);
     const roles = status === 200 ? (body?.roles ?? []) : [];
-    this.roles.set(key, { value: roles, at: Date.now() });
+    const ttl = status === 0 ? 10_000 : TTL_MS;
+    this.roles.set(key, { value: roles, at: Date.now() - (TTL_MS - ttl) });
     return roles;
   }
 

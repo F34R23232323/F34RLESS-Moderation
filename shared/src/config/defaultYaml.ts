@@ -870,6 +870,14 @@ anti_raid:
 sticky_messages:
   enabled: false
   re_post_after_messages: 5
+  conversation_detection: true
+  conversation_window_seconds: 60
+  conversation_min_messages: 4
+  quiet_period_seconds: 30
+  min_interval_seconds: 60
+  max_reposts_per_hour: 12
+  delete_previous: true
+  configured: []
 
 slowmode_scheduler:
   enabled: false

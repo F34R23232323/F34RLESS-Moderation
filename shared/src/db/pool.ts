@@ -1,7 +1,24 @@
 import { createPool, type Pool, type PoolOptions } from 'mysql2/promise';
 
+/** Hard timeout for every individual pool query.  Without this, a query that
+ *  is waiting for a connection or stuck on a slow server will block forever,
+ *  eventually starving the entire pool and hanging every HTTP request.
+ *  Keep well below the server's 12 s request deadline so a stalled query
+ *  resolves with an error before the deadline fires. */
+const QUERY_TIMEOUT_MS = 9_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    timer.unref?.();
+    promise.then(
+      (val) => { clearTimeout(timer); resolve(val); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 export function createDbPool(connectionString: string, extra: Partial<PoolOptions> = {}): Pool {
-  // acquireTimeout is supported at runtime by mysql2 but missing from its typings.
   const options = {
     uri: connectionString,
     connectionLimit: 30,
@@ -9,13 +26,27 @@ export function createDbPool(connectionString: string, extra: Partial<PoolOption
     dateStrings: false,
     waitForConnections: true,
     connectTimeout: 10_000,
-    acquireTimeout: 20_000,
-    queueLimit: 200,
+    queueLimit: 0,
     idleTimeout: 60_000,
     enableKeepAlive: true,
     ...extra,
   } as PoolOptions;
-  return createPool(options);
+  const pool = createPool(options);
+
+  // Monkey-patch query/execute so every call has a hard deadline.  This is the
+  // only reliable way to prevent the pool from hanging in Express 4 (where an
+  // unanswered query means a permanently stuck HTTP request).
+  const origQuery = pool.query.bind(pool);
+  const origExecute = pool.execute.bind(pool);
+
+  (pool as any).query = function (...args: any[]) {
+    return withTimeout((origQuery as any)(...args), QUERY_TIMEOUT_MS, 'pool.query');
+  };
+  (pool as any).execute = function (...args: any[]) {
+    return withTimeout((origExecute as any)(...args), QUERY_TIMEOUT_MS, 'pool.execute');
+  };
+
+  return pool;
 }
 
 export async function ping(pool: Pool): Promise<boolean> {

@@ -1,0 +1,184 @@
+Channel Export — f34rless.hq
+Generated: 2026-09-12 00:38:51 UTC
+==================================================
+
+[Category] 👋 — Start Here  (ID: 1467134357717123222)
+----------------------------------------
+  👋・welcome  [Text]  (ID: 1466990155922542723)
+      Topic: Welcome to our discord server!
+  📜・rules  [Text]  (ID: 1466990155922542722)
+  🧭・server-guide  [Text]  (ID: 1546894031395495966)
+  👥・staff-list  [Text]  (ID: 1546896650625220809)
+  📌・announcements  [Announcement]  (ID: 1466990156199362875)
+      Topic: Check here for the most important announcements.
+  🔄・changelog  [Announcement]  (ID: 1546894154297254029)
+  🎭・roles  [Text]  (ID: 1467127384602837003)
+
+[Category] Community  (ID: 1466990156199362879)
+----------------------------------------
+  👋・introductions  [Text]  (ID: 1546895050925940899)
+  💡・suggestions  [Text]  (ID: 1547774562895405076)
+    └─ Suggestion #1  [Thread]  (ID: 1548129769403711591)
+  💬・general  [Text]  (ID: 1466990156199362880)
+      Topic: Channel for chatting with other people.
+  📷・media  [Text]  (ID: 1535372305381855232)
+  🐾・pets  [Text]  (ID: 1546895326676521030)
+  😆・memes  [Text]  (ID: 1535372374684336138)
+  🎵・music  [Text]  (ID: 1535372412105789531)
+  1️⃣・counting  [Text]  (ID: 1534350105312886865)  [slowmode: 5s]
+
+[Category] Creative  (ID: 1547950380799889488)
+----------------------------------------
+  🎨・creative-chat  [Text]  (ID: 1547950475419328602)
+  🖼️・creative-showcase  [Text]  (ID: 1547950515428532336)
+
+[Category] Bots  (ID: 1467194398063198360)
+----------------------------------------
+  😺・cattito¹  [Text]  (ID: 1467128459913461912)  [slowmode: 5s]
+  😺・cattito²  [Text]  (ID: 1526730345699999945)  [slowmode: 5s]
+  🐹・hamster  [Text]  (ID: 1542191772237701170)
+  🤖・bot-commands  [Text]  (ID: 1466990156199362883)
+      Topic: Channel for bot commands.
+
+[Category] Voice Channels  (ID: 1466990156509876274)
+----------------------------------------
+  💤・AFK  [Voice]  (ID: 1466990156690227314)
+  ➕・Join To Create  [Voice]  (ID: 1527017514746515537)
+
+[Category] Bot Development  (ID: 1467123199778099353)
+----------------------------------------
+  🟢・bot-status  [Announcement]  (ID: 1467123470369296457)
+  📢・bot-updates  [Announcement]  (ID: 1467123406582579210)
+  📂・github  [Text]  (ID: 1470529480341717174)
+  👀・sneak-peaks  [Text]  (ID: 1470554928429666414)
+  🗓️・upcoming-updates  [Text]  (ID: 1547950235274190938)
+
+[Category] Support And Applications  (ID: 1467133498061099039)
+----------------------------------------
+  📃・applications  [Text]  (ID: 1467133723148419103)
+  🎫・create-a-ticket  [Text]  (ID: 1467119424455704760)
+
+[Category] Applications  (ID: 1467121220976644107)
+----------------------------------------
+  🧾・application-log  [Text]  (ID: 1467121545796259851)
+
+[Category] Support Tickets  (ID: 1467119486489595987)
+----------------------------------------
+  🧾・ticket-log  [Text]  (ID: 1467121372646998097)
+  ⭐・ticket-ratings  [Text]  (ID: 1467121510912229672)
+  『🎫』giveaway-claim-zhyperxdev-165  [Text]  (ID: 1537488426012508310)
+  high-support-angel2524___  [Text]  (ID: 1546901294881579158)
+
+[Category] All Staff  (ID: 1466990156690227319)
+----------------------------------------
+  🚀・Staff VC  [Voice]  (ID: 1466990157063262372)
+  🗨️・staff-chat  [Text]  (ID: 1466990156690227320)
+    └─ TSHE SUGGESTIONS BOT LOGS  [Thread]  (ID: 1535381036614029412)
+  ⚖️・administrators  [Text]  (ID: 1546276522787086466)
+    └─ Cathy Case  [Thread]  (ID: 1546276926585307206)
+  ⚠️・automod-testing  [Text]  (ID: 1469309849085939835)
+  🤖・staff-commands  [Text]  (ID: 1467112384786071603)
+  👊・bumping  [Text]  (ID: 1534529824670875688)
+
+[Category] Staff Resources  (ID: 1539739970988802108)
+----------------------------------------
+  📙・staff-info  [Text]  (ID: 1467997035889426526)
+  📢-・staff-announcements  [Text]  (ID: 1467136533260800124)
+  🔨・staff-tasks  [Text]  (ID: 1539740316712702042)
+  ⚠️・staff-strikes  [Text]  (ID: 1539740350623649903)
+
+[Category] Moderation & Reports  (ID: 1467100264896139276)
+----------------------------------------
+  🛡️・automod-reports  [Text]  (ID: 1467100532278558752)
+  📩・user-reports  [Text]  (ID: 1467100755587502164)
+  🗃️・report-archive  [Text]  (ID: 1467100822176530453)
+  🚨・discord-automod  [Text]  (ID: 1467100635701706814)
+
+[Category] Appeals  (ID: 1534537569981829310)
+----------------------------------------
+  ⚖️・active-appeals  [Text]  (ID: 1467101228944068668)
+    └─ Appeal by @iltz580  [Thread]  (ID: 1538532271085199412)
+  📁・appeals-logs  [Text]  (ID: 1467101317699993663)
+
+[Category] Server Logs & Alerts  (ID: 1467104423669927993)
+----------------------------------------
+  📁・server-logs  [Forum]  (ID: 1467181858914701393)
+    └─ ‼️〢Intergrations  [Thread]  (ID: 1467182157876166696)
+    └─ ⚙️〢Discord Automod Changes  [Thread]  (ID: 1467189652569194636)
+    └─ 🆔〢Server Changes  [Thread]  (ID: 1475965409709789376)
+    └─ 🌐〢Assets  [Thread]  (ID: 1467182307981922509)
+    └─ 🎙️〢Stage Channels  [Thread]  (ID: 1467189521262182451)
+    └─ 🎭〢Roles  [Thread]  (ID: 1497610461942648902)
+    └─ 🐌〢Autoslowmode  [Thread]  (ID: 1507386118604062760)
+    └─ 💬〢Channels  [Thread]  (ID: 1487426366625284208)
+    └─ 📊〢Polls  [Thread]  (ID: 1467182127920709642)
+    └─ 🔗〢Invites  [Thread]  (ID: 1467182232920789277)
+    └─ 🗓️〢Events  [Thread]  (ID: 1467182105174741112)
+    └─ 🚢〢Onboarding  [Thread]  (ID: 1475965227425202368)
+    └─ 🧵〢Threads  [Thread]  (ID: 1497610133973504070)
+    └─ 🪝〢Webhooks  [Thread]  (ID: 1467182268647739402)
+  🔨・moderation-actions  [Forum]  (ID: 1467185381505237002)
+    └─ Other  [Thread]  (ID: 1540115016420823173)
+    └─ ♻️〢Case Changes, Deletions, And Creations  [Thread]  (ID: 1497609708540924058)
+    └─ ⚠️〢Warns  [Thread]  (ID: 1467185584647831858)
+    └─ ⛔〢Bans  [Thread]  (ID: 1467185509876105399)
+    └─ 📛〢Prunes  [Thread]  (ID: 1467185489898635384)
+    └─ 📝〢User Notes  [Thread]  (ID: 1467187814977372423)
+    └─ 🔇〢Mutes  [Thread]  (ID: 1467185558928228463)
+    └─ 🔔〢Report Logs  [Thread]  (ID: 1531982800830337024)
+    └─ 🤖〢Automod  [Thread]  (ID: 1467185464124510319)
+    └─ 🥾〢Kicks  [Thread]  (ID: 1467185535411028229)
+  👥・user-logs  [Forum]  (ID: 1467188097136595055)
+    └─ 🎭〢Roles  [Thread]  (ID: 1467188430932021419)
+    └─ 🏷️〢Username Updates  [Thread]  (ID: 1467188528227160236)
+    └─ 📤〢Leaves  [Thread]  (ID: 1467576828318318694)
+    └─ 📥〢Joins  [Thread]  (ID: 1467576784877912126)
+    └─ 🔊〢Voice Channel Activity  [Thread]  (ID: 1467189062166122607)
+    └─ 🖼️〢Avatar Updates  [Thread]  (ID: 1467188152912314553)
+  🗨️・message-logs  [Forum]  (ID: 1475963907200778290)
+    └─ ✏️〢Message Edits  [Thread]  (ID: 1475964054244950211)
+    └─ 📂〢Message Archive Logs  [Thread]  (ID: 1539700871036928071)
+    └─ 📨〢Message Sending Commands  [Thread]  (ID: 1475964482147586150)
+    └─ 📰〢Message Publishes  [Thread]  (ID: 1475964727757766786)
+    └─ 🔥〢Message Bulk Deletions  [Thread]  (ID: 1475964377650692331)
+    └─ 🗑️〢Message Deletions  [Thread]  (ID: 1475964127116525652)
+  ❗・internal-bot-logs  [Forum]  (ID: 1497610637629460526)
+    └─ Emergency Staff Pings  [Thread]  (ID: 1546281343292416060)
+    └─ ❌〢DM Failed  [Thread]  (ID: 1497610823147720877)
+    └─ ❗〢Alerts  [Thread]  (ID: 1497610757536354314)
+  🛠️・discord-updates  [Text]  (ID: 1467103585627275367)
+  ⚠️・discord-safety-alerts  [Text]  (ID: 1467103641029709855)
+  🌙・noxx  [Text]  (ID: 1468748067112095956)
+  🗃️・noxx-confession-log  [Text]  (ID: 1474169696726024265)
+  ✅・verification-logs  [Text]  (ID: 1525242406595727514)
+  deepseek-logs  [Text]  (ID: 1539341058926977174)
+
+[Category] Vyxia  (ID: 1543583139388071936)
+----------------------------------------
+  🔗・invite-log  [Text]  (ID: 1469345681163554950)
+  security-logs  [Text]  (ID: 1543712638540709939)
+  errors  [Text]  (ID: 1543949931595829338)
+
+[Category] TSHE CYBER SECURITY  (ID: 1467117688118575106)
+----------------------------------------
+  ⏳・status  [Text]  (ID: 1467117906902122567)
+  ⚙️・system  [Text]  (ID: 1467117854435442800)
+  📁・commands  [Text]  (ID: 1467118320514891828)
+  ☢️・antinuke  [Text]  (ID: 1467118257667444858)
+  📩・dms  [Text]  (ID: 1467130893251383296)
+  📜・message-quota  [Text]  (ID: 1520507459137962116)
+  🔔・staff  [Text]  (ID: 1527772114369773698)
+
+[Category] Moderation Bot Internal Logs  (ID: 1539783205643616306)
+----------------------------------------
+  errors  [Text]  (ID: 1539783293988249692)
+  rate-limits  [Text]  (ID: 1539783341967016027)
+
+[Category] Verification  (ID: 1513907381141115052)
+----------------------------------------
+  ✅・verify  [Text]  (ID: 1467118853673844857)
+  🔑・verification-help  [Text]  (ID: 1522664066634747984)
+  🚨・quarantine  [Text]  (ID: 1543413141478572122)
+
+==================================================
+Total: 95 channels (18 categories, 65 text, 3 voice, 4 threads)

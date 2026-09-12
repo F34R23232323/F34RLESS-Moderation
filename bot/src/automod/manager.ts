@@ -79,7 +79,7 @@ export class AutomodManager {
         const cfg = this.getModuleConfig(mod.name);
         if (!cfg || !cfg.enabled) continue;
         if (cfg.shadow_mode) continue;
-        if (cfg.channel_ignore_list.includes(channel.id)) continue;
+        if (cfg.channel_ignore_list.includes(channel.id) || (channel.parentId && cfg.channel_ignore_list.includes(channel.parentId))) continue;
         if (cfg.immune_roles.length > 0 && member.roles.cache.some((r) => cfg.immune_roles.includes(r.id))) continue;
 
         const hit = await mod.check({ app: this.app, member, message, channel, content: message.content });

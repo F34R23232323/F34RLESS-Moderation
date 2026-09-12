@@ -70,7 +70,11 @@ export async function paginateV2(opts: PaginateOptions): Promise<void> {
     if (i.customId === `${id}_prev`) page = Math.max(0, page - 1);
     else if (i.customId === `${id}_next`) page = Math.min(total - 1, page + 1);
     else return;
-    await i.update({ components: render(page).components as any, allowedMentions: noPing } as any);
+    try {
+      await i.update({ components: render(page).components as any, allowedMentions: noPing } as any);
+    } catch {
+      await i.followUp({ content: 'Could not update the message.', ephemeral: true }).catch(() => undefined);
+    }
   });
 
   collector.on('end', async () => {

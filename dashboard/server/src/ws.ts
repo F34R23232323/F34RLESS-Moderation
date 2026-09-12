@@ -99,9 +99,23 @@ export function createWebSocketServer(httpServer: Server, db: Pool, sessionSecre
   });
 
   setInterval(() => {
-    for (const state of clients) {
-      void poll(state, db).catch(() => undefined);
-    }
+    const clientsArray = [...clients];
+    if (clientsArray.length === 0) return;
+
+    // Shared metrics — run the expensive COUNT queries once, then broadcast.
+    void pollMetrics(db).then((metrics) => {
+      if (!metrics) return;
+      for (const state of clientsArray) {
+        if (state.ws.readyState !== WebSocket.OPEN) continue;
+        if (state.streams.has('metrics')) {
+          state.ws.send(JSON.stringify({ type: 'metric', payload: { ...metrics, timestamp: Date.now() } }));
+        }
+      }
+    }).catch(() => undefined);
+
+    // Batch log + automod queries: find the max watermark across all clients,
+    // query once, then fan out only the rows each client hasn't seen yet.
+    void pollLogsBatch(db, clientsArray).catch(() => undefined);
   }, 2500);
 }
 
@@ -120,48 +134,82 @@ async function verifyAppealOwnership(db: Pool, state: ClientState, keys: string[
   }
 }
 
-async function poll(state: ClientState, db: Pool): Promise<void> {
-  if (state.ws.readyState !== WebSocket.OPEN) return;
-  if (state.streams.has('logs')) {
-    const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, event, guild_id, channel_id, actor_id, target_id, message, details, created_at FROM logs WHERE id > ? ORDER BY id ASC LIMIT 100',
-      [state.lastLogId],
-    );
-    for (const row of rows) {
-      state.lastLogId = Math.max(state.lastLogId, Number(row.id));
-      state.ws.send(JSON.stringify({ type: 'log', payload: row }));
-    }
-  }
-  if (state.streams.has('automod')) {
-    const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT id, rule, module, user_id, channel_id, content_snippet, response_suppressed, case_ids, created_at FROM automod_logs WHERE id > ? ORDER BY id ASC LIMIT 100',
-      [state.lastAutomodLogId],
-    );
-    for (const row of rows) {
-      state.lastAutomodLogId = Math.max(state.lastAutomodLogId, Number(row.id));
-      state.ws.send(JSON.stringify({ type: 'automod_log', payload: row }));
-    }
-  }
-  if (state.streams.has('metrics')) {
+async function pollMetrics(db: Pool): Promise<{ messagesPerMinute: number; automodTriggersLastHour: number } | null> {
+  try {
     const [m] = await db.query<RowDataPacket[]>(
       "SELECT COUNT(*) AS msgs FROM logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 60 SECOND)",
     );
     const [triggers] = await db.query<RowDataPacket[]>(
       'SELECT COUNT(*) AS count FROM automod_logs WHERE created_at > DATE_SUB(NOW(), INTERVAL 3600 SECOND)',
     );
-    state.ws.send(
-      JSON.stringify({
-        type: 'metric',
-        payload: {
-          messagesPerMinute: Number(m[0]?.msgs ?? 0),
-          automodTriggersLastHour: Number(triggers[0]?.count ?? 0),
-          timestamp: Date.now(),
-        },
-      }),
-    );
+    return {
+      messagesPerMinute: Number(m[0]?.msgs ?? 0),
+      automodTriggersLastHour: Number(triggers[0]?.count ?? 0),
+    };
+  } catch {
+    return null;
   }
+}
+
+async function poll(state: ClientState, db: Pool): Promise<void> {
+  if (state.ws.readyState !== WebSocket.OPEN) return;
+  // Appeals are per-user and small — fine to poll individually.
   if (state.streams.has('appeals') && state.appealKeys.size > 0) {
     await pollAppeals(state, db);
+  }
+}
+
+/**
+ * Batched log + automod poll — one query each per cycle regardless of client
+ * count.  Finds the minimum last-id watermark across eligible clients, fetches
+ * all rows since that point, then fans out only the rows each client needs.
+ */
+async function pollLogsBatch(db: Pool, clients: ClientState[]): Promise<void> {
+  const logsClients = clients.filter((s) => s.ws.readyState === WebSocket.OPEN && s.streams.has('logs'));
+  const automodClients = clients.filter((s) => s.ws.readyState === WebSocket.OPEN && s.streams.has('automod'));
+
+  // ── Logs ─────────────────────────────────────────────────────────────
+  if (logsClients.length > 0) {
+    const minLogId = Math.min(...logsClients.map((s) => s.lastLogId));
+    const [logRows] = await db.query<RowDataPacket[]>(
+      'SELECT id, event, guild_id, channel_id, actor_id, target_id, message, details, created_at FROM logs WHERE id > ? ORDER BY id ASC LIMIT 500',
+      [minLogId],
+    );
+    if (logRows.length > 0) {
+      for (const state of logsClients) {
+        const unseen = logRows.filter((r) => Number(r.id) > state.lastLogId);
+        for (const row of unseen) {
+          state.lastLogId = Math.max(state.lastLogId, Number(row.id));
+          state.ws.send(JSON.stringify({ type: 'log', payload: row }));
+        }
+      }
+    }
+  }
+
+  // ── Automod logs ─────────────────────────────────────────────────────
+  if (automodClients.length > 0) {
+    const minAutoId = Math.min(...automodClients.map((s) => s.lastAutomodLogId));
+    const [autoRows] = await db.query<RowDataPacket[]>(
+      'SELECT id, rule, module, user_id, channel_id, content_snippet, response_suppressed, case_ids, created_at FROM automod_logs WHERE id > ? ORDER BY id ASC LIMIT 500',
+      [minAutoId],
+    );
+    if (autoRows.length > 0) {
+      for (const state of automodClients) {
+        const unseen = autoRows.filter((r) => Number(r.id) > state.lastAutomodLogId);
+        for (const row of unseen) {
+          state.lastAutomodLogId = Math.max(state.lastAutomodLogId, Number(row.id));
+          state.ws.send(JSON.stringify({ type: 'automod_log', payload: row }));
+        }
+      }
+    }
+  }
+
+  // ── Appeals (per-user, kept individual — small & scoped) ──────────────
+  for (const state of clients) {
+    if (state.ws.readyState !== WebSocket.OPEN) continue;
+    if (state.streams.has('appeals') && state.appealKeys.size > 0) {
+      void pollAppeals(state, db).catch(() => undefined);
+    }
   }
 }
 

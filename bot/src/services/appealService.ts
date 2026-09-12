@@ -1,5 +1,5 @@
 import type { Guild, GuildMember, Message, TextBasedChannel } from 'discord.js';
-import { ContainerBuilder, MessageFlags, TextDisplayBuilder } from 'discord.js';
+import { ContainerBuilder, MessageFlags, TextDisplayBuilder, WebhookClient } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
 import { resolveAppealConfig, safeDiscordText, sanitizeForDiscord, type AppealsConfig } from '../../../shared/src/index';
@@ -117,14 +117,19 @@ export class AppealService {
         } else if (req.action === 'decide' && req.appeal_id != null) {
           ok = await this.executeDecision(req.appeal_id);
         } else if (req.action === 'relay' && req.appeal_id != null && req.payload) {
-          const payload = JSON.parse(req.payload) as { messageId?: number };
-          ok = await this.relayStaffMessage(req.appeal_id, payload.messageId ?? 0);
+          const payload = JSON.parse(req.payload) as { messageId?: number; senderType?: string };
+          if (payload.senderType === 'user') {
+            ok = await this.relayUserMessage(req.appeal_id, payload.messageId ?? 0);
+          } else {
+            ok = await this.relayStaffMessage(req.appeal_id, payload.messageId ?? 0);
+          }
         } else {
-          ok = false;
+          this.app.logger.warn(`Appeal action ${req.action} (id ${req.id}): unknown action or missing appeal_id`);
         }
-        await this.app.db.execute("UPDATE appeal_actions SET status = 'done', processed_at = NOW() WHERE id = ?", [req.id]);
-        if (!ok) {
-          this.app.logger.warn(`Appeal action ${req.action} (id ${req.id}) completed without effect`);
+        if (ok) {
+          await this.app.db.execute("UPDATE appeal_actions SET status = 'done', processed_at = NOW() WHERE id = ?", [req.id]);
+        } else {
+          this.app.logger.warn(`Appeal action ${req.action} (id ${req.id}): returned false, will retry next cycle`);
         }
       } catch (err) {
         this.app.logger.error(`Appeal action ${req.action} (id ${req.id}) failed:`, err);
@@ -203,11 +208,11 @@ export class AppealService {
   /** Post the Components V2 appeal card to the guild's log channel (+ thread). */
   public async postAppeal(appealId: number): Promise<boolean> {
     const appeal = await this.loadAppeal(appealId);
-    if (!appeal) return false;
+    if (!appeal) { this.app.logger.warn(`Appeal #${appealId}: appeal row not found`); return false; }
     const guild = this.app.client.guilds.cache.get(appeal.guild_id);
-    if (!guild) return false;
+    if (!guild) { this.app.logger.warn(`Appeal #${appeal.id}: guild ${appeal.guild_id} not in cache`); return false; }
     const cfg = resolveAppealConfig(this.app.config.appeals, appeal.guild_id);
-    if (!cfg.enabled) return false;
+    if (!cfg.enabled) { this.app.logger.warn(`Appeal #${appeal.id}: appeals disabled for guild ${appeal.guild_id}`); return false; }
     if (!cfg.log_channel_id) {
       this.app.logger.warn(`Appeal #${appeal.id}: appeals.log_channel_id not set for guild ${appeal.guild_id}`);
       return false;
@@ -224,7 +229,7 @@ export class AppealService {
       this.loadAnswers(appeal.id),
       this.app.client.users.fetch(appeal.user_id).catch(() => null),
     ]);
-    if (!caseRow) return false;
+    if (!caseRow) { this.app.logger.warn(`Appeal #${appeal.id}: case ${appeal.case_id} not found`); return false; }
 
     const cfgForm = cfg.form;
     const answerLines: Array<{ question: string; answer: string }> = [];
@@ -248,16 +253,9 @@ export class AppealService {
       answers: answerLines,
     });
 
-    const content = cfg.ping_role_id ? `<@&${cfg.ping_role_id}>` : '';
-    const allowedMentions: { parse: string[]; roles?: string[] } = cfg.ping_role_id
-      ? { parse: [], roles: [cfg.ping_role_id] }
-      : { parse: [] };
-
     const sent = await (channel as unknown as SendableChannel).send({
-      content,
       components: card.components,
       flags: card.flags,
-      allowedMentions,
     } as never);
 
     await this.app.db.execute('UPDATE appeals SET discord_message_id = ? WHERE id = ?', [sent.id, appeal.id]);
@@ -435,6 +433,84 @@ export class AppealService {
       decidedAt: appeal.decided_at,
     });
     await message.edit({ components: card.components, flags: card.flags, allowedMentions: { parse: [] } } as never).catch(() => undefined);
+  }
+
+  /**
+   * Relay an appellant's web portal message into the Discord thread via a
+   * webhook so it appears as the user (their avatar + display name) rather
+   * than as the bot.  Falls back to a plain prefixed message if the parent
+   * channel doesn't support webhooks or creation fails.
+   */
+  public async relayUserMessage(appealId: number, messageId: number): Promise<boolean> {
+    const appeal = await this.loadAppeal(appealId);
+    if (!appeal) return false;
+    const guild = this.app.client.guilds.cache.get(appeal.guild_id);
+    if (!guild) return false;
+
+    const [rows] = await this.app.db.query<RowDataPacket[]>(
+      'SELECT id, sender_id, content, sent_at FROM appeal_messages WHERE id = ? AND appeal_id = ?',
+      [messageId, appealId],
+    );
+    const msg = rows[0] as { id: number; sender_id: string; content: string } | undefined;
+    if (!msg) return false;
+
+    const thread = await this.resolveThread(appeal, guild);
+    if (thread) {
+      // Fetch user info for the webhook impersonation.
+      const user = await this.app.client.users.fetch(msg.sender_id).catch(() => null);
+      const displayName = user?.displayName ?? user?.username ?? 'Appellant';
+      const avatarURL = user?.displayAvatarURL({ size: 64 }) ?? undefined;
+      const text = safeDiscordText(msg.content, 1900);
+
+      // Webhooks must be created on the parent text channel, then the message
+      // is directed into the thread via threadId.
+      const threadChannel = appeal.discord_thread_id
+        ? (guild.channels.cache.get(appeal.discord_thread_id) ?? await guild.channels.fetch(appeal.discord_thread_id).catch(() => null))
+        : null;
+      const parentId = (threadChannel as any)?.parentId as string | null | undefined;
+      const parentChannel = parentId
+        ? (guild.channels.cache.get(parentId) ?? await guild.channels.fetch(parentId).catch(() => null))
+        : null;
+
+      let posted = false;
+      if (parentChannel && 'fetchWebhooks' in parentChannel) {
+        try {
+          const webhooks = await (parentChannel as any).fetchWebhooks().catch(() => null);
+          // Reuse an existing bot-owned webhook to avoid hitting the 10-webhook limit.
+          let webhook = webhooks?.find((wh: any) => wh.owner?.id === this.app.client.user?.id && wh.token);
+          if (!webhook) {
+            webhook = await (parentChannel as any).createWebhook({
+              name: 'f34rless Appeals',
+              reason: 'Appeal chat relay',
+            }).catch(() => null);
+          }
+          if (webhook?.token) {
+            const wc = new WebhookClient({ id: webhook.id, token: webhook.token });
+            await wc.send({
+              content: text,
+              username: displayName,
+              avatarURL,
+              threadId: appeal.discord_thread_id ?? undefined,
+              allowedMentions: { parse: [] },
+            } as never).catch(() => null);
+            wc.destroy();
+            posted = true;
+          }
+        } catch {
+          // Fall through to plain message fallback.
+        }
+      }
+
+      if (!posted) {
+        // Fallback: plain message with name prefix if webhook creation failed.
+        await thread
+          .send({ content: `**${displayName}:** ${text}`, allowedMentions: { parse: [] } } as never)
+          .catch(() => undefined);
+      }
+    }
+
+
+    return true;
   }
 
   /** Relay a staff web message into the Discord thread (+ DM the appellant). */

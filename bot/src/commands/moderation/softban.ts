@@ -6,7 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
@@ -41,13 +41,29 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const { confirmed } = await sendButtonConfirm(app, message, 'softban', targetId, reason);
   if (!confirmed) return;
 
-  const result = await app.punishmentManager.softban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-  await v2MessageReply(message, { content: result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
+  const targetUser = await app.client.users.fetch(targetId).catch(() => null);
+  if (!targetUser) {
+    await (message.channel as any).send({ content: '❌ User not found.', allowedMentions: { parse: [] } }).catch(() => undefined);
+    return;
+  }
+
+  const result = await app.punishmentManager.softban(targetUser, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
+  const content = result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
+  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
 }
 
 const command: BotCommand = {
   name: 'softban', category: 'moderation', description: 'Ban and immediately unban to purge messages',
   data, permissions: ['BanMembers'], aliases: ['sb'], execute, prefixExecute,
+  asUserContext: true,
+  async contextExecute(interaction, app) {
+    if (!interaction.isUserContextMenuCommand()) return;
+    const targetUser = await app.client.users.fetch(interaction.targetUser.id).catch(() => null);
+    if (!targetUser) return;
+    await contextUserConfirm(app, interaction, 'softban', 'No reason provided', () =>
+      app.punishmentManager.softban(targetUser, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
+    );
+  },
 };
 
 export default command;

@@ -6,7 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
@@ -57,12 +57,22 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-  await v2MessageReply(message, { content: result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
+  const content = result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
+  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
 }
 
 const command: BotCommand = {
   name: 'kick', category: 'moderation', description: 'Kick a user from the server',
   data, permissions: ['KickMembers'], aliases: ['k', 'kik'], execute, prefixExecute,
+  asUserContext: true,
+  async contextExecute(interaction, app) {
+    if (!interaction.isUserContextMenuCommand()) return;
+    await contextUserConfirm(app, interaction, 'kick', 'No reason provided', async () => {
+      const member = await interaction.guild?.members.fetch(interaction.targetUser.id).catch(() => null);
+      if (!member) return { ok: false, error: 'User not found in server', dmSent: false };
+      return app.punishmentManager.kick(member, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId });
+    });
+  },
 };
 
 export default command;

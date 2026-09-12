@@ -120,8 +120,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const count = await performPurge(app, message.author.id, message.guildId!, channel, amount, {
     targetUserId, contains, bots, attachments, excludeId: message.id,
   });
-  const reply = await v2MessageReply(message, { content: `Purged ${count} message(s).` });
-  setTimeout(() => reply.delete().catch(() => undefined), 3000);
+  const reply = await (message.channel as any).send({ content: `Purged ${count} message(s).`, allowedMentions: { parse: [] } }).catch(() => undefined);
+  if (reply) setTimeout(() => reply.delete().catch(() => undefined), 3000);
 }
 
 const command: BotCommand = {

@@ -10,6 +10,8 @@ function csrfToken() {
   return match ? decodeURIComponent(match.split('=').slice(1).join('=')) : '';
 }
 
+const ADMIN_TIMEOUT_MS = 30_000;
+
 async function adminApi(path, options = {}) {
   const method = options.method || 'GET';
   const headers = { 'Content-Type': 'application/json' };
@@ -17,12 +19,26 @@ async function adminApi(path, options = {}) {
     const csrf = csrfToken();
     if (csrf) headers['X-CSRF-Token'] = csrf;
   }
-  const res = await fetch(`/api/appeals${path}`, {
-    method,
-    headers,
-    credentials: 'include',
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ADMIN_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(`/api/appeals${path}`, {
+      method,
+      headers,
+      credentials: 'include',
+      signal: controller.signal,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    });
+  } catch (err) {
+    throw new Error(
+      err?.name === 'AbortError'
+        ? 'Request timed out — is the dashboard server reachable?'
+        : 'Network error — is the dashboard server reachable?',
+    );
+  } finally {
+    clearTimeout(timer);
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error || `HTTP ${res.status}`);
   return body;

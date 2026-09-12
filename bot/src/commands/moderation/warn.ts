@@ -6,7 +6,7 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
@@ -50,13 +50,20 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-  if (!result.ok) { await v2MessageReply(message, { content: `Failed: ${mapDiscordError(result.error!)}` }); return; }
-  await v2MessageReply(message, { content: `Warned <@${targetId}> — case ${result.case!.case_code}.` });
+  const content = result.ok ? `Warned <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
+  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
 }
 
 const command: BotCommand = {
   name: 'warn', category: 'moderation', description: 'Warn a user (creates a formal case)',
   data, permissions: ['ModerateMembers'], aliases: ['w', 'warning'], execute, prefixExecute,
+  asUserContext: true,
+  async contextExecute(interaction, app) {
+    if (!interaction.isUserContextMenuCommand()) return;
+    await contextUserConfirm(app, interaction, 'warn', 'No reason provided', () =>
+      app.punishmentManager.warn(interaction.targetUser as any, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
+    );
+  },
 };
 
 export default command;

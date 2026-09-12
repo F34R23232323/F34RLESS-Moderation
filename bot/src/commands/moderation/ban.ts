@@ -7,7 +7,7 @@ import { resolveUserOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
@@ -95,9 +95,23 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const { confirmed } = await sendButtonConfirm(app, message, 'ban', targetId, reason, durationMs > 0 ? durationMs : undefined);
   if (!confirmed) return;
 
-  const result = await app.punishmentManager.ban(targetId as never, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, durationMs: durationMs > 0 ? durationMs : undefined, evidence });
+  const targetUser = await app.client.users.fetch(targetId).catch(() => null);
+  if (!targetUser) {
+    await (message.channel as any).send({ content: '❌ User not found.', allowedMentions: { parse: [] } }).catch(() => undefined);
+    return;
+  }
+
+  let result;
+  try {
+    result = await app.punishmentManager.ban(targetUser, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, durationMs: durationMs > 0 ? durationMs : undefined, evidence });
+  } catch (err) {
+    app.logger.error('Ban command threw:', err);
+    await (message.channel as any).send({ content: `❌ Ban failed: ${(err as Error).message}`, allowedMentions: { parse: [] } }).catch(() => undefined);
+    return;
+  }
   const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
-  await v2MessageReply(message, { content: result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
+  const replyContent = result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
+  await (message.channel as any).send({ content: replyContent, allowedMentions: { parse: [] } }).catch(() => undefined);
 }
 
 const command: BotCommand = {
@@ -109,6 +123,15 @@ const command: BotCommand = {
   aliases: ['b', 'bann'],
   execute,
   prefixExecute,
+  asUserContext: true,
+  async contextExecute(interaction, app) {
+    if (!interaction.isUserContextMenuCommand()) return;
+    const targetUser = await app.client.users.fetch(interaction.targetUser.id).catch(() => null);
+    if (!targetUser) return;
+    await contextUserConfirm(app, interaction, 'ban', 'No reason provided', () =>
+      app.punishmentManager.ban(targetUser, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
+    );
+  },
 };
 
 export default command;

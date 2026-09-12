@@ -28,6 +28,10 @@ export interface EnvVars {
   SPOTIFY_CLIENT_SECRET?: string;
   /** Single API key used by external bots to authenticate against the HTTP API. */
   API_KEYS?: string;
+  /** OneUptime API key with ReadProjectStatusPage permission. */
+  ONEUPTIME_API_KEY?: string;
+  /** Base URL for the OneUptime installation (defaults to https://status.f34r.rip). */
+  ONEUPTIME_BASE_URL?: string;
 }
 
 function requireEnv(name: string): string {
@@ -59,6 +63,8 @@ export function loadEnv(): EnvVars {
     SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
     SPOTIFY_CLIENT_SECRET: process.env.SPOTIFY_CLIENT_SECRET,
     API_KEYS: process.env.API_KEYS,
+    ONEUPTIME_API_KEY: process.env.ONEUPTIME_API_KEY,
+    ONEUPTIME_BASE_URL: process.env.ONEUPTIME_BASE_URL,
   };
 }
 

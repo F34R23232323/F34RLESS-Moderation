@@ -142,24 +142,34 @@ const getGuildId = (req: Request): string => req.params.guildId;
 
 /** Owner OR guild-staff (role tier includes the `appeal` permission). */
 async function staffAuthImpl(ctx: DashboardContext, guildId: string, req: Request, res: Response, next: NextFunction): Promise<void> {
-  const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
-  if (!session) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
-  (req as unknown as { userId: string }).userId = session.userId;
-  (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
-  if (session.userId === ctx.ownerUserId) {
+  try {
+    const session = await readSession(ctx, req.cookies?.[SESSION_COOKIE_NAME] as string | undefined);
+    if (!session) {
+      res.status(401).json({ error: 'unauthorized' });
+      return;
+    }
+    (req as unknown as { userId: string }).userId = session.userId;
+    (req as unknown as { sessionToken: string }).sessionToken = session.sessionToken;
+    if (session.userId === ctx.ownerUserId) {
+      next();
+      return;
+    }
+    // Race the Discord membership check against a hard deadline so a slow or
+    // rate-limited Discord API call can never hang an admin request indefinitely.
+    const rolesWithTimeout = Promise.race<string[]>([
+      ctx.guildAccess.memberRoles(guildId, session.userId),
+      new Promise<string[]>((resolve) => setTimeout(() => resolve([]), 6_000)),
+    ]);
+    const roles = await rolesWithTimeout;
+    const staff = staffRoleIds(ctx.config);
+    if (!roles.some((r) => staff.has(r))) {
+      res.status(403).json({ error: 'forbidden' });
+      return;
+    }
     next();
-    return;
+  } catch {
+    res.status(500).json({ error: 'staff_auth_failed' });
   }
-  const roles = await ctx.guildAccess.memberRoles(guildId, session.userId);
-  const staff = staffRoleIds(ctx.config);
-  if (!roles.some((r) => staff.has(r))) {
-    res.status(403).json({ error: 'forbidden' });
-    return;
-  }
-  next();
 }
 
 /** Guild membership check (owner bypassed). 403 when not a member.
@@ -169,23 +179,30 @@ async function staffAuthImpl(ctx: DashboardContext, guildId: string, req: Reques
  * place. That proof is verified server-side against the DB, never trusted
  * from the client. */
 async function memberAuthImpl(ctx: DashboardContext, guildId: string, req: Request, res: Response, next: NextFunction): Promise<void> {
-  const userId = (req as unknown as { userId: string }).userId;
-  if (userId === ctx.ownerUserId) {
-    next();
-    return;
-  }
-  const isMember = await ctx.guildAccess.isMember(guildId, userId);
-  if (!isMember) {
-    const [owned] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT 1 FROM cases WHERE guild_id = ? AND user_id = ? LIMIT 1',
-      [guildId, userId],
-    );
-    if (owned.length === 0) {
-      res.status(403).json({ error: 'not_member' });
+  try {
+    const userId = (req as unknown as { userId: string }).userId;
+    if (userId === ctx.ownerUserId) {
+      (req as unknown as { isMember: boolean }).isMember = true;
+      next();
       return;
     }
+    const isMember = await ctx.guildAccess.isMember(guildId, userId);
+    if (!isMember) {
+      const [owned] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT 1 FROM cases WHERE guild_id = ? AND user_id = ? LIMIT 1',
+        [guildId, userId],
+      );
+      if (owned.length === 0) {
+        res.status(403).json({ error: 'not_member' });
+        return;
+      }
+    }
+    // Stamp the membership result so route handlers don't need to re-query Discord.
+    (req as unknown as { isMember: boolean }).isMember = isMember;
+    next();
+  } catch {
+    res.status(500).json({ error: 'member_auth_failed' });
   }
-  next();
 }
 
 function staffAuth(ctx: DashboardContext): (req: Request, res: Response, next: NextFunction) => Promise<void> {
@@ -208,28 +225,33 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       res.status(400).json({ error: 'invalid guild id' });
       return;
     }
-    const botInGuild = await ctx.guildAccess.botInGuild(guildId);
-    if (!botInGuild) {
-      res.status(404).json({ error: 'guild_not_found' });
-      return;
+    try {
+      const botInGuild = await ctx.guildAccess.botInGuild(guildId);
+      if (!botInGuild) {
+        res.status(404).json({ error: 'guild_not_found' });
+        return;
+      }
+      const cfg = resolveAppealConfig(ctx.config.appeals, guildId);
+      if (!cfg.enabled) {
+        res.json({ enabled: false });
+        return;
+      }
+      const info = await ctx.guildAccess.guildInfo(guildId);
+      res.json({
+        enabled: true,
+        guildId,
+        guildName: info?.name ?? null,
+        guildIcon: info?.icon ?? null,
+        eligiblePunishmentTypes: cfg.eligible_punishment_types,
+        cooldownSeconds: cfg.cooldown_seconds,
+        maxOpenAppealsPerUser: cfg.max_open_appeals_per_user,
+        form: cfg.form,
+      });
+    } catch {
+      res.status(500).json({ error: 'config_unavailable' });
     }
-    const cfg = resolveAppealConfig(ctx.config.appeals, guildId);
-    if (!cfg.enabled) {
-      res.json({ enabled: false });
-      return;
-    }
-    const info = await ctx.guildAccess.guildInfo(guildId);
-    res.json({
-      enabled: true,
-      guildId,
-      guildName: info?.name ?? null,
-      guildIcon: info?.icon ?? null,
-      eligiblePunishmentTypes: cfg.eligible_punishment_types,
-      cooldownSeconds: cfg.cooldown_seconds,
-      maxOpenAppealsPerUser: cfg.max_open_appeals_per_user,
-      form: cfg.form,
-    });
   });
+
 
   // Guild picker for the admin dashboard (owner sees all, staff see their own).
   router.get('/guilds', async (req, res) => {
@@ -239,19 +261,23 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       return;
     }
     const guilds = await ctx.guildAccess.listGuilds();
-    const out: Array<{ id: string; name: string; icon: string | null }> = [];
-    for (const g of guilds) {
-      const cfg = resolveAppealConfig(ctx.config.appeals, g.id);
-      if (!cfg.enabled) continue;
-      if (session.userId === ctx.ownerUserId) {
-        out.push(g);
-        continue;
-      }
-      const roles = await ctx.guildAccess.memberRoles(g.id, session.userId);
-      if (roles.some((r) => staffRoleIds(ctx.config).has(r))) out.push(g);
+    // Filter to appeals-enabled guilds first (cheap, no network I/O).
+    const enabledGuilds = guilds.filter((g) => resolveAppealConfig(ctx.config.appeals, g.id).enabled);
+    if (session.userId === ctx.ownerUserId) {
+      res.json({ guilds: enabledGuilds });
+      return;
     }
-    res.json({ guilds: out });
+    // Check all guilds in parallel so N guilds cost 1× Discord latency, not N×.
+    const staffSet = staffRoleIds(ctx.config);
+    const results = await Promise.all(
+      enabledGuilds.map(async (g) => {
+        const roles = await ctx.guildAccess.memberRoles(g.id, session.userId);
+        return roles.some((r) => staffSet.has(r)) ? g : null;
+      }),
+    );
+    res.json({ guilds: results.filter(Boolean) });
   });
+
 
   // ── Public user routes (session + membership required) ─────────────────────
 
@@ -341,67 +367,77 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
     }
     const { caseId, answers } = parsed.data;
 
-    const blocked = await activeBlock(ctx, guildId, userId);
-    if (blocked) {
-      res.status(403).json({ error: 'blocked', reason: blocked.reason, expiresAt: blocked.expires_at ?? null });
-      return;
-    }
-
-    // Case must exist in this guild, belong to the requester and be active.
-    const [caseRows] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT id, case_number, case_code, type FROM cases WHERE id = ? AND guild_id = ? AND user_id = ? AND status = \'active\'',
-      [caseId, guildId, userId],
-    );
-    const caseRow = caseRows[0] as { id: number; case_number: number; case_code: string; type: string } | undefined;
-    if (!caseRow) {
-      res.status(404).json({ error: 'case_not_found' });
-      return;
-    }
-    // Kicks are never appealable; users outside the server may only appeal bans.
-    const isMember = await ctx.guildAccess.isMember(guildId, userId);
-    const allowedTypes = cfg.eligible_punishment_types.filter(
-      (t) => t !== 'kick' && (isMember || t === 'ban' || t === 'tempban'),
-    );
-    if (!allowedTypes.includes(caseRow.type as never)) {
-      res.status(400).json({ error: 'case_not_eligible' });
-      return;
-    }
-
-    const [openAppeals] = await ctx.db.query<RowDataPacket[]>(
-      "SELECT id FROM appeals WHERE case_id = ? AND guild_id = ? AND status = 'pending'",
-      [caseRow.id, guildId],
-    );
-    if (openAppeals.length > 0) {
-      res.status(409).json({ error: 'already_appealed' });
-      return;
-    }
-
-    // Cooldown between submissions for this user in this guild.
-    const [lastRow] = await ctx.db.query<RowDataPacket[]>(
-      'SELECT submitted_at FROM appeals WHERE guild_id = ? AND user_id = ? ORDER BY submitted_at DESC LIMIT 1',
-      [guildId, userId],
-    );
-    if (lastRow[0]) {
-      const elapsed = Date.now() - new Date(lastRow[0].submitted_at).getTime();
-      if (cfg.cooldown_seconds > 0 && elapsed < cfg.cooldown_seconds * 1000) {
-        res.status(429).json({ error: 'cooldown', retryAfterSeconds: Math.ceil((cfg.cooldown_seconds * 1000 - elapsed) / 1000) });
+    let caseRow: { id: number; case_number: number; case_code: string; type: string } | undefined;
+    try {
+      const blocked = await activeBlock(ctx, guildId, userId);
+      if (blocked) {
+        res.status(403).json({ error: 'blocked', reason: blocked.reason, expiresAt: blocked.expires_at ?? null });
         return;
       }
-    }
 
-    // Max open appeals per user.
-    const [openCount] = await ctx.db.query<RowDataPacket[]>(
-      "SELECT COUNT(*) AS count FROM appeals WHERE guild_id = ? AND user_id = ? AND status = 'pending'",
-      [guildId, userId],
-    );
-    if (Number(openCount[0]?.count ?? 0) >= cfg.max_open_appeals_per_user) {
-      res.status(429).json({ error: 'max_open_appeals' });
-      return;
-    }
+      // Case must exist in this guild, belong to the requester and be active.
+      const [caseRows] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT id, case_number, case_code, type FROM cases WHERE id = ? AND guild_id = ? AND user_id = ? AND status = \'active\'',
+        [caseId, guildId, userId],
+      );
+      caseRow = caseRows[0] as { id: number; case_number: number; case_code: string; type: string } | undefined;
+      if (!caseRow) {
+        res.status(404).json({ error: 'case_not_found' });
+        return;
+      }
+      // Kicks are never appealable; users outside the server may only appeal bans.
+      // isMember was already resolved by memberAuth middleware — read it from req to
+      // avoid a second Discord API call (even a cache-hit) on every submission.
+      const isMember = (req as unknown as { isMember: boolean }).isMember ?? false;
+      const allowedTypes = cfg.eligible_punishment_types.filter(
+        (t) => t !== 'kick' && (isMember || t === 'ban' || t === 'tempban'),
+      );
+      if (!allowedTypes.includes(caseRow.type as never)) {
+        res.status(400).json({ error: 'case_not_eligible' });
+        return;
+      }
 
-    const formError = validateAnswers(cfg.form, answers);
-    if (formError) {
-      res.status(400).json({ error: formError });
+
+      const [openAppeals] = await ctx.db.query<RowDataPacket[]>(
+        "SELECT id FROM appeals WHERE case_id = ? AND guild_id = ? AND status = 'pending'",
+        [caseRow.id, guildId],
+      );
+      if (openAppeals.length > 0) {
+        res.status(409).json({ error: 'already_appealed' });
+        return;
+      }
+
+      // Cooldown between submissions for this user in this guild.
+      const [lastRow] = await ctx.db.query<RowDataPacket[]>(
+        'SELECT submitted_at FROM appeals WHERE guild_id = ? AND user_id = ? ORDER BY submitted_at DESC LIMIT 1',
+        [guildId, userId],
+      );
+      if (lastRow[0]) {
+        const elapsed = Date.now() - new Date(lastRow[0].submitted_at).getTime();
+        if (cfg.cooldown_seconds > 0 && elapsed < cfg.cooldown_seconds * 1000) {
+          res.status(429).json({ error: 'cooldown', retryAfterSeconds: Math.ceil((cfg.cooldown_seconds * 1000 - elapsed) / 1000) });
+          return;
+        }
+      }
+
+      // Max open appeals per user.
+      const [openCount] = await ctx.db.query<RowDataPacket[]>(
+        "SELECT COUNT(*) AS count FROM appeals WHERE guild_id = ? AND user_id = ? AND status = 'pending'",
+        [guildId, userId],
+      );
+      if (Number(openCount[0]?.count ?? 0) >= cfg.max_open_appeals_per_user) {
+        res.status(429).json({ error: 'max_open_appeals' });
+        return;
+      }
+
+      const formError = validateAnswers(cfg.form, answers);
+      if (formError) {
+        res.status(400).json({ error: formError });
+        return;
+      }
+    } catch (err) {
+      console.error('Appeal validation failed:', err);
+      res.status(500).json({ error: 'validation_failed' });
       return;
     }
 
@@ -409,7 +445,7 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
     try {
       await conn.beginTransaction();
       const [ins] = await conn.execute(
-        "INSERT INTO appeals (guild_id, case_id, user_id, status) VALUES (?, ?, ?, 'pending')",
+        "INSERT INTO appeals (guild_id, case_id, user_id, message, status) VALUES (?, ?, ?, 'Appeal submitted via portal', 'pending')",
         [guildId, caseRow.id, userId],
       );
       const appealId = (ins as { insertId: number }).insertId;
@@ -575,10 +611,12 @@ export function createAppealsRouter(ctx: DashboardContext): Router {
       [appeal.id, senderType, senderId, content],
     );
     const messageId = (ins as { insertId: number }).insertId;
-    // Relay into the Discord thread (and DM the appellant if staff replies).
+    // Relay into the Discord thread.
+    // Pass senderType so the bot knows whether to post as the user (webhook)
+    // or as staff (plain message + DM the appellant).
     await ctx.db.execute(
       "INSERT INTO appeal_actions (guild_id, appeal_id, action, payload) VALUES (?, ?, 'relay', ?)",
-      [guildId, appeal.id, JSON.stringify({ messageId })],
+      [guildId, appeal.id, JSON.stringify({ messageId, senderType })],
     );
     res.status(201).json({ id: messageId });
   });

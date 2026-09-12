@@ -7,7 +7,7 @@ import { resolveMemberOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
 const data = new SlashCommandBuilder()
@@ -58,12 +58,22 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
 
   const result = await app.punishmentManager.timeout(member, duration.milliseconds, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
   const durStr = humanizeDuration(duration.milliseconds);
-  await v2MessageReply(message, { content: result.ok ? `Timed out <@${targetId}> for ${durStr} — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
+  const content = result.ok ? `Timed out <@${targetId}> for ${durStr} — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
+  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
 }
 
 const command: BotCommand = {
   name: 'timeout', category: 'moderation', description: 'Apply a timeout to a user',
   data, permissions: ['ModerateMembers'], aliases: ['to'], execute, prefixExecute,
+  asUserContext: true,
+  async contextExecute(interaction, app) {
+    if (!interaction.isUserContextMenuCommand()) return;
+    await contextUserConfirm(app, interaction, 'timeout', 'No reason provided', async () => {
+      const member = await interaction.guild?.members.fetch(interaction.targetUser.id).catch(() => null);
+      if (!member) return { ok: false, error: 'User not found in server', dmSent: false };
+      return app.punishmentManager.timeout(member, 600_000, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId });
+    }, { durationMs: 600_000 });
+  },
 };
 
 export default command;

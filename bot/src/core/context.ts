@@ -37,6 +37,8 @@ import type { AntiNukeService } from '../antinuke';
 import type { EmojiManager } from '../emoji';
 import type { ScamHashStore } from '../automod/scamHashStore';
 import type { EconomyService } from '../economy/service';
+import type { SuggestionService } from '../suggestions/service';
+import type { StickyMessageService } from '../services/stickyMessageService';
 
 export interface App {
   config: BotConfig;
@@ -85,6 +87,8 @@ export interface App {
   emojiManager: EmojiManager;
   scamHashStore: ScamHashStore;
   economy: EconomyService;
+  suggestions: SuggestionService;
+  stickyMessages: StickyMessageService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;
