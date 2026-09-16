@@ -1,6 +1,6 @@
 import type { RowDataPacket } from 'mysql2/promise';
 import { parseJson } from '../../../shared/src/index';
-import type { Guild, TextChannel, Channel } from 'discord.js';
+import { PermissionsBitField, type PermissionResolvable, type Guild, type TextChannel, type Channel } from 'discord.js';
 import type { App } from '../core/context';
 
 interface OverwriteSnapshot {
@@ -12,11 +12,6 @@ interface OverwriteSnapshot {
 
 function isLockable(ch: Channel): ch is TextChannel {
   return 'permissionOverwrites' in ch && ch.isTextBased() && !ch.isThread();
-}
-
-/** Merge two permission arrays (bitwise OR). */
-function mergePerms(a: string[], b: string[]): string[] {
-  return [...new Set([...a, ...b])];
 }
 
 export class LockingService {
@@ -38,44 +33,45 @@ export class LockingService {
 
       const guild = channel.guild;
       const cfg = this.app.config.channel_locking;
-      const denyPerms = cfg.deny_permissions;
+      const denyBitfield = PermissionsBitField.resolve(cfg.deny_permissions as PermissionResolvable[]);
 
-      // 2. Read every existing overwrite from the cache
-      const existing = [...channel.permissionOverwrites.cache.values()];
-
-      // 3. Build a new overwrite list: start with all existing, then merge lockdown denies
-      const merged = new Map<string, any>();
-      for (const ow of existing) {
-        merged.set(ow.id, ow);
-      }
+      // 2. Build overwrite updates — each entry uses BigInt bitfields
+      const overwrites: { id: string; type: number; allow: bigint; deny: bigint }[] = [];
 
       // @everyone: add lockdown deny permissions (keep existing allow/deny intact)
-      const everyoneId = guild.id;
-      const everyoneOw = merged.get(everyoneId);
-      const everyoneAllow = everyoneOw ? [...everyoneOw.allow.toArray()] : [];
-      const everyoneDeny = everyoneOw ? [...everyoneOw.deny.toArray()] : [];
-      merged.set(everyoneId, {
-        id: everyoneId,
+      const everyoneOw = channel.permissionOverwrites.cache.get(guild.id);
+      overwrites.push({
+        id: guild.id,
         type: 0,
-        allow: everyoneAllow,
-        deny: mergePerms(everyoneDeny, denyPerms),
+        allow: everyoneOw?.allow.bitfield ?? 0n,
+        deny: (everyoneOw?.deny.bitfield ?? 0n) | denyBitfield,
       });
 
-      // Excluded roles: add allow for the denied permissions (so they bypass the lock)
-      for (const roleId of cfg.exclude_roles) {
-        const existingOw = merged.get(roleId);
-        const allow = existingOw ? [...existingOw.allow.toArray()] : [];
-        const deny = existingOw ? [...existingOw.deny.toArray()] : [];
-        merged.set(roleId, {
-          id: roleId,
-          type: 0,
-          allow: mergePerms(allow, denyPerms),
-          deny,
+      // All other existing overwrites: preserve as-is
+      for (const ow of channel.permissionOverwrites.cache.values()) {
+        if (ow.id === guild.id) continue; // already handled above
+        overwrites.push({
+          id: ow.id,
+          type: ow.type,
+          allow: ow.allow.bitfield,
+          deny: ow.deny.bitfield,
         });
       }
 
-      // 4. Write the full merged set back — nothing is lost
-      await channel.permissionOverwrites.set([...merged.values()], reason ?? 'Channel locked');
+      // Excluded roles: add allow for the denied permissions (so they bypass the lock)
+      for (const roleId of cfg.exclude_roles) {
+        if (overwrites.some((o) => o.id === roleId)) continue; // already included
+        const existingOw = channel.permissionOverwrites.cache.get(roleId);
+        overwrites.push({
+          id: roleId,
+          type: 0,
+          allow: (existingOw?.allow.bitfield ?? 0n) | denyBitfield,
+          deny: existingOw?.deny.bitfield ?? 0n,
+        });
+      }
+
+      // 3. Write the full set back — nothing is lost
+      await channel.permissionOverwrites.set(overwrites, reason ?? 'Channel locked');
       return { ok: true };
     } catch (err) {
       return { ok: false, error: (err as Error).message };
@@ -84,13 +80,14 @@ export class LockingService {
 
   /**
    * Unlock a channel by restoring the exact overwrites from the snapshot.
-   * If no snapshot exists, clears all overwrites (safe fallback).
+   * If no snapshot exists, removes the lockdown deny permissions from @everyone
+   * instead of wiping all overwrites.
    */
   public async unlockChannel(channel: TextChannel, reason?: string): Promise<{ ok: boolean; error?: string }> {
     if (!isLockable(channel)) return { ok: false, error: 'This channel cannot be unlocked.' };
     try {
       const snapshot = await this.getSnapshot(channel.guildId, channel.id);
-      if (snapshot) {
+      if (snapshot && snapshot.length > 0) {
         const resolvables = snapshot.map((o) => ({
           id: o.id,
           type: o.type,
@@ -98,14 +95,22 @@ export class LockingService {
           deny: BigInt(o.deny),
         }));
         await channel.permissionOverwrites.set(resolvables, reason ?? 'Channel unlocked');
-        await this.app.db.execute(
-          'UPDATE lockdown_snapshots SET active = 0, unlocked_at = NOW() WHERE guild_id = ? AND channel_id = ? AND active = 1',
-          [channel.guildId, channel.id],
-        );
       } else {
-        // No snapshot — clear all overwrites as a safe fallback
-        await channel.permissionOverwrites.set([], reason ?? 'Channel unlocked');
+        // No snapshot or empty snapshot — remove lockdown denies from @everyone only
+        const cfg = this.app.config.channel_locking;
+        const denyBitfield = PermissionsBitField.resolve(cfg.deny_permissions as PermissionResolvable[]);
+        const overwrites = [...channel.permissionOverwrites.cache.values()].map((ow) => ({
+          id: ow.id,
+          type: ow.type,
+          allow: ow.allow.bitfield,
+          deny: ow.id === channel.guildId ? ow.deny.bitfield & ~denyBitfield : ow.deny.bitfield,
+        }));
+        await channel.permissionOverwrites.set(overwrites, reason ?? 'Channel unlocked');
       }
+      await this.app.db.execute(
+        'UPDATE lockdown_snapshots SET active = 0, unlocked_at = NOW() WHERE guild_id = ? AND channel_id = ? AND active = 1',
+        [channel.guildId, channel.id],
+      );
       return { ok: true };
     } catch (err) {
       return { ok: false, error: (err as Error).message };
@@ -149,14 +154,21 @@ export class LockingService {
         }
       }
     } else {
-      // No snapshots — just clear overwrites on all configured channels
+      // No snapshots — remove lockdown denies from @everyone on all lockable channels
       const cfg = this.app.config.channel_locking;
       const channelIds = cfg.channels.length > 0 ? cfg.channels : [...guild.channels.cache.filter(isLockable).keys()];
       for (const id of channelIds) {
         const channel = guild.channels.cache.get(id);
         if (channel && isLockable(channel)) {
           try {
-            await channel.permissionOverwrites.set([], reason ?? 'Channel unlocked');
+            const denyBitfield = PermissionsBitField.resolve(cfg.deny_permissions as PermissionResolvable[]);
+            const overwrites = [...channel.permissionOverwrites.cache.values()].map((ow) => ({
+              id: ow.id,
+              type: ow.type,
+              allow: ow.allow.bitfield,
+              deny: ow.id === guild.id ? ow.deny.bitfield & ~denyBitfield : ow.deny.bitfield,
+            }));
+            await channel.permissionOverwrites.set(overwrites, reason ?? 'Channel unlocked');
             unlocked++;
           } catch {
             failed++;

@@ -23,6 +23,8 @@ export async function handleInviteCreate(app: App, invite: Invite): Promise<void
       [guildId, invite.code, invite.inviter?.id ?? null, invite.uses ?? 0, invite.expiresTimestamp ? new Date(invite.expiresTimestamp) : null],
     );
   }
+
+  app.inviteTracker.updateOnCreate(invite);
 }
 
 export default { name: 'inviteCreate', run: handleInviteCreate };

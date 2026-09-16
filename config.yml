@@ -19,8 +19,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - BanMembers
+    permissions: []
+    permission_group: senior_mod
     immune_roles: []
     aliases:
       - b
@@ -32,8 +32,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - KickMembers
+    permissions: []
+    permission_group: moderator
     immune_roles: []
     aliases:
       - k
@@ -43,8 +43,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - ModerateMembers
+    permissions: []
+    permission_group: trial_mod
     immune_roles: []
     aliases:
       - w
@@ -54,8 +54,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - ModerateMembers
+    permissions: []
+    permission_group: trial_mod
     immune_roles: []
     aliases:
       - closecase
@@ -65,8 +65,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - ModerateMembers
+    permissions: []
+    permission_group: trial_mod
     immune_roles: []
     aliases:
       - m
@@ -77,8 +77,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 2
-    permissions:
-      - ModerateMembers
+    permissions: []
+    permission_group: trial_mod
     immune_roles: []
     aliases:
       - to
@@ -87,8 +87,8 @@ commands:
     slash: true
     prefix: true
     cooldown_seconds: 5
-    permissions:
-      - ManageMessages
+    permissions: []
+    permission_group: moderator
     immune_roles: []
     aliases:
       - clear
@@ -162,28 +162,33 @@ commands:
       - img
   massmute:
     enabled: true
+    permission_group: senior_mod
     immune_roles:
       - "1520031216651210773"
   masswarn:
     enabled: true
+    permission_group: senior_mod
     immune_roles:
       - "1520031216651210773"
   masskick:
     enabled: true
+    permission_group: senior_mod
     immune_roles:
       - "1520031216651210773"
   massban:
     enabled: true
+    permission_group: senior_mod
     immune_roles:
       - "1520031216651210773"
   unwarn:
     enabled: true
+    permission_group: trial_mod
     immune_roles:
       - "1479852874635939880"
   userinfo:
     enabled: true
-    permissions:
-      - ModerateMembers
+    permissions: []
+    permission_group: trial_mod
     immune_roles:
       - "1467103806561980528"
   stickerpackinfo:
@@ -202,8 +207,8 @@ commands:
       - "1467103806561980528"
   roleinfo:
     enabled: true
-    permissions:
-      - ManageGuild
+    permissions: []
+    permission_group: trial_mod
     immune_roles:
       - "1467103806561980528"
   guildsplashinfo:
@@ -218,8 +223,8 @@ commands:
       - "1467103806561980528"
   guildinfo:
     enabled: true
-    permissions:
-      - ManageGuild
+    permissions: []
+    permission_group: trial_mod
     immune_roles:
       - "1467103806561980528"
   guildiconinfo:
@@ -229,8 +234,8 @@ commands:
       - "1467103806561980528"
   guildchannelcount:
     enabled: true
-    permissions:
-      - ManageChannels
+    permissions: []
+    permission_group: trial_mod
     immune_roles:
       - "1467103806561980528"
   guildbannerinfo:
@@ -244,8 +249,8 @@ commands:
       - "1467103806561980528"
   channelinfo:
     enabled: true
-    permissions:
-      - ManageChannels
+    permissions: []
+    permission_group: trial_mod
     immune_roles:
       - "1467103806561980528"
   bannerinfo:
@@ -280,66 +285,95 @@ commands:
     enabled: false
   report-ignoreall:
     enabled: true
+    permission_group: admin
     immune_roles:
       - "1520031216651210773"
   casedelete:
     enabled: true
+    permission_group: moderator
     immune_roles:
       - "1520031216651210773"
   unmute:
     enabled: true
+    permission_group: trial_mod
   unban:
     enabled: true
+    permission_group: senior_mod
   timewarn:
     enabled: true
+    permission_group: trial_mod
   timemute:
     enabled: true
+    permission_group: trial_mod
   timekick:
     enabled: true
+    permission_group: senior_mod
   timeban:
     enabled: true
+    permission_group: senior_mod
   setslowmode:
     enabled: true
+    permission_group: trial_mod
   prune:
     enabled: true
+    permission_group: senior_mod
   nameban:
     enabled: true
+    permission_group: senior_mod
   namemute:
     enabled: true
+    permission_group: senior_mod
   namewarn:
     enabled: true
+    permission_group: senior_mod
   namekick:
     enabled: true
+    permission_group: senior_mod
   lockall:
     enabled: true
+    permission_group: head_mod
   lock:
     enabled: true
+    permission_group: trial_mod
   unlock:
     enabled: true
+    permission_group: trial_mod
   unlockall:
     enabled: true
+    permission_group: head_mod
   say:
     enabled: true
+    permission_group: admin
     allowed_roles:
       - "1490439698416402613"
+  snipe:
+    enabled: true
+    permissions: []
+    permission_group: trial_mod
   announce:
     enabled: true
+    permission_group: admin
     allowed_roles:
       - "1490439698416402613"
   unblock-appeal-user:
     enabled: true
+    permission_group: admin
   report-blacklist:
     enabled: true
+    permission_group: admin
   report-sendmissing:
     enabled: true
+    permission_group: admin
   block-appeal-user:
     enabled: true
+    permission_group: admin
   emergency:
     enabled: true
     slash: true
     prefix: true
     cooldown_seconds: 3600
     permissions: []
+    permission_group: admin
     immune_roles: []
     aliases:
       - estaff
@@ -350,6 +384,7 @@ commands:
     prefix: true
     cooldown_seconds: 5
     permissions: []
+    permission_group: admin
     immune_roles: []
     aliases:
       - eaccess
@@ -3102,6 +3137,8 @@ role_connections:
         - has_role: true
           role_id: "1534546666726756373"
         - has_role: true
+          role_id: "1546938772208492634"
+        - has_role: true
           role_id: "1534546302350659675"
         - has_role: true
           role_id: "1534545792705237133"
@@ -3187,7 +3224,7 @@ slowmode_scheduler:
 sticky_roles:
   enabled: false
 invite_tracking:
-  enabled: false
+  enabled: true
 tickets:
   enabled: false
   category_id: "000000000000000000"
@@ -3236,26 +3273,121 @@ fuzzy:
   cooldown_seconds: 15
 staff_permission_groups:
   groups:
-    - name: junior_mod
-      roles: []
+    # Trial Moderator and above
+    - name: trial_mod
+      roles:
+        - "1534547067501023405"   # Trial Moderator
+        - "1534546666726756373"   # Moderator
+        - "1534546302350659675"   # Senior Moderator
+        - "1538896865481850992"   # Head Moderator
+        - "1534545792705237133"   # Administrator
+        - "1546938257990746183"   # Lead Administrator
+        - "1534544391811891321"   # Co-Owner
+        - "1546938772208492634"   # Security Team
+        - "1479852874635939880"   # Rooted Together — Owners
       permissions:
         - warn
         - mute
-        - purge
-    - name: senior_mod
-      roles: []
-      permissions:
-        - warn
-        - mute
-        - kick
-        - ban
         - timeout
-        - purge
-        - case
-        - appeal
-        - massban
+        - caseclose
+        - unwarn
+        - unmute
+        - timewarn
+        - timemute
+        - userinfo
         - lock
         - unlock
+        - setslowmode
+        - snipe
+        - note
+        - report
+        - clearwarnings
+    # Moderator and above
+    - name: moderator
+      roles:
+        - "1534546666726756373"   # Moderator
+        - "1534546302350659675"   # Senior Moderator
+        - "1538896865481850992"   # Head Moderator
+        - "1534545792705237133"   # Administrator
+        - "1546938257990746183"   # Lead Administrator
+        - "1534544391811891321"   # Co-Owner
+        - "1546938772208492634"   # Security Team
+        - "1479852874635939880"   # Rooted Together — Owners
+      permissions:
+        - kick
+        - purge
+        - purge-until
+        - softban
+        - nick
+        - temprole
+        - case
+        - cases
+        - warns
+        - casedelete
+        - automodtest
+        - slowmode
+    # Senior Moderator and above
+    - name: senior_mod
+      roles:
+        - "1534546302350659675"   # Senior Moderator
+        - "1538896865481850992"   # Head Moderator
+        - "1534545792705237133"   # Administrator
+        - "1546938257990746183"   # Lead Administrator
+        - "1534544391811891321"   # Co-Owner
+        - "1546938772208492634"   # Security Team
+        - "1479852874635939880"   # Rooted Together — Owners
+      permissions:
+        - ban
+        - unban
+        - timeban
+        - timekick
+        - massban
+        - massmute
+        - masswarn
+        - masskick
+        - nameban
+        - namemute
+        - namewarn
+        - namekick
+        - prune
+        - restore
+        - snapshot
+        - lookup
+        - modstats
+    # Head Moderator and above
+    - name: head_mod
+      roles:
+        - "1538896865481850992"   # Head Moderator
+        - "1534545792705237133"   # Administrator
+        - "1546938257990746183"   # Lead Administrator
+        - "1534544391811891321"   # Co-Owner
+        - "1546938772208492634"   # Security Team
+        - "1479852874635939880"   # Rooted Together — Owners
+      permissions:
+        - lockall
+        - unlockall
+        - quarantine
+        - unquarantine
+        - archive
+        - archives
+    # Administrator and above
+    - name: admin
+      roles:
+        - "1534545792705237133"   # Administrator
+        - "1546938257990746183"   # Lead Administrator
+        - "1534544391811891321"   # Co-Owner
+        - "1546938772208492634"   # Security Team
+        - "1479852874635939880"   # Rooted Together — Owners
+      permissions:
+        - roleadd
+        - roleremove
+        - roleimagedit
+        - emergency
+        - emergencyaccess
+        - block-appeal-user
+        - unblock-appeal-user
+        - appeal-reply
+        - report-ignoreall
 community:
   starboard:
     enabled: false

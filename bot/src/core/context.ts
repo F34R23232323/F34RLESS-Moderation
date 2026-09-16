@@ -20,6 +20,8 @@ import type { ReportingService } from '../reporting/reportingService';
 import type { ModerationCommandGuard } from '../moderation/hierarchyGuard';
 import type { LockingService } from '../management/channelLocking';
 import type { SlowmodeScheduler } from '../management/slowmodeScheduler';
+import type { CustomSlowmodeService } from '../management/customSlowmode';
+import type { InviteTracker } from '../management/inviteTracker';
 import type { AntiRaidService } from '../security/antiRaid';
 import type { SavedMessageService } from '../services/savedMessageService';
 import type { DashboardLogService } from '../services/dashboardLogService';
@@ -70,6 +72,8 @@ export interface App {
   reporting: ReportingService;
   lockingService: LockingService;
   slowmodeScheduler: SlowmodeScheduler;
+  customSlowmode: CustomSlowmodeService;
+  inviteTracker: InviteTracker;
   antiRaid: AntiRaidService;
   joinRate: Map<string, number[]>;
   messages: SavedMessageService;

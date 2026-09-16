@@ -32,6 +32,13 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
       return;
     }
 
+    if (app.customSlowmode.shouldBlock(message.channelId, message.author.id)) {
+      const remaining = app.customSlowmode.getRemainingMs(message.channelId, message.author.id);
+      await message.delete().catch(() => undefined);
+      await message.channel.send({ content: `<@${message.author.id}> please wait **${formatSlowmodeDuration(remaining)}** before sending again.` }).catch(() => undefined);
+      return;
+    }
+
     // Handle suggestion channel messages before other processing
     const handled = await handleSuggestionMessage(app, message).catch(() => false);
     if (handled) return;
@@ -313,6 +320,18 @@ async function handleUnknown(app: App, message: Message, cmdName: string): Promi
     const realName = resolved ?? suggestion.candidate;
     await v2MessageReply(message, { content: `Did you mean \`${prefixChar(app, message)}${realName}\`?` }).catch(() => undefined);
   }
+}
+
+function formatSlowmodeDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (seconds > 0 && parts.length === 0) parts.push(`${seconds}s`);
+  return parts.join(' ') || '0s';
 }
 
 function prefixChar(app: App, message: Message): string {

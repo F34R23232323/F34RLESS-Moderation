@@ -27,6 +27,8 @@ import { Metrics } from './metrics/metrics';
 import { ReportingService } from './reporting/reportingService';
 import { LockingService } from './management/channelLocking';
 import { SlowmodeScheduler } from './management/slowmodeScheduler';
+import { CustomSlowmodeService } from './management/customSlowmode';
+import { InviteTracker } from './management/inviteTracker';
 import { AntiRaidService } from './security/antiRaid';
 import { SavedMessageService } from './services/savedMessageService';
 import { DashboardLogService } from './services/dashboardLogService';
@@ -118,6 +120,8 @@ async function main(): Promise<void> {
     reporting: null as unknown as ReportingService,
     lockingService: null as unknown as LockingService,
     slowmodeScheduler: null as unknown as SlowmodeScheduler,
+    customSlowmode: null as unknown as CustomSlowmodeService,
+    inviteTracker: null as unknown as InviteTracker,
     antiRaid: null as unknown as AntiRaidService,
     joinRate: new Map<string, number[]>(),
     messages: null as unknown as SavedMessageService,
@@ -169,6 +173,8 @@ async function main(): Promise<void> {
   app.reporting = new ReportingService(app);
   app.lockingService = new LockingService(app);
   app.slowmodeScheduler = new SlowmodeScheduler(app);
+  app.customSlowmode = new CustomSlowmodeService(app);
+  app.inviteTracker = new InviteTracker(app);
   app.antiRaid = new AntiRaidService(app);
   app.messages = new SavedMessageService(app);
   app.dashboardLogs = new DashboardLogService(app);

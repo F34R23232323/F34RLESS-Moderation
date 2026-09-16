@@ -29,6 +29,12 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
     const security = await import('../security/joinChecks');
     await security.runJoinChecks(app, member);
 
+    const inviteInfo = isBot ? null : await app.inviteTracker.findUsedInvite(guild);
+
+    if (inviteInfo) {
+      await app.inviteTracker.storeJoin(guild.id, inviteInfo, member.id);
+    }
+
     const cfg = app.config.welcome;
     if (cfg.enabled && cfg.channel_id) {
       const channel = guild.channels.cache.get(cfg.channel_id);
@@ -47,7 +53,19 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
       guildId: guild.id,
       targetId: member.id,
       message: `<@${member.id}> joined (account created ${member.user.createdAt.toISOString()})`,
-      details: { accountAgeDays: Math.round((Date.now() - member.user.createdTimestamp) / 86400000) },
+      details: {
+        accountAgeDays: Math.round((Date.now() - member.user.createdTimestamp) / 86400000),
+        ...(inviteInfo
+          ? {
+              inviteCode: inviteInfo.code,
+              inviter: inviteInfo.inviterId,
+              inviterTag: inviteInfo.inviterTag,
+              inviteChannel: inviteInfo.channelId,
+              uses: inviteInfo.uses,
+              maxUses: inviteInfo.maxUses,
+            }
+          : { joinMethod: 'vanity or unknown' }),
+      },
     });
   } catch (err) {
     app.logger.error('guildMemberAdd handler threw:', err);

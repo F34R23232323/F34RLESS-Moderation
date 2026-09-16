@@ -50,7 +50,7 @@ export class ModerationCommandGuard {
       }
     }
 
-    const required = command.permissions ?? [];
+    const required = (cfg?.permissions?.length ? cfg.permissions : command.permissions) ?? [];
     if (required.length === 0) return { ok: true };
     const missing = required.filter((perm) => !member.permissions.has(perm as never));
     if (missing.length > 0) {

@@ -20,6 +20,8 @@ export async function handleInviteDelete(app: App, invite: Invite): Promise<void
     message: `Invite deleted: discord.gg/${invite.code}`,
     details: { code: invite.code },
   });
+
+  app.inviteTracker.updateOnDelete(invite);
 }
 
 export default { name: 'inviteDelete', run: handleInviteDelete };

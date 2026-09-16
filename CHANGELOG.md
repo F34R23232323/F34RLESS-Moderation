@@ -4,6 +4,19 @@ All notable changes made in this session.
 
 ---
 
+### Security: Role-Based Moderation Permissions (Replaces Discord Native Permissions)
+- **All moderation commands now use role-based permissions instead of Discord native permissions.** Commands like `ban`, `kick`, `warn`, `mute`, `timeout`, `purge`, and others no longer rely on Discord permission flags (e.g. `BanMembers`, `KickMembers`, `ModerateMembers`). Access is now controlled entirely through role IDs defined in `config.yml`, giving full control over who can run what without depending on Discord's permission system.
+- Added `staff_permission_groups` in `config.yml` with 5 tiers matching the server's role hierarchy:
+  - `trial_mod` — Trial Moderator and above (warn, mute, timeout, caseclose, lock/unlock, etc.)
+  - `moderator` — Moderator and above (kick, purge, softban, nick, temprole, etc.)
+  - `senior_mod` — Senior Moderator and above (ban, unban, mass actions, nameban, prune, etc.)
+  - `head_mod` — Head Moderator and above (lockall, unlockall, quarantine, archive, etc.)
+  - `admin` — Administrator and above (emergency, role management, appeal blocking, etc.)
+- Each moderation command in `config.yml` now has a `permission_group` field linking it to the appropriate tier, and `permissions: []` to clear Discord native permission checks.
+- Updated `ModerationCommandGuard.hasRequiredPermissions()` to respect `permissions` from `config.yml` as an override. When a command's config sets `permissions: []`, Discord native permission checks are skipped and only role-based checks apply.
+
+---
+
 ### Message Bulk Delete Archive Link
 - `messageBulkDelete` log now includes a clickable archive link (via `app.archives.archiveBatch`) alongside the existing transcript file attachment, so staff can review deleted messages in the dashboard without downloading a file.
 

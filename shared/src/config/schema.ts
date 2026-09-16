@@ -1535,6 +1535,7 @@ export const LOG_EVENT_NAMES = [
   'voice_state_update',
   'invite_create',
   'invite_delete',
+  'invite_use',
   'moderation_action',
   'automod_trigger',
   'command_usage',

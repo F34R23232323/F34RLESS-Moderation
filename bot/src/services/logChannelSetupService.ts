@@ -39,7 +39,7 @@ export const LOG_GROUPS: readonly LogGroup[] = [
   {
     key: 'channels', label: 'Channel Logs',
     description: 'Channel, thread, voice-state, invite, and webhook changes.',
-    events: ['channel_create', 'channel_update', 'channel_delete', 'channel_pins_update', 'thread_create', 'thread_update', 'thread_delete', 'voice_state_update', 'invite_create', 'invite_delete'],
+    events: ['channel_create', 'channel_update', 'channel_delete', 'channel_pins_update', 'thread_create', 'thread_update', 'thread_delete', 'voice_state_update', 'invite_create', 'invite_delete', 'invite_use'],
   },
   {
     key: 'moderation', label: 'Moderation Logs',
