@@ -47,6 +47,7 @@ const command: BotCommand = {
   name: 'unban',
   category: 'moderation',
   description: 'Unban a user',
+  usage: '!unban <user> <reason>',
   data,
   permissions: ['BanMembers'],
   aliases: [],

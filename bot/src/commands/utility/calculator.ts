@@ -410,6 +410,8 @@ const command: BotCommand = {
   name: 'calculator',
   category: 'utility',
   description: 'Evaluate a math expression with working out',
+  usage: '!calculator <expression>',
+  details: 'Shows step-by-step working. Supports +, -, *, /, %, ^, roots, trig, logs, factorials, and constants like pi.',
   data,
   permissions: [],
   aliases: ['calc'],

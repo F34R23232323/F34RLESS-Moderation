@@ -20,6 +20,8 @@ export interface PunishOptions {
   archive?: boolean;
   /** Which log event to emit for a timeout/mute (default member_timeout). */
   logEvent?: 'member_mute' | 'member_timeout';
+  /** Hide the moderator's identity in DMs sent to the punished user. */
+  anonymous?: boolean;
 }
 
 export interface PunishResult {
@@ -128,6 +130,7 @@ export class PunishmentManager {
       reason: options.reason,
       moderator: options.moderatorId ? (await guild.members.fetch(options.moderatorId).catch(() => null))?.displayName ?? undefined : undefined,
       durationMs: options.durationMs ?? durationMs,
+      anonymous: options.anonymous,
     });
   }
 
@@ -147,6 +150,7 @@ export class PunishmentManager {
       moderator: options.moderatorId ? (await guild.members.fetch(options.moderatorId).catch(() => null))?.displayName ?? undefined : undefined,
       durationMs: options.durationMs ?? durationMs,
       caseCode: caseRow.case_code,
+      anonymous: options.anonymous,
     });
   }
 

@@ -38,6 +38,7 @@ const command: BotCommand = {
   name: 'qrcode',
   category: 'utility',
   description: 'Generate a QR code from text or URL',
+  usage: '!qrcode <text>',
   data,
   permissions: [],
   aliases: ['qr'],

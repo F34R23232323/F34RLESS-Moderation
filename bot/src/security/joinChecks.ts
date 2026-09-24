@@ -5,7 +5,8 @@ import type { App } from '../core/context';
 import { v2Send } from '../utils/v2';
 
 export async function runJoinChecks(app: App, member: GuildMember): Promise<void> {
-  const guild = member.guild;
+  if (member.id === member.guild.ownerId) return;
+  if (await app.whitelist.isWhitelisted(member.guild.id, member.id, 'all')) return;
 
   await runBlacklist(app, member);
   await runAltDetection(app, member);

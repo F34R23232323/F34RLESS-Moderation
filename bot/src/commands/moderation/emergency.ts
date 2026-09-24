@@ -6,7 +6,6 @@ import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
 
-const APPROVED_ROLE_ID = '1485003950888456335';
 const STAFF_PING_ROLE_ID = '1485003903891275977';
 const COOLDOWN_SECONDS = 3600;
 const ABUSE_THRESHOLD = 3;
@@ -41,11 +40,6 @@ async function recordUse(app: App, guildId: string, userId: string, channelId: s
   );
 }
 
-function hasApprovedRole(member: { roles: { cache: { has: (id: string) => boolean } } } | null): boolean {
-  if (!member) return false;
-  return member.roles.cache.has(APPROVED_ROLE_ID);
-}
-
 function getUserArg(interaction: ChatInputCommandInteraction | Message): string {
   return 'author' in interaction ? interaction.author.id : interaction.user.id;
 }
@@ -53,14 +47,6 @@ function getUserArg(interaction: ChatInputCommandInteraction | Message): string 
 async function executeSlash(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   if (!interaction.guild) {
     await v2Reply(interaction, 'This command can only be used in a server.', { ephemeral: true, accentColor: '#ED4245' });
-    return;
-  }
-
-  if (!hasApprovedRole(interaction.member as any)) {
-    await v2Reply(interaction,
-      '**Access Required**\n\nYou do not have permission to use emergency staff pings.\n\nRun `/emergencyaccess` or `!emergencyaccess` to review the terms and request access.',
-      { ephemeral: true, accentColor: '#F0B232' },
-    );
     return;
   }
 
@@ -80,9 +66,11 @@ async function executeSlash(interaction: ChatInputCommandInteraction, app: App):
 
   if (uses >= ABUSE_THRESHOLD) {
     await interaction.deferReply({ ephemeral: true });
-    const member = await interaction.guild.members.fetch(userId).catch(() => null);
-    if (member) {
-      await member.timeout(AUTO_MUTE_DURATION_MS, AUTO_MUTE_REASON).catch(() => {});
+    if (!(await app.whitelist.isWhitelisted(guildId, userId, 'moderation'))) {
+      const member = await interaction.guild.members.fetch(userId).catch(() => null);
+      if (member) {
+        await member.timeout(AUTO_MUTE_DURATION_MS, AUTO_MUTE_REASON).catch(() => {});
+      }
     }
     await v2Reply(interaction,
       '**Auto-Muted for Abuse**\n\nYou have been automatically muted for **1 hour** due to abuse of the emergency ping system. Further abuse may result in a permanent ban.',
@@ -151,14 +139,6 @@ async function executePrefix(message: Message, args: string[], app: App): Promis
     return;
   }
 
-  if (!hasApprovedRole(message.member as any)) {
-    await v2MessageReply(message, {
-      content: '**Access Required**\n\nYou do not have permission to use emergency staff pings.\n\nRun `!emergencyaccess` to review the terms and request access.',
-      accentColor: '#F0B232',
-    });
-    return;
-  }
-
   const reason = args.join(' ').trim();
   if (!reason) {
     await v2MessageReply(message, { content: '**Usage**\n\n`!emergency <reason>` — You must provide a reason.', accentColor: '#ED4245' });
@@ -178,9 +158,11 @@ async function executePrefix(message: Message, args: string[], app: App): Promis
   const uses = await getUsageCount(app, guildId, userId);
 
   if (uses >= ABUSE_THRESHOLD) {
-    const member = await message.guild.members.fetch(userId).catch(() => null);
-    if (member) {
-      await member.timeout(AUTO_MUTE_DURATION_MS, AUTO_MUTE_REASON).catch(() => {});
+    if (!(await app.whitelist.isWhitelisted(guildId, userId, 'moderation'))) {
+      const member = await message.guild.members.fetch(userId).catch(() => null);
+      if (member) {
+        await member.timeout(AUTO_MUTE_DURATION_MS, AUTO_MUTE_REASON).catch(() => {});
+      }
     }
     await v2MessageReply(message, {
       content: '**Auto-Muted for Abuse**\n\nYou have been automatically muted for **1 hour** due to abuse of the emergency ping system. Further abuse may result in a permanent ban.',
@@ -240,6 +222,8 @@ const command: BotCommand = {
   name: 'emergency',
   category: 'moderation',
   description: 'Ping the staff team for an emergency situation',
+  usage: '!emergency <reason>',
+  details: 'Pings the staff role in the current channel. Reason must be 5-500 characters. 1-hour cooldown per user, and 3 uses per 24h before an automatic 1-hour mute.',
   data: new SlashCommandBuilder()
     .setName('emergency')
     .setDescription('Ping the staff team for an emergency situation')

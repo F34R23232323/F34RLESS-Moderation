@@ -48,6 +48,8 @@ const command: BotCommand = {
   name: 'note',
   category: 'moderation',
   description: 'Add a staff note to a user (not a punishment)',
+  usage: '!note <user> <note>',
+  details: 'Staff notes are informational only — they never punish or DM the user.',
   data,
   permissions: ['ModerateMembers'],
   aliases: [],

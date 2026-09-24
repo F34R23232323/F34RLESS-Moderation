@@ -194,6 +194,8 @@ const command: BotCommand = {
   name: 'case',
   category: 'moderation',
   description: 'View or manage a case',
+  usage: ['!case view <code>', '!case edit <code> <reason>', '!case void <code>', '!case link <code> <code>', '!case bulk_edit <ids> <reason>'],
+  details: 'Cases can be referenced by code or number. Voiding a warn case also removes the warning from the active count.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['c'],

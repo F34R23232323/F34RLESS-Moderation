@@ -25,6 +25,10 @@ export class ModerationCommandGuard {
     return target.roles.cache.some((r) => immuneIds.includes(r.id));
   }
 
+  public async isTargetWhitelisted(guildId: string, userId: string): Promise<boolean> {
+    return this.app.whitelist.isWhitelisted(guildId, userId, 'moderation');
+  }
+
   public hasRequiredPermissions(member: GuildMember, command: BotCommand): GuardResult {
     if (this.isOwner(member.id)) return { ok: true };
     const cfg = this.app.config.commands[command.name];
@@ -62,6 +66,7 @@ export class ModerationCommandGuard {
   public canModerate(target: GuildMember, staff: GuildMember): GuardResult {
     if (this.isOwner(staff.id)) return { ok: true };
     if (target.id === staff.id) return { ok: false, reason: 'you cannot moderate yourself' };
+    if (target.id === target.guild.ownerId) return { ok: false, reason: 'you cannot moderate the server owner' };
     const botMember = this.app.client.guilds.cache.get(target.guild.id)?.members.me;
     if (botMember && !this.isHigher(botMember, target)) {
       return { ok: false, reason: 'the bot is below the target in the role hierarchy' };

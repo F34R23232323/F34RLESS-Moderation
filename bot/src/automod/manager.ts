@@ -69,6 +69,9 @@ export class AutomodManager {
     const channel = message.channel as TextChannel;
     if (!guild || !member || !('id' in channel)) return;
 
+    if (member.id === guild.ownerId) return;
+    if (await this.app.whitelist.isWhitelisted(guild.id, member.id, 'automod')) return;
+
     const globalImmune = this.app.config.automod.global_immune_roles;
     if (member.roles.cache.some((r) => globalImmune.includes(r.id))) return;
 
@@ -127,6 +130,8 @@ export class AutomodManager {
 
   public async handleJoin(member: GuildMember): Promise<void> {
     if (!this.app.config.automod.enabled) return;
+    if (member.id === member.guild.ownerId) return;
+    if (await this.app.whitelist.isWhitelisted(member.guild.id, member.id, 'automod')) return;
     const guild = member.guild;
     const globalImmune = this.app.config.automod.global_immune_roles;
     if (member.roles.cache.some((r) => globalImmune.includes(r.id))) return;
@@ -149,6 +154,8 @@ export class AutomodManager {
 
   public async handleNickname(member: GuildMember, nickname: string): Promise<void> {
     if (!this.app.config.regex_engine.enabled) return;
+    if (member.id === member.guild.ownerId) return;
+    if (await this.app.whitelist.isWhitelisted(member.guild.id, member.id, 'automod')) return;
     const cfg = this.getModuleConfig('regex_engine');
     if (!cfg || !cfg.enabled || cfg.shadow_mode) return;
     const mod = this.modules.find((m) => m.name === 'regex_engine');

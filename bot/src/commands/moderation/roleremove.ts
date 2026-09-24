@@ -86,6 +86,7 @@ const command: BotCommand = {
   name: 'roleremove',
   category: 'moderation',
   description: 'Remove a role from a user',
+  usage: '!roleremove <user> <role> [reason]',
   data,
   permissions: ['ManageRoles'],
   aliases: ['rr'],

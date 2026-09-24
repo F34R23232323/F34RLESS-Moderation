@@ -41,6 +41,7 @@ import type { ScamHashStore } from '../automod/scamHashStore';
 import type { EconomyService } from '../economy/service';
 import type { SuggestionService } from '../suggestions/service';
 import type { StickyMessageService } from '../services/stickyMessageService';
+import type { WhitelistService } from '../services/whitelistService';
 
 export interface App {
   config: BotConfig;
@@ -93,6 +94,7 @@ export interface App {
   economy: EconomyService;
   suggestions: SuggestionService;
   stickyMessages: StickyMessageService;
+  whitelist: WhitelistService;
   polls: Map<string, { votes: Map<string, Set<string>>; options: string[]; question: string; messageId: string; channelId: string }>;
   customCache: Map<string, { loadedAt: number; commands: Map<string, { response: { content: string }; aliases: string[] }> }>;
   startedAt: number;

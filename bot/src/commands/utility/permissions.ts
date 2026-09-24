@@ -68,6 +68,8 @@ const command: BotCommand = {
   name: 'permissions',
   category: 'utility',
   description: 'Permission utilities',
+  usage: '!permissions <user>',
+  details: 'Shows the effective permissions a member has in the current channel and which roles grant them.',
   data,
   permissions: [],
   aliases: ['perms'],

@@ -1,5 +1,5 @@
 export const CASES = {
-  'Extremeism': {
+  'Extremism': {
     shouldMatch: [
       'great replacement theory',
       'blood and soil',
@@ -152,10 +152,6 @@ export const CASES = {
     ],
     shouldNotMatch: ['how to make a cake', 'i bought a gun for hunting', 'the building is secure', 'school shooting was covered in the news', 'the bomb in minecraft is cool'],
   },
-  'Text Markdown': {
-    shouldMatch: ['# heading', '## subheading', '### another', 'line one\n# second line'],
-    shouldNotMatch: ['no heading', 'a #tag', 'plain text', 'use # tags for channels', '#### four', '#no space'],
-  },
   'Account Trading': {
     shouldMatch: [
       'selling discord accounts',
@@ -195,19 +191,13 @@ export const CASES = {
       'child porn',
       'gooning',
       'goon session',
-      'hook up',
       'wanna hookup',
       'suck my dick',
       'eat my pussy',
       'fuck me',
-      'ur so sexy',
-      'you are so hot',
-      'you are so fucking hot',
-      'slide into my dms',
       'whats your snap baby',
       'snap me cutie',
       'send me your age',
-      'your snap name?',
       'your body is hot',
       'snap me your nudes',
       'add my snap for nudes',
@@ -256,6 +246,9 @@ export const CASES = {
       'my cat', 'dick but funny', 'cocked the gun', 'i play roblox', 'the song is fire',
       'the soup is hot', 'he is hot', 'hot weather', 'r34 skyline is fast', 'i love you',
       'cum on guys lets go', 'a dick joke', 'fuckin around in the yard',
+      // Broad/flirtatious phrases with no explicit content — deliberately not caught.
+      'hook up', 'ur so sexy', 'you are so hot', 'you are so fucking hot',
+      'slide into my dms', 'your snap name?',
     ],
   },
   'NSFW Links ': {
@@ -339,14 +332,12 @@ export const CASES = {
       'she-male',
       'shemale',
       'transvestite',
-      'bitch boy',
       'faggotry',
       'you homo',
       'homos',
       'lesbo',
       'the queers',
       'gayers',
-      'gender bender',
       'shirt lifter',
       'you look gay',
       'act like a fairy',
@@ -356,6 +347,8 @@ export const CASES = {
       'trans people are welcome here', 'the flag is green', 'fake news', 'backpacker', 'i am queer',
       'fairy in the forest', 'pansies in the garden', 'homo sapiens', 'swisher sweets', 'lesbos island',
       'the dike holds back water', 'puff of smoke', 'cheese puffs', 'toddger is a word', 'trans rights',
+      // Removed as false positives: general insult + a neutral/reclaimed term, not anti-LGBTQ+ hate.
+      'bitch boy', 'gender bender',
     ],
   },
   'E-Dating': {

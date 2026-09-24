@@ -181,11 +181,11 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   await v2MessageReply(message, { content: 'Sticky configured.' });
 }
 
-const sticky: BotCommand = { name: 'sticky', category: 'admin', description: 'Manage sticky channel messages', data, permissions: ['ManageMessages'], aliases: ['stick'], execute, prefixExecute };
+const sticky: BotCommand = { name: 'sticky', category: 'admin', description: 'Manage sticky channel messages', usage: ['!sticky <message>', '!sticky saved <name>'], details: 'Reposts the sticky in the current channel with anti-spam and conversation detection. Use `!sticky remove` or `!unstick` to remove it.', data, permissions: ['ManageMessages'], aliases: ['stick'], execute, prefixExecute };
 
 const unstickData = new SlashCommandBuilder().setName('unstick').setDescription('Remove the sticky from this channel').addChannelOption(channelOption);
 const unstick: BotCommand = {
-  name: 'unstick', category: 'admin', description: 'Remove a sticky message', data: unstickData,
+  name: 'unstick', category: 'admin', description: 'Remove a sticky message', usage: '!unstick [channel]', data: unstickData,
   permissions: ['ManageMessages'], aliases: [],
   async execute(interaction, app) {
     if (!interaction.guildId) return;

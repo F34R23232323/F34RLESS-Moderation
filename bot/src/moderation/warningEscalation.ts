@@ -12,6 +12,8 @@ export class WarningEscalation {
   public async check(guildId: string, userId: string): Promise<void> {
     const ladder = this.app.config.warnings.escalation_ladder;
     if (ladder.length === 0) return;
+    if (userId === this.app.client.user?.id) return;
+    if (await this.app.whitelist.isWhitelisted(guildId, userId, 'escalation')) return;
 
     const count = await this.app.caseService.countWarnings(guildId, userId);
     const rung = [...ladder]

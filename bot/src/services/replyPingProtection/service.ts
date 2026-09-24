@@ -80,6 +80,10 @@ export class ReplyPingProtectionService {
       this.app.logger.debug(`${logPrefix} skipped: user/channel/role is exempt`);
       return;
     }
+    if (await this.app.whitelist.isWhitelisted(execution.guild.id, execution.userId, 'reply_ping')) {
+      this.app.logger.debug(`${logPrefix} skipped: user is whitelisted from reply ping protection`);
+      return;
+    }
 
     this.app.logger.info(`${logPrefix} handling — channel=${channelId} content="${execution.content?.slice(0, 80) ?? ''}"`);
 
@@ -191,6 +195,7 @@ export class ReplyPingProtectionService {
     const member = message.member ?? await message.guild.members.fetch(userId).catch(() => null);
 
     if (this.isExempt(userId, member, channelId)) return;
+    if (await this.app.whitelist.isWhitelisted(message.guildId, userId, 'reply_ping')) return;
 
     this.app.logger.info(
       `[ReplyPingProtection] messageCreate hit — user=${userId} channel=${channelId} blockedUser=${blockedUserId ?? 'none'} blockedRole=${blockedRoleId ?? 'none'} content="${content.slice(0, 80)}"`,

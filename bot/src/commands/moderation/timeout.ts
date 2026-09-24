@@ -9,13 +9,15 @@ import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
+import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
 
 const data = new SlashCommandBuilder()
   .setName('timeout')
   .setDescription('Apply a timeout to a user')
   .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true))
   .addStringOption((o) => o.setName('duration').setDescription('Duration like 10m, 2h, 14d').setRequired(true))
-  .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
+  .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false))
+  .addAttachmentOption((o) => o.setName('evidence').setDescription('Image evidence to store with the case').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
@@ -32,7 +34,8 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
-  const actionId = storePendingAction({ action: 'timeout', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId, reason, durationMs: duration.milliseconds, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
+  const evidence = await collectSlashEvidence(app, interaction);
+  const actionId = storePendingAction({ action: 'timeout', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId, reason, evidence, durationMs: duration.milliseconds, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
   const { components, flags } = buildConfirmEmbed('Timeout', resolved.user.id, reason, duration.milliseconds, actionId);
   await interaction.editReply({ components, flags } as never);
 }
@@ -52,6 +55,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   const duration = parseDuration(durationStr);
   if (!duration || duration.isPermanent) { await v2MessageReply(message, { content: 'Provide a valid duration.' }); return; }
 
+  const images = await collectMessageImageEvidence(app, message);
+  if (images.length > 0) evidence = [...(evidence ?? []), ...images];
   const { sendButtonConfirm } = await import('../../components/moderation');
   const { confirmed } = await sendButtonConfirm(app, message, 'timeout', targetId, reason, duration.milliseconds);
   if (!confirmed) return;
@@ -64,6 +69,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
 
 const command: BotCommand = {
   name: 'timeout', category: 'moderation', description: 'Apply a timeout to a user',
+  usage: '!timeout <user> <duration> <reason>',
+  details: 'Applies a Discord timeout for the given duration (e.g. `10m`, `2h`, `14d`, max 28d). Reply to a message to time out its author.',
   data, permissions: ['ModerateMembers'], aliases: ['to'], execute, prefixExecute,
   asUserContext: true,
   async contextExecute(interaction, app) {

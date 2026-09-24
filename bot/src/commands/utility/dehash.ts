@@ -139,6 +139,8 @@ const command: BotCommand = {
   name: 'dehash',
   category: 'utility',
   description: 'Attempt to reverse a hash via a built-in rainbow table',
+  usage: '!dehash [algorithm] <hash>',
+  details: 'Only matches against a built-in table of common words and passwords; the algorithm is auto-detected from the hash length when omitted.',
   data,
   permissions: [],
   aliases: ['uncrack', 'rainbow'],

@@ -280,6 +280,8 @@ const command: BotCommand = {
   name: 'automodtest',
   category: 'moderation',
   description: 'Test whether a word or sentence would be caught by any automod rule',
+  usage: '!automodtest <word or sentence>',
+  details: 'Simulation only — shows which rules would match and which actions they would take, without acting on anything.',
   data,
   permissions: ['ManageMessages'],
   aliases: ['amtest', 'modtest'],

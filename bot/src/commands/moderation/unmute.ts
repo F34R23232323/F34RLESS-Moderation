@@ -52,6 +52,7 @@ const command: BotCommand = {
   name: 'unmute',
   category: 'moderation',
   description: 'Remove a mute/timeout from a user',
+  usage: '!unmute <user> <reason>',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['um'],

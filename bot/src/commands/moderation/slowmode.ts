@@ -155,6 +155,8 @@ const command: BotCommand = {
   name: 'slowmode',
   category: 'moderation',
   description: 'Set or remove slowmode on a channel',
+  usage: ['!slowmode <duration> [channel]', '!slowmode remove [channel]'],
+  details: 'Durations up to 6h use native Discord slowmode; longer durations use the bot custom slowmode, which deletes messages sent within the window.',
   data,
   permissions: ['ManageChannels'],
   aliases: ['sm'],

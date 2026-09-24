@@ -143,6 +143,8 @@ const command: BotCommand = {
   name: 'report',
   category: 'moderation',
   description: 'Report a user to staff',
+  usage: ['!report <user> <reason>', '!report ignore all'],
+  details: 'Reports go to the configured staff channel; reports within the merge window are merged together. `ignore all` is staff-only and archives every open report.',
   data,
   permissions: [],
   aliases: ['ria'],

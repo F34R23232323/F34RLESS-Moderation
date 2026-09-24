@@ -12,6 +12,8 @@ export interface BotCommand {
   name: string;
   category: string;
   description: string;
+  details?: string;
+  usage?: string | string[];
   data: any;
   permissions?: PermissionResolvable[];
   aliases?: string[];

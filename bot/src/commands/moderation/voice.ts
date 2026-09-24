@@ -28,6 +28,10 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
         await v2Reply(interaction, 'User not found.', { ephemeral: true });
         return;
       }
+      if (await app.whitelist.isWhitelisted(guild.id, resolved.user!.id, 'voice')) {
+        await v2Reply(interaction, `Cannot ${name}: this user is whitelisted from voice moderation.`, { ephemeral: true });
+        return;
+      }
       try {
         await action(resolved.member);
         await v2Reply(interaction, `Done for <@${resolved.user!.id}>.`);
@@ -45,6 +49,10 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
       const member = await guild.members.fetch(targetId).catch(() => null);
       if (!member) {
         await v2MessageReply(message, { content: 'User not found.' });
+        return;
+      }
+      if (await app.whitelist.isWhitelisted(guild.id, targetId, 'voice')) {
+        await v2MessageReply(message, { content: `Cannot ${name}: this user is whitelisted from voice moderation.` });
         return;
       }
       await action(member).then(() => v2MessageReply(message, { content: `Done for <@${targetId}>.` })).catch((err) => v2MessageReply(message, { content: `Failed: ${mapDiscordError(err.message)}` }));

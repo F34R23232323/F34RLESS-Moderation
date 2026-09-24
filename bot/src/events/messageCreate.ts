@@ -32,7 +32,7 @@ export async function handleMessageCreate(app: App, message: Message): Promise<v
       return;
     }
 
-    if (app.customSlowmode.shouldBlock(message.channelId, message.author.id)) {
+    if (await app.customSlowmode.shouldBlock(message.channelId, message.author.id, message.guildId ?? undefined)) {
       const remaining = app.customSlowmode.getRemainingMs(message.channelId, message.author.id);
       await message.delete().catch(() => undefined);
       await message.channel.send({ content: `<@${message.author.id}> please wait **${formatSlowmodeDuration(remaining)}** before sending again.` }).catch(() => undefined);

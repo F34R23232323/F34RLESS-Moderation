@@ -68,6 +68,8 @@ const command: BotCommand = {
   name: 'play',
   category: 'music',
   description: 'Play a song or add it to the queue',
+  usage: '!play <song name or link>',
+  details: 'Supports YouTube, Spotify, SoundCloud, and direct audio URLs. You must be in a voice channel.',
   data,
   permissions: [],
   aliases: ['p'],

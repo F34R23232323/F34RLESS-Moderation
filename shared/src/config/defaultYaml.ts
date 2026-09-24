@@ -342,9 +342,9 @@ automod:
         - type: send_channel_message
           dm_first: true
           format: components_v2
-          content: "Hey {user} — one of your messages was just removed because it didn't follow this server's rules.\n\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
+          content: "Hey {user} — one of your messages was just removed because it didn't follow this server's rules.\\n\\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\\n\\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
           title: "Message Removed"
-          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\n\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\n\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
+          description: "Hey {user} - one of your messages was just removed because it didn't follow this server's rules.\\n\\nThat's all that happened - your account is fine and no punishment was applied. Please take a moment to review the rules before your next message.\\n\\nIf you think this was a mistake, just message any staff member and we'll happily take another look."
           footer: "Thanks for helping keep {guild} friendly and safe."
           accent_color: "#ED4245"
           delete_after_seconds: 60
@@ -517,9 +517,9 @@ automod:
         - type: send_channel_message
           dm_first: true
           format: components_v2
-          content: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
+          content: "Hey {user}, your messages were removed.\\n\\nYour messages were removed because you sent the same or a very similar message multiple times."
           title: "Repeated Message Detected"
-          description: "Hey {user}, your messages were removed.\n\nYour messages were removed because you sent the same or a very similar message multiple times."
+          description: "Hey {user}, your messages were removed.\\n\\nYour messages were removed because you sent the same or a very similar message multiple times."
           delete_after_seconds: 60
         - type: warn
           reason: "Automod: repeated message spam ({rule})"
@@ -638,8 +638,8 @@ regex_engine:
   rules:
     - name: "slurs"
       patterns:
-        - "\\b(slur1|slur2)\\b"
-        - "\\b(slur3|slur4)\\b"
+        - "\\\\b(slur1|slur2)\\\\b"
+        - "\\\\b(slur3|slur4)\\\\b"
       flags: "gi"
       scope: "message"
       enabled: true
@@ -836,22 +836,15 @@ role_connections:
     #     - { has_role: true, role_id: "000000000000000006" }
 
 # -----------------------------------------------------------------------------
-# Named channel-lock presets. Unlock restores a byte-for-byte permission
-# snapshot taken at lock time (never recomputed).
+# Channel locking: lockdown deny overwrites applied to the listed channels.
 # deny_permissions: Discord permission names, e.g. SendMessages, AddReactions.
-# schedule: optional cron entries per preset.
+# exclude_roles: roles that keep access while channels are locked.
+# Unlock restores a byte-for-byte permission snapshot taken at lock time.
 # -----------------------------------------------------------------------------
 channel_locking:
-  presets:
-    - name: "lockdown-all"
-      channels: ["000000000000000000"]
-      categories: []
-      all_channels: false
-      exclude_roles: []
-      deny_permissions: ["SendMessages", "AddReactions"]
-      schedule:
-        - { cron: "0 22 * * *", action: "lock" }
-        - { cron: "0 7 * * *", action: "unlock" }
+  channels: []
+  exclude_roles: []
+  deny_permissions: ["SendMessages", "AddReactions"]
 
 # -----------------------------------------------------------------------------
 # Anti-raid mode. join_rate_threshold joins within window_seconds triggers.
@@ -866,6 +859,20 @@ anti_raid:
   alert_channel_id: "000000000000000000"
   account_age_days: 7
   cooldown_seconds: 3600
+
+anti_impersonation:
+  enabled: false
+  check_on_join: true
+  check_on_nick_change: true
+  check_on_username_change: true
+  match_server_name: true
+  match_member_names: true
+  reset_nickname: "Impersonation Detected"
+  notify_user: true
+  notify_target: true
+  exempt_role_ids: []
+  actions: ["warn", "mute", "kick", "ban"]
+  mute_duration: "1h"
 
 sticky_messages:
   enabled: false

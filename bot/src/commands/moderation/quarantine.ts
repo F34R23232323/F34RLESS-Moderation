@@ -72,6 +72,8 @@ const command: BotCommand = {
   name: 'quarantine',
   category: 'moderation',
   description: 'Strip roles and apply a restricted role pending investigation',
+  usage: '!quarantine <user>',
+  details: 'Stores the member roles, strips them, and applies the restricted role from config.yml (`quarantine.restricted_role_id`). Use `!unquarantine` to restore.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['q'],

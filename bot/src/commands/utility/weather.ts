@@ -49,6 +49,7 @@ const command: BotCommand = {
   name: 'weather',
   category: 'utility',
   description: 'Quick weather lookup',
+  usage: '!weather <city>',
   data,
   permissions: [],
   aliases: [],

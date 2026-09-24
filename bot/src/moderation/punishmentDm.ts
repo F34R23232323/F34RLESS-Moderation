@@ -13,6 +13,7 @@ export interface PunishmentDmContext {
   moderator?: string;
   durationMs?: number | null;
   caseCode?: string;
+  anonymous?: boolean;
 }
 
 export class PunishmentDmManager {
@@ -40,7 +41,7 @@ export class PunishmentDmManager {
       guild_id: ctx.guild.id,
       user: ctx.user.username,
       reason: ctx.reason ?? 'no reason provided',
-      moderator: cfg.hide_moderator ? 'staff' : (ctx.moderator ?? 'staff'),
+      moderator: ctx.anonymous || cfg.hide_moderator ? 'staff' : (ctx.moderator ?? 'staff'),
       duration: ctx.durationMs ? humanizeDuration(ctx.durationMs) : 'permanent',
       expires_at: expiry ? `<t:${expiry}:F> (<t:${expiry}:R>)` : 'Never',
       case_id: ctx.caseCode ?? 'n/a',

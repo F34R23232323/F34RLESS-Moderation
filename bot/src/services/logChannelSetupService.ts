@@ -29,7 +29,7 @@ export const LOG_GROUPS: readonly LogGroup[] = [
   {
     key: 'members', label: 'Member Logs',
     description: 'Member joins, departures, bans, kicks, timeouts, and nickname changes.',
-    events: ['member_join', 'member_leave', 'member_ban', 'member_unban', 'member_kick', 'member_mute', 'member_unmute', 'member_timeout', 'member_warn', 'member_unwarn', 'member_boost', 'member_unboost', 'member_avatar_update', 'member_username_update', 'nickname_change'],
+    events: ['member_join', 'member_leave', 'member_ban', 'member_unban', 'member_kick', 'member_mute', 'member_unmute', 'member_timeout', 'member_warn', 'member_unwarn', 'member_boost', 'member_unboost', 'member_avatar_update', 'member_username_update', 'nickname_change', 'impersonation_detected'],
   },
   {
     key: 'roles', label: 'Role Logs',
@@ -44,7 +44,7 @@ export const LOG_GROUPS: readonly LogGroup[] = [
   {
     key: 'moderation', label: 'Moderation Logs',
     description: 'Moderator actions, automod triggers, reports, cases, and appeals.',
-    events: ['moderation_action', 'automod_trigger', 'report_created', 'report_resolved', 'case_edit', 'case_voided', 'case_unvoided', 'case_linked', 'case_closed', 'note_add', 'note_edit', 'note_remove', 'appeal_created', 'appeal_resolved', 'emergency_ping_triggered', 'emergency_access_granted', 'emergency_access_denied'],
+    events: ['moderation_action', 'automod_trigger', 'report_created', 'report_resolved', 'case_edit', 'case_voided', 'case_unvoided', 'case_linked', 'case_closed', 'note_add', 'note_edit', 'note_remove', 'appeal_created', 'appeal_resolved', 'emergency_ping_triggered'],
   },
   {
     key: 'server', label: 'Server & App Logs',

@@ -211,6 +211,7 @@ const command: BotCommand = {
   name: 'imageinfo',
   category: 'utility',
   description: 'Get format, dimensions, size and hashes of an image',
+  usage: '!imageinfo <image attachment or URL>',
   data,
   permissions: [],
   aliases: ['ii', 'img'],

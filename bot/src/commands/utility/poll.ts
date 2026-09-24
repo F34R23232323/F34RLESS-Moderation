@@ -103,6 +103,8 @@ const command: BotCommand = {
   name: 'poll',
   category: 'utility',
   description: 'Create a poll with buttons',
+  usage: '!poll <question> <option1> <option2> [option3] [option4]',
+  details: 'The slash form can auto-close after a duration; otherwise close it manually with the button.',
   data,
   permissions: [],
   aliases: [],

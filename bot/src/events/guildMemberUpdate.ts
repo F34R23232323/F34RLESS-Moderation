@@ -2,6 +2,7 @@ import type { RowDataPacket } from 'mysql2/promise';
 import { AuditLogEvent, type GuildMember } from 'discord.js';
 import type { App } from '../core/context';
 import { resolveAuditActor } from '../utils/auditLog';
+import { runImpersonationCheck } from '../security/impersonation';
 
 export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, newMember: GuildMember): Promise<void> {
   try {
@@ -54,8 +55,12 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
       );
       const lock = locks[0];
       if (lock && lock.locked_nick !== newMember.nickname) {
-        await newMember.setNickname(lock.locked_nick, 'Nickname locked').catch(() => undefined);
+        if (!(await app.whitelist.isWhitelisted(guild.id, newMember.id, 'nick_lock'))) {
+          await newMember.setNickname(lock.locked_nick, 'Nickname locked').catch(() => undefined);
+        }
       }
+
+      await runImpersonationCheck(app, newMember, 'nick_change');
     }
 
     const oldBoost = oldMember.premiumSinceTimestamp ?? null;

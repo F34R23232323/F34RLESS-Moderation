@@ -60,9 +60,10 @@ export class CustomSlowmodeService {
     return this.active.get(channelId) ?? null;
   }
 
-  public shouldBlock(channelId: string, userId: string): boolean {
+  public async shouldBlock(channelId: string, userId: string, guildId?: string): Promise<boolean> {
     const slowmode = this.active.get(channelId);
     if (!slowmode) return false;
+    if (guildId && await this.app.whitelist.isWhitelisted(guildId, userId, 'slowmode')) return false;
 
     const key = `${channelId}:${userId}`;
     const last = this.lastMessage.get(key);

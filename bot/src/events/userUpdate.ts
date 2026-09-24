@@ -1,5 +1,6 @@
 import type { User, PartialUser } from 'discord.js';
 import type { App } from '../core/context';
+import { runImpersonationCheck } from '../security/impersonation';
 
 export async function handleUserUpdate(app: App, oldUser: User | PartialUser, newUser: User): Promise<void> {
   try {
@@ -34,6 +35,11 @@ export async function handleUserUpdate(app: App, oldUser: User | PartialUser, ne
         message: `<@${newUser.id}>${isBot} updated their username`,
         details: { userId: newUser.id, changes: parts },
       });
+
+      for (const g of app.client.guilds.cache.values()) {
+        const member = g.members.cache.get(newUser.id);
+        if (member) await runImpersonationCheck(app, member, 'username_change');
+      }
     }
   } catch (err) {
     app.logger.error('userUpdate handler threw:', err);

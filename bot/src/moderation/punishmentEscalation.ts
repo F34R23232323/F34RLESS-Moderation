@@ -17,6 +17,7 @@ export class PunishmentEscalation {
   public async recordTrigger(guildId: string, userId: string, rule: string): Promise<void> {
     const cfg = this.app.config.escalation;
     if (!cfg.enabled) return;
+    if (await this.app.whitelist.isWhitelisted(guildId, userId, 'escalation')) return;
     const now = Date.now();
 
     const [rows] = await this.app.db.query<RowDataPacket[]>(

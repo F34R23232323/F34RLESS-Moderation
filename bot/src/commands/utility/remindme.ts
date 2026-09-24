@@ -65,6 +65,8 @@ const command: BotCommand = {
   name: 'remindme',
   category: 'utility',
   description: 'Set a persistent reminder',
+  usage: '!remindme <duration> <message>',
+  details: 'Reminders persist across restarts. The slash form can also list and cancel them.',
   data,
   permissions: [],
   aliases: ['remind'],

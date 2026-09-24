@@ -97,6 +97,7 @@ export class NsfwModerationService {
         const roleIds = message.member ? [...message.member.roles.cache.values()].map((r) => r.id) : null;
         if (roleIds && roleIds.some((id) => cfg.exempt_roles.includes(id))) return;
       }
+      if (await this.app.whitelist.isWhitelisted(message.guildId!, message.author.id, 'nsfw')) return;
 
       const automodIgnores = this.collectAutomodIgnores();
       if (automodIgnores.channels.has(message.channelId) || (parentId && automodIgnores.channels.has(parentId))) return;

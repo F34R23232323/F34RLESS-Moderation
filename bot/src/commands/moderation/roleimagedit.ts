@@ -133,6 +133,7 @@ const command: BotCommand = {
   name: 'roleimagedit',
   category: 'moderation',
   description: 'Set or remove a role\'s icon via image upload',
+  usage: ['!roleimagedit <role> [image attachment]', '!roleimagedit <role> remove'],
   data,
   permissions: ['ManageRoles'],
   aliases: ['roleicon', 'ri'],

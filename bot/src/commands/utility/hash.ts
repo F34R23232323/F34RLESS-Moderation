@@ -78,6 +78,8 @@ const command: BotCommand = {
   name: 'hash',
   category: 'utility',
   description: 'Hash a string with md5, sha1, sha256 and more',
+  usage: '!hash [algorithm] <text>',
+  details: 'Omit the algorithm to print every supported hash at once.',
   data,
   permissions: [],
   aliases: [],

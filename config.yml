@@ -49,6 +49,17 @@ commands:
     aliases:
       - w
       - warning
+  impersonationcheck:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    permission_group: trial_mod
+    immune_roles: []
+    aliases:
+      - impcheck
+      - impersonation
   caseclose:
     enabled: true
     slash: true
@@ -371,24 +382,13 @@ commands:
     enabled: true
     slash: true
     prefix: true
-    cooldown_seconds: 3600
+    cooldown_seconds: 0
     permissions: []
     permission_group: admin
     immune_roles: []
     aliases:
       - estaff
       - eping
-  emergencyaccess:
-    enabled: true
-    slash: true
-    prefix: true
-    cooldown_seconds: 5
-    permissions: []
-    permission_group: admin
-    immune_roles: []
-    aliases:
-      - eaccess
-      - eagree
   economy:
     enabled: true
     slash: false
@@ -804,13 +804,10 @@ logging:
   moderation_action:
     enabled: true
     channel_id: "1540115016420823173"
+  impersonation_detected:
+    enabled: true
+    channel_id: "1540115016420823173"
   emergency_ping_triggered:
-    enabled: true
-    channel_id: "1546281343292416060"
-  emergency_access_granted:
-    enabled: true
-    channel_id: "1546281343292416060"
-  emergency_access_denied:
     enabled: true
     channel_id: "1546281343292416060"
 warnings:
@@ -1523,8 +1520,8 @@ regex_engine:
         - \bw+[e3]+t+b+[a@4]+ck+\b|\bw+[o0]+g+b+[o0]+y+\b|\bw+[o0]+g+b+[o0]+[yi]+\b
         - \bsp+[i1]+[ck]+\b
         - \bch+[i1!]+nk+\b
-        - \bn[i1l!|Ã‘â€“]+[g9q]+[e3ÃÂµa@]*[rÃ‘ÂÃ‘â‚¬]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|Ã‘â€“]+[g9q]{2,}(?:a|4|@|ÃÂ°)(?:s|z)?\b
-        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3ÃÂµa@][\.\-_*\s]*[rÃ‘ÂÃ‘â‚¬](?:s|z|er|ers)?(?![\w])
+        - \bn[i1l!|і]+[g9q]+[e3еa@]*[rяр]+(?:s|z|er|ers)?(?![\w])|\bn[i1l!|і]+[g9q]{2,}(?:a|4|@|а)(?:s|z)?\b
+        - \bn[\.\-_*\s]*[i1!][\.\-_*\s]*[g9][\.\-_*\s]*[g9][\.\-_*\s]*[e3еa@][\.\-_*\s]*[rяр](?:s|z|er|ers)?(?![\w])
         - \bp[i1]c[a@]n[i1]?nn[yi]\b|\bp[\.\-_*\s]+[i1]c[\.\-_*\s]+[a@4]n[\.\-_*\s]+[i1]?n[\.\-_*\s]+[yi]\b
         - \bw[o0][g9]\b|\bw[o0][g9]{2}[o0][yi]?\b
         - \bn[i1][b8]{2}[e3a@](?:r|s)?\b|\bn[i1][b8]{2}e?r[s5]?\b
@@ -1534,7 +1531,7 @@ regex_engine:
         - \bn[e3][g9]r[o0](?:[i1]d)?[s5]?\b
         - \b(?:s[a@]nd|p[o0]rch|tree)\s*m[o0]nk[e3][yi]\b
         - \bm[o0]nk[e3][yi]\s*(?:b[o0][yi]|girl|man|woman|face|poster|b[o0]y)\b
-        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3ÃÂµa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rÃ‘ÂÃ‘â‚¬](?:s|z|er|ers)?(?![\w])
+        - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3еa@4][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[rяр](?:s|z|er|ers)?(?![\w])
         - \bn[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[g9][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[a@4]\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[o0][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n\b
         - \bc[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[uo0*][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*t\b
@@ -1542,7 +1539,7 @@ regex_engine:
         - \bs[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*p[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1!][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*c(?:k)?s?\b
         - \bk[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\b
         - \bch[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*n[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*k\b
-        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3ÃÂµa@]*[rÃ‘ÂÃ‘â‚¬]?(?![\w])
+        - \bc[o0][o0]n\s*n[\.\-_*\s]*[i1!][g9]+[e3еa@]*[rяр]?(?![\w])
         - \bgr[e3][a@]se[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*b[a@4]ll\b|\bg[\.\-_*\s]*r[\.\-_*\s]*[e3][\.\-_*\s]*[a@4][\.\-_*\s]*[s5][\.\-_*\s]*[yi]\b
         - \bp[\.\-_*\s]+[i1][\.\-_*\s]+[ck][\.\-_*\s]+[a@4][\.\-_*\s]+n[\.\-_*\s]+n[\.\-_*\s]+[yi]\b
         - \bs[\.\-_*\s]+[a@4][\.\-_*\s]+m[\.\-_*\s]+b[\.\-_*\s]+[o0]\b
@@ -1680,6 +1677,16 @@ regex_engine:
         - (un[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*)?[a@][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*l[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[i1][\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*v[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*[e3]\s+(yourself|urself|u|you)\b
         - \bk[i1!|][l1!|]+[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*(?:ur|y[o0]u?r?|you)[\s\u200b\u200c\u200d\u2060._\-*|/\\'~!+]*self\b
         - (hang|neck|slit|slash|cut)\s*(yourself|urself|ur\s*self|your\s*own)\b
+        - \bend\s+it\s+(?:all|already)\b
+        - \b(?:nobody|no\s+one)\s+(?:cares|loves|needs|wants|misses|likes)\s+(?:about\s+)?you\b
+        - (?<!\d\s)\bkms\b
+        - \bself[\s-]*delet
+        - \blife\s+is\s+(?:not|n[o0]t)\s+worth\b
+        - \b(?:no|what'?s?\s+the)\s+point\s+(?:in|of)\s+(?:living|life)\b
+        - \bi\s+wish\s+i\s+(?:was|were)\s+(?:dead|never\s+born)\b
+        - \b(?:i'?m|i\s+am)\s+(?:so\s+)?done\s+with\s+(?:life|everything)\b
+        - \b(?:i'?m|i\s+am)\s+tired\s+of\s+(?:living|life)\b
+        - \b(?:i'?m|i\s+am)\s+over\s+(?:it\s+all|everything)\b
       flags: gi
       scope: message
       enabled: true
@@ -1731,7 +1738,7 @@ regex_engine:
         - (nitro|robux|vbucks?)\s*(dm|hmu|pm)\s*(me)?\b
         - \b(discord|steam)\s*(nitro|gift)\s*(card|code)\s*(giveaway|free|claim)?\b
         - \b(?:claim|get\s+free)\s+(?:a\s+|your\s+|free\s+)?(nitro|robux|vbucks?)\b
-        - (i\s+)?(won|win)\s+(a\s+|free\s+)?(nitro|robux|vbucks?)\s*(giveaway)?\s*(click|dm|here|link|claim)\b
+        - (i\s+)?(won|win)\s+(?:a\s+|an?\s+)?(?:free\s+)?(nitro|robux|vbucks?)\s*(giveaway)?\s*(click|dm|here|link|claim)\b
       flags: gi
       scope: message
       enabled: true
@@ -1769,6 +1776,7 @@ regex_engine:
         - (your|the)\s+(discord|steam|account)\s+(is|are|was)\s+(under\s+investigation|flagged|restricted|limited)\b
         - (server|channel|guild)\s+(is|will\s+be)\s+(deleted|taken\s+down|removed)\s+(unless|if)\s+(you\s+)?(verify|click|send|join)\b
         - (verify|confirm|validate)\s+your\s+(account|identity|server)\s+(to\s+)?(avoid|prevent|stop)\s+(deletion|suspension|termination|ban)\b
+        - (?:click|tap)\s+(?:here|this|below)\s+to\s+(?:verify|confirm).{0,40}(?:free\s+)?(?:nitro|robux|vbucks|gift|boost)
       flags: gi
       scope: message
       enabled: true
@@ -1928,7 +1936,7 @@ regex_engine:
         - type: run_escalation_check
     - name: Extremism
       patterns:
-        - Ã¥ÂÂ|Ã¥ÂÂ|Ã¥ÂÂÃ¥ÂÂ
+        - 卐|卍|卐卐
         - \b(great\s+replacement|white\s+replacement)\b
         - \b(blood\s+and\s+soil|sieg\s+heil)\b
         - \b14\s*words\b(?!\s+(?:is|are|was|were|means|being))\b(?:\s*(of\s+)?(truth|wisdom|the|our))?|\bfourteen\s*words\b(?:\s*(of\s+)?(truth|wisdom|the|our))?
@@ -2192,6 +2200,7 @@ regex_engine:
         - \b(p[u*v][s$][s$][yi3]|c[o0*]c?k|titt[yi]|titties|t[i1!][t*]s|b[o0][o0]b(?:ies?|s)?|v[a@]g[i1]n[a@]|p[e3]n[i1][s$]|cl[i1][t*]|p[u*]b[i1]c)\b
         - \br\s*3\s*4\b(?!\s*(?:skyline|gtr))|\brule\s*34\b
         - \b(onlyfans|fansly)\s*(link|dm|hmu|free|for\s+sale|promo)\b
+        - \bhorny\b(?!\s+(?:toad|frog|lizard))
         - \b(nudes?|n[o0][o0]ds?)\s*(for\s+sale|dm|hmu|trade|swap)\b
         - \b(m[o0]sturb[a@]t(?:ing|i[o0]n|e)?|fap\s*session)\b
         - \b(creampie|spl[i1]t\s+roast|a[n@][a@]l\s*(?:sex|play)?|sexting|send\s+sexts?)\b
@@ -2331,6 +2340,7 @@ regex_engine:
         - \b(?:you|ur|u|that|f[u*]ck[i1]ng|stupid|d[a@]mn)\s+h[o0]m[o0]\b|\bh[o0]m[o0]s\b
         - \b(?:you|ur|u|he'?s|she'?s|th[a@]t)\s+(?:silly|stupid|little|dumb|d[a@]mn|f[u*]ck[i1]ng)?\s*f[a@][i1]r[yi]\b|\b(?:act|look|dress|behave)\s+(?:like\s+)?(?:a\s+)?f[a@][i1]r[yi]\b
         - \bl[e3]sb[o0]\b
+        - \b(?:you|ur|u|what\s+a|such\s+a|little|stupid|dumb|f[u*]ck[i1]ng|fucking)\s+(?:a\s+)?pans[yi]e?s?\b
       flags: gi
       scope: message
       enabled: true
@@ -2699,16 +2709,16 @@ regex_engine:
         - type: run_escalation_check
     - name: Piracy
       patterns:
-        - \b(how\s+to\s+(pirate|crack|get\s+free)|where\s+to\s+(pirate|download\s+free))\b
+        - \b(?:how|where)\s+to\s+(?:pirate\b|(?:crack|get|download)\s+(?:free\s+)?(?:a\s+|an?\s+|the\s+|some\s+)*(?:games?|software|apps?|programs?|movies?|music|albums?|books?|windows|dvds?))\b
         - \b(pirate\s*bay|1337x|rutracker|kickass)\b
         - \bmagnet:\s*link\b
         - \b(nulled|nulled\s*(?:script|plugin|theme|addon))\b
         - \b(bypass\s*(?:activation|license|payment|trial))\b
         - \b(illegal(?:ly)?|stolen)\s*(?:copy|software|game|movie|music|video|media)\b
         - \b(downloading\s+from\s+(?:torrent|pirate|crack))\b
-        - \b(reupload|re-?upload|dl\s+link|download\s+link)\s*(?:for|to)?\s*(?:crack|pirate|warez|torrent)\b
+        - \b(reupload|re-?upload|dl\s+link|download\s+link)\s*(?:link\s+)?\s*(?:for|to)?\s*(?:crack|pirate|warez|torrent)\b
         - \b(free\s*crack|crack\s*(?:download|link|file))\b
-        - \b(pirat(?:e|ing|ed)|crack(?:ing|ed)|warez)\s+(?:software|game|app|tool|plugin|theme|movie|series)\b
+        - \b(pirat(?:e|ing|ed)|crack(?:ing|ed)|warez)\s+(?:software|game|app|tool|plugin|theme|movie|series|download|link|site|pack)\b
       flags: gi
       scope: message
       enabled: true
@@ -2738,9 +2748,9 @@ regex_engine:
         - type: run_escalation_check
     - name: Alt Account Promotion
       patterns:
-        - \b(use|get|make|create|switch\s+to|log\s+into?|join\s+on)\s+(?:a\s+)?(?:alt|alternate|backup|secondary|smurf|throwaway)\s*(?:account)?\b
-        - \b(?:this|here\s+is|using)\s+(?:my\s+)?(?:alt|alternate|backup|secondary|smurf|throwaway)\s*(?:account)?\b
-        - \b(i'?m\s+(?:back|here|online)\s+(?:on|with)\s+(?:my\s+)?(?:alt|backup|smurf|throwaway))\b
+        - \b(use|get|make|create|switch\s+to|log\s+into?|join\s+on)\s+(?:a\s+|an\s+|my\s+|your\s+)?(?:(?:alt|alternate|smurf|throwaway)\s*(?:account|acc|acct)?|(?:backup|secondary)\s+(?:account|acc|acct))\b
+        - \b(?:this|here|using)\s+(?:is\s+)?(?:my\s+)?(?:(?:alt|alternate|smurf|throwaway)\s*(?:account|acc|acct)?|(?:backup|secondary)\s+(?:account|acc|acct))\b
+        - \b(i(?:'?m|\s+am)\s+(?:(?:back|here|online)\s+)?(?:on|with)\s+(?:my\s+)?(?:alt|backup|smurf|throwaway))\b
         - \b(ban\s*evad(?:e|ing|ed)|evad(?:e|ing|ed)\s+(?:the\s+)?ban)\b
         - \b(avoid\s+(?:the\s+)?(?:ban|mute|kick|punishment|restriction)\s+(?:with|using|on|via)\s+(?:an?\s+)?(?:alt|account))\b
         - \b(who(?:\'?s|\s+is)\s+(?:got|have|has)\s+(?:another|a\s+backup|an?)\s*(?:alt|account))\b
@@ -2774,7 +2784,7 @@ regex_engine:
         - type: run_escalation_check
     - name: Staff Impersonation
       patterns:
-        - \b(i\s+(?:am|'?m)\s+(?:a\s+|the\s+|an\s+)?)\s*(?:staff|mod(?:erator)?|admin(?:istrator)?|owner|helper|trial\s*mod)\b
+        - \b(i\s*(?:am|'?m)\s+(?:a\s+|an\s+|the\s+)?)(?:staff|mod(?:erator)?|admin(?:istrator)?|owner|helper|trial\s*mod)\b
         - \b(?:i\s+)?(?:have\s+(?:the\s+)?(?:power|authority|permission|right)\s+to)\s+(?:mute|ban|kick|warn|timeout|punish)\b
         - \b(?:i\s+)?(?:do|does)?\s*(?:work|work\s+for|represent|manage)\s+(?:for|with|at)\s+(?:sapphire|discord|noxx|the\s+bot)\b
         - \b(?:i'?m\s+(?:a\s+)?(?:staff|mod|admin|owner)\s+(?:here|of|in|on)\s+this)\b
@@ -2808,7 +2818,7 @@ regex_engine:
         - type: run_escalation_check
     - name: Advertising & DM Ads
       patterns:
-        - \b(?:free\s*(?:nitro|robux|vbucks|gift|money|crypto|coins))\b
+        - \b(?:free\s*(?:nitro|robux|vbucks|steam\s*keys?|gift|money|crypto|coins))\b
         - \b(?:giveaway|give\s+away|prize|winner|congrat(?:s|ulations))\s+(?:in|at|on|join|click|check|enter)\b
         - \b(?:i'?m\s+(?:selling|buying|trading|offering|giving))\s+(?:a\s+|an\s+|my\s+)?\b
         - \b(?:dms?\s+(?:open|are\s+open|to\s+buy))\b
@@ -3126,12 +3136,14 @@ role_connections:
         - has_role: true
           role_id: "1479852874635939880"
         - has_role: true
-          role_id: "1479912951694495845"
+          role_id: "1551731809275093113"
     - enabled: true
       main_role: "1467103806561980528"
       logic: any
       held_for_seconds: 0
       conditions:
+        - has_role: true
+          role_id: "1551731809275093113"
         - has_role: true
           role_id: "1534547067501023405"
         - has_role: true
@@ -3188,6 +3200,19 @@ anti_raid:
   alert_channel_id: "000000000000000000"
   account_age_days: 7
   cooldown_seconds: 3600
+anti_impersonation:
+  enabled: false
+  check_on_join: true
+  check_on_nick_change: true
+  check_on_username_change: true
+  match_server_name: true
+  match_member_names: true
+  reset_nickname: "Impersonation Detected"
+  notify_user: true
+  notify_target: true
+  exempt_role_ids: ["1491407923291619388"]
+  actions: ["warn", "mute", "kick", "ban"]
+  mute_duration: "1h"
 sticky_messages:
   enabled: true
   re_post_after_messages: 5
@@ -3302,6 +3327,7 @@ staff_permission_groups:
         - note
         - report
         - clearwarnings
+        - impersonationcheck
     # Moderator and above
     - name: moderator
       roles:
@@ -3383,7 +3409,6 @@ staff_permission_groups:
         - roleremove
         - roleimagedit
         - emergency
-        - emergencyaccess
         - block-appeal-user
         - unblock-appeal-user
         - appeal-reply

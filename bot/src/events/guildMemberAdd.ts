@@ -29,6 +29,9 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
     const security = await import('../security/joinChecks');
     await security.runJoinChecks(app, member);
 
+    const impersonation = await import('../security/impersonation');
+    await impersonation.runImpersonationCheck(app, member, 'join');
+
     const inviteInfo = isBot ? null : await app.inviteTracker.findUsedInvite(guild);
 
     if (inviteInfo) {

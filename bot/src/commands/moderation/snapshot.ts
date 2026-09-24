@@ -57,6 +57,8 @@ const command: BotCommand = {
   name: 'snapshot',
   category: 'moderation',
   description: 'Snapshot a member\'s roles and nickname',
+  usage: '!snapshot <user> <reason>',
+  details: 'Saves the current roles and nickname so they can be re-applied later with `!restore`.',
   data,
   permissions: ['ModerateMembers'],
   aliases: [],

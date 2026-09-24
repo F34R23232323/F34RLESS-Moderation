@@ -86,6 +86,7 @@ const command: BotCommand = {
   name: 'roleadd',
   category: 'moderation',
   description: 'Add a role to a user',
+  usage: '!roleadd <user> <role> [reason]',
   data,
   permissions: ['ManageRoles'],
   aliases: ['ra'],

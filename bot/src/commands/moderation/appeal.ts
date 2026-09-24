@@ -95,6 +95,8 @@ const command: BotCommand = {
   name: 'appeal',
   category: 'moderation',
   description: 'Appeal a punishment case',
+  usage: '!appeal <case code or number> <message>',
+  details: 'You can only appeal your own active cases; kick cases and closed cases cannot be appealed. Staff review the appeal afterwards.',
   data,
   permissions: [],
   aliases: [],

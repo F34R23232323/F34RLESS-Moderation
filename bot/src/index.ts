@@ -30,6 +30,7 @@ import { SlowmodeScheduler } from './management/slowmodeScheduler';
 import { CustomSlowmodeService } from './management/customSlowmode';
 import { InviteTracker } from './management/inviteTracker';
 import { AntiRaidService } from './security/antiRaid';
+import { startImpersonationScans } from './security/impersonation';
 import { SavedMessageService } from './services/savedMessageService';
 import { DashboardLogService } from './services/dashboardLogService';
 import { ApiCaseService } from './services/apiCaseService';
@@ -48,6 +49,7 @@ import { ScamHashStore } from './automod/scamHashStore';
 import { EconomyService } from './economy/service';
 import { SuggestionService } from './suggestions/service';
 import { StickyMessageService } from './services/stickyMessageService';
+import { WhitelistService } from './services/whitelistService';
 
 async function main(): Promise<void> {
   const logger = new Logger('boot');
@@ -141,6 +143,7 @@ async function main(): Promise<void> {
     economy: null as unknown as EconomyService,
     suggestions: null as unknown as SuggestionService,
     stickyMessages: null as unknown as StickyMessageService,
+    whitelist: null as unknown as WhitelistService,
     polls: new Map(),
     customCache: new Map(),
     startedAt: Date.now(),
@@ -191,6 +194,7 @@ async function main(): Promise<void> {
   app.economy = new EconomyService(app);
   app.suggestions = new SuggestionService(db, config);
   app.stickyMessages = new StickyMessageService(app);
+  app.whitelist = new WhitelistService(db);
   app.suggestions.setClient(client);
   app.metrics = new Metrics(app);
   app.scheduler = new SchedulerService(app);
@@ -228,6 +232,7 @@ async function main(): Promise<void> {
       status: config.bot.status,
       activities: [{ name: config.bot.activity.text, type, url }],
     });
+    startImpersonationScans(app);
   });
 
   // Load the NSFW model before login so no image job starts before it is

@@ -41,7 +41,7 @@ export const SLASH_COMMAND_GROUPS: readonly SlashCommandGroup[] = [
     members: [
       'archive', 'archives', 'caseclose', 'appeal-reply', 'block-appeal-user', 'unblock-appeal-user',
       'note', 'modstats', 'snapshot', 'restore', 'roleadd', 'roleremove', 'roleimagedit', 'temprole',
-      'clearwarnings', 'automodtest', 'lockall', 'unlockall', 'emergencyaccess',
+      'clearwarnings', 'automodtest', 'lockall', 'unlockall',
     ],
   },
 ] as const;

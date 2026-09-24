@@ -96,6 +96,8 @@ const command: BotCommand = {
   name: 'lookup',
   category: 'moderation',
   description: 'Full user lookup: cases, notes, warnings, automod history',
+  usage: '!lookup <user>',
+  details: 'Shows account age, join date, roles, warning count, risk score, cases, notes, and recent automod triggers. The slash form can also decode a Discord snowflake ID.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['modlookup'],

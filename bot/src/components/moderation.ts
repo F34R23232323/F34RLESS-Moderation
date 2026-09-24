@@ -10,6 +10,7 @@ import {
 } from 'discord.js';
 import type { App } from '../core/context';
 import { mapDiscordError } from '../utils/moderationErrors';
+import type { CaseEvidenceItem } from '../utils/evidence';
 import { applicationEmoji, emojiPrefix } from '../emoji';
 
 /** Pending moderation action awaiting confirmation. Stored in-memory with a
@@ -24,8 +25,13 @@ interface PendingAction {
   deleteDays?: number;
   /** For purge: messages after this ID are deleted */
   purgeAfterId?: string;
+  /** For purge: max number of messages to delete */
+  purgeAmount?: number;
   actorId: string;
   expiresAt: number;
+  anonymous?: boolean;
+  /** Extra evidence (e.g. stored images) attached when the action executes. */
+  evidence?: CaseEvidenceItem[];
 }
 
 /** Temporary in-memory store for pending confirmations (keyed by action ID). */
@@ -145,12 +151,15 @@ export const confirmButton = {
   type: 'button' as const,
   id: 'confirm:',
   async run(app: App, interaction: ButtonInteraction): Promise<void> {
+    // Acknowledge immediately — the checks and the punishment itself can take
+    // well over Discord's 3-second component window.
+    await interaction.deferUpdate();
     const id = extractActionId(interaction);
-    if (!id) { await interaction.update(v2Update('Invalid action.')); return; }
+    if (!id) { await interaction.editReply(v2Update('Invalid action.')); return; }
     const action = peekPendingAction(id);
-    if (!action) { await interaction.update(v2Update('This confirmation has expired.')); return; }
+    if (!action) { await interaction.editReply(v2Update('This confirmation has expired.')); return; }
     if (interaction.user.id !== action.actorId) {
-      await interaction.reply({ content: 'Only the command invoker can confirm this action.', ephemeral: true });
+      await interaction.followUp({ content: 'Only the command invoker can confirm this action.', ephemeral: true });
       return;
     }
     consumePendingAction(id);
@@ -162,22 +171,33 @@ export const cancelButton = {
   type: 'button' as const,
   id: 'cancel:',
   async run(app: App, interaction: ButtonInteraction): Promise<void> {
+    await interaction.deferUpdate();
     const id = extractActionId(interaction);
-    if (!id) { await interaction.update(v2Update('Invalid action.')); return; }
+    if (!id) { await interaction.editReply(v2Update('Invalid action.')); return; }
     const action = peekPendingAction(id);
-    if (!action) { await interaction.update(v2Update('This confirmation has expired.')); return; }
+    if (!action) { await interaction.editReply(v2Update('This confirmation has expired.')); return; }
     if (interaction.user.id !== action.actorId) {
-      await interaction.reply({ content: 'Only the command invoker can cancel this action.', ephemeral: true });
+      await interaction.followUp({ content: 'Only the command invoker can cancel this action.', ephemeral: true });
       return;
     }
     consumePendingAction(id);
-    await interaction.update(v2Update('❌ Action cancelled.'));
+    await interaction.editReply(v2Update('❌ Action cancelled.'));
   },
 };
 
 async function executeAction(app: App, interaction: ButtonInteraction, action: PendingAction): Promise<void> {
   const guild = interaction.guild;
-  if (!guild) { await interaction.update(v2Update('Guild not found.')); return; }
+  if (!guild) { await interaction.editReply(v2Update('Guild not found.')); return; }
+
+  if (action.targetUserId === guild.ownerId) {
+    await interaction.editReply(v2Update('❌ The server owner cannot be moderated.'));
+    return;
+  }
+
+  if (await app.whitelist.isWhitelisted(guild.id, action.targetUserId, 'moderation')) {
+    await interaction.editReply(v2Update('❌ This user is whitelisted from moderation actions.'));
+    return;
+  }
 
   const {
     humanizeDuration,
@@ -190,69 +210,80 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
     switch (action.action) {
       case 'ban': {
         const user = await app.client.users.fetch(action.targetUserId).catch(() => null);
-        if (!user) { await interaction.update(v2Update('User not found.')); return; }
+        if (!user) { await interaction.editReply(v2Update('User not found.')); return; }
         result = await pm.ban(user as never, {
           reason: action.reason,
           moderatorId: action.actorId,
           archiveChannelId: action.channelId,
           durationMs: action.durationMs,
           deleteMessageDays: action.deleteDays,
+          anonymous: action.anonymous,
+          evidence: action.evidence,
         });
         break;
       }
       case 'kick': {
         const member = await guild.members.fetch(action.targetUserId).catch(() => null);
-        if (!member) { await interaction.update(v2Update('User not found in server.')); return; }
+        if (!member) { await interaction.editReply(v2Update('User not found in server.')); return; }
         result = await pm.kick(member, {
           reason: action.reason,
           moderatorId: action.actorId,
           archiveChannelId: action.channelId,
+          anonymous: action.anonymous,
+          evidence: action.evidence,
         });
         break;
       }
       case 'mute':
       case 'timeout': {
         const member = await guild.members.fetch(action.targetUserId).catch(() => null);
-        if (!member) { await interaction.update(v2Update('User not found in server.')); return; }
+        if (!member) { await interaction.editReply(v2Update('User not found in server.')); return; }
         result = await pm.timeout(member, action.durationMs ?? 3_600_000, {
           reason: action.reason,
           moderatorId: action.actorId,
           archiveChannelId: action.channelId,
           logEvent: action.action === 'mute' ? 'member_mute' : 'member_timeout',
+          anonymous: action.anonymous,
+          evidence: action.evidence,
         });
         break;
       }
       case 'warn': {
         const member = await guild.members.fetch(action.targetUserId).catch(() => null);
         const target = member ?? (await app.client.users.fetch(action.targetUserId).catch(() => null));
-        if (!target) { await interaction.update(v2Update('User not found.')); return; }
+        if (!target) { await interaction.editReply(v2Update('User not found.')); return; }
         result = await pm.warn(target, {
           reason: action.reason,
           moderatorId: action.actorId,
           archiveChannelId: action.channelId,
+          anonymous: action.anonymous,
+          evidence: action.evidence,
         });
         break;
       }
       case 'softban': {
         const user = await app.client.users.fetch(action.targetUserId).catch(() => null);
-        if (!user) { await interaction.update(v2Update('User not found.')); return; }
+        if (!user) { await interaction.editReply(v2Update('User not found.')); return; }
         result = await pm.softban(user as never, {
           reason: action.reason,
           moderatorId: action.actorId,
           archiveChannelId: action.channelId,
+          anonymous: action.anonymous,
+          evidence: action.evidence,
         });
         break;
       }
       case 'purge': {
         const channel = guild.channels.cache.get(action.channelId);
-        if (!channel || !('bulkDelete' in channel)) { await interaction.update(v2Update('Channel not found.')); return; }
+        if (!channel || !('bulkDelete' in channel)) { await interaction.editReply(v2Update('Channel not found.')); return; }
+        const purgeLimit = action.purgeAmount ?? 100;
         let toDelete;
         if (action.purgeAfterId) {
-          const after = await (channel as any).messages.fetch({ after: action.purgeAfterId, limit: 100 });
+          const after = await (channel as any).messages.fetch({ after: action.purgeAfterId, limit: purgeLimit });
           toDelete = [...after.values()];
         } else {
-          const fetched = await (channel as any).messages.fetch({ limit: 100 });
-          toDelete = fetched.filter((m: any) => m.id !== action.targetUserId).first(100);
+          const fetched = await (channel as any).messages.fetch({ limit: Math.min(purgeLimit + 10, 100) });
+          toDelete = fetched.filter((m: any) => m.author.id !== action.targetUserId).first(purgeLimit);
         }
         const ids = toDelete.map((m: any) => m.id);
         if (ids.length > 0) {
@@ -260,23 +291,33 @@ async function executeAction(app: App, interaction: ButtonInteraction, action: P
         }
         const purgeCount = ids.length;
         await app.logManager.log({ event: 'moderation_action', guildId: guild.id, channelId: action.channelId, actorId: action.actorId, message: `Purged ${purgeCount} messages in <#${action.channelId}>`, details: { amount: purgeCount } });
-        await interaction.update(v2Update(`✅ Purged ${purgeCount} message(s).`));
+        await interaction.editReply(v2Update(`✅ Purged ${purgeCount} message(s).`));
+        return;
+      }
+      case 'clearwarnings': {
+        const { executeClear } = await import('../commands/moderation/clearwarnings');
+        const cleared = await executeClear(app, guild, action.targetUserId, undefined, action.actorId);
+        await interaction.editReply(v2Update(
+          cleared > 0
+            ? `✅ Cleared ${cleared} warning(s) for <@${action.targetUserId}>.`
+            : `<@${action.targetUserId}> has no active warnings.`,
+        ));
         return;
       }
       default:
-        await interaction.update(v2Update('Unknown action.'));
+        await interaction.editReply(v2Update('Unknown action.'));
         return;
     }
 
-    if (!result) { await interaction.update(v2Update('Unknown action.')); return; }
+    if (!result) { await interaction.editReply(v2Update('Unknown action.')); return; }
     const dur = action.durationMs ? ` for ${humanizeDuration(action.durationMs)}` : '';
     if (result.ok) {
-      await interaction.update(v2Update(`✅ ${action.action} applied to <@${action.targetUserId}>${dur} — case ${result.case!.case_code}.`));
+      await interaction.editReply(v2Update(`✅ ${action.action} applied to <@${action.targetUserId}>${dur} — case ${result.case!.case_code}.`));
     } else {
-      await interaction.update(v2Update(`❌ Failed: ${mapDiscordError(result.error!)}`));
+      await interaction.editReply(v2Update(`❌ Failed: ${mapDiscordError(result.error!)}`));
     }
   } catch (err) {
-    await interaction.update(v2Update(`❌ Error: ${(err as Error).message}`));
+    await interaction.editReply(v2Update(`❌ Error: ${(err as Error).message}`));
   }
 }
 

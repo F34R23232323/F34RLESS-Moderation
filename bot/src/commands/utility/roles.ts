@@ -118,6 +118,7 @@ const command: BotCommand = {
   name: 'roles',
   category: 'utility',
   description: 'Role utilities',
+  usage: ['!roles list', '!roles members <role>'],
   data,
   permissions: [],
   aliases: [],

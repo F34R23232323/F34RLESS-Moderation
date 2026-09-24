@@ -68,6 +68,7 @@ const command: BotCommand = {
   name: 'unquarantine',
   category: 'moderation',
   description: 'Restore a quarantined user to their original roles',
+  usage: '!unquarantine <user>',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['uq'],

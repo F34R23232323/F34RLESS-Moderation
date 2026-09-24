@@ -36,6 +36,7 @@ const command: BotCommand = {
   name: 'base64',
   category: 'utility',
   description: 'Base64 encode/decode',
+  usage: '!base64 <encode|decode> <text>',
   data,
   permissions: [],
   aliases: ['b64'],

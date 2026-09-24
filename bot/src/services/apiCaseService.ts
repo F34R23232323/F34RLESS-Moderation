@@ -64,6 +64,10 @@ export class ApiCaseService {
       throw new Error('bot is not in the target guild');
     }
 
+    if (await this.app.whitelist.isWhitelisted(req.guild_id, req.user_id, 'api')) {
+      throw new Error('target user is whitelisted from API punishments');
+    }
+
     const evidence = req.evidence ? parseJson(req.evidence, undefined) : undefined;
     const opts: PunishOptions = {
       reason: req.reason || 'No reason provided',

@@ -805,6 +805,24 @@ export const configSchema = z
       .strict()
       .default({}),
 
+    anti_impersonation: z
+      .object({
+        enabled: boolean.default(false),
+        check_on_join: boolean.default(true),
+        check_on_nick_change: boolean.default(true),
+        check_on_username_change: boolean.default(true),
+        match_server_name: boolean.default(true),
+        match_member_names: boolean.default(true),
+        reset_nickname: z.string().max(32).default('Impersonation Detected'),
+        notify_user: boolean.default(true),
+        notify_target: boolean.default(true),
+        exempt_role_ids: snowflakeArray.default([]),
+        actions: z.array(z.enum(['warn', 'mute', 'kick', 'ban'])).min(1).default(['warn', 'mute', 'kick', 'ban']),
+        mute_duration: z.string().default('1h'),
+      })
+      .strict()
+      .default({}),
+
     sticky_messages: z
       .object({
         enabled: boolean.default(false),
@@ -1525,6 +1543,7 @@ export const LOG_EVENT_NAMES = [
   'role_create',
   'role_delete',
   'nickname_change',
+  'impersonation_detected',
   'channel_create',
   'channel_update',
   'channel_delete',
@@ -1568,8 +1587,6 @@ export const LOG_EVENT_NAMES = [
   'webhook_update',
   'webhook_delete',
   'emergency_ping_triggered',
-  'emergency_access_granted',
-  'emergency_access_denied',
   'economy_balance_change',
   'economy_purchase',
   'economy_sale',

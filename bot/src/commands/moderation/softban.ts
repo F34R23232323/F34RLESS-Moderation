@@ -8,12 +8,14 @@ import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
 import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
+import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
 
 const data = new SlashCommandBuilder()
   .setName('softban')
   .setDescription('Ban and immediately unban to purge messages')
   .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true))
-  .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
+  .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false))
+  .addAttachmentOption((o) => o.setName('evidence').setDescription('Image evidence to store with the case').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   await interaction.deferReply({ ephemeral: true });
@@ -22,7 +24,8 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const user = await resolveUserOption(interaction, app);
   if (!user) { await v2Reply(interaction, 'User not found.', { ephemeral: true }); return; }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
-  const actionId = storePendingAction({ action: 'softban', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
+  const evidence = await collectSlashEvidence(app, interaction);
+  const actionId = storePendingAction({ action: 'softban', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, evidence, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
   const { components, flags } = buildConfirmEmbed('Softban', user.id, reason, undefined, actionId);
   await interaction.editReply({ components, flags } as never);
 }
@@ -37,6 +40,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!parseTargetId(args[0]) && replyCtx) { targetId = replyCtx.targetId; reason = args.join(' ') || 'No reason provided'; evidence = replyCtx.evidence; }
   if (!targetId) { await v2MessageReply(message, { content: 'Usage: `!softban <user> <reason>` — or reply to a message to softban its author.' }); return; }
 
+  const images = await collectMessageImageEvidence(app, message);
+  if (images.length > 0) evidence = [...(evidence ?? []), ...images];
   const { sendButtonConfirm } = await import('../../components/moderation');
   const { confirmed } = await sendButtonConfirm(app, message, 'softban', targetId, reason);
   if (!confirmed) return;
@@ -54,6 +59,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
 
 const command: BotCommand = {
   name: 'softban', category: 'moderation', description: 'Ban and immediately unban to purge messages',
+  usage: '!softban <user> <reason>',
+  details: 'Bans and unbans in one step so the member can return immediately while their recent messages are purged.',
   data, permissions: ['BanMembers'], aliases: ['sb'], execute, prefixExecute,
   asUserContext: true,
   async contextExecute(interaction, app) {

@@ -14,7 +14,7 @@ export class AntiRaidService {
     return this.active.has(guildId);
   }
 
-  public async trigger(guildId: string): Promise<void> {
+  public async trigger(guildId: string, memberIds?: string[]): Promise<void> {
     if (this.active.has(guildId)) return;
     const cfg = this.app.config.anti_raid;
     if (!cfg.enabled) return;
@@ -51,6 +51,8 @@ export class AntiRaidService {
         const cutoff = now - 3600_000;
         for (const member of members.values()) {
           if (member.joinedTimestamp && member.joinedTimestamp > cutoff && !member.user.bot) {
+            if (member.id === guild.ownerId) continue;
+            if (await this.app.whitelist.isWhitelisted(guildId, member.id, 'raid')) continue;
             await member.timeout(3600_000, 'Anti-raid').catch(() => undefined);
           }
         }
@@ -64,6 +66,8 @@ export class AntiRaidService {
             const cutoff = now - cfg.window_seconds * 1000 * 3;
             for (const member of members.values()) {
               if (member.joinedTimestamp && member.joinedTimestamp > cutoff && !member.user.bot) {
+                if (member.id === guild.ownerId) continue;
+                if (await this.app.whitelist.isWhitelisted(guildId, member.id, 'raid')) continue;
                 if (!member.roles.cache.has(cfg.quarantine_role_id)) {
                   await member.roles.add(cfg.quarantine_role_id, 'Anti-raid quarantine').catch(() => undefined);
                 }
@@ -78,6 +82,8 @@ export class AntiRaidService {
         const cutoff = now - cfg.window_seconds * 1000 * 3;
         for (const member of members.values()) {
           if (member.joinedTimestamp && member.joinedTimestamp > cutoff && !member.user.bot) {
+            if (member.id === guild.ownerId) continue;
+            if (await this.app.whitelist.isWhitelisted(guildId, member.id, 'raid')) continue;
             await this.app.db.execute(
               `INSERT INTO gates (guild_id, user_id, state) VALUES (?, ?, 'pending')
                ON DUPLICATE KEY UPDATE state = 'pending'`,

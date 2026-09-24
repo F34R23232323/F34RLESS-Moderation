@@ -162,6 +162,8 @@ const command: BotCommand = {
   name: 'purge-until',
   category: 'moderation',
   description: 'Purge all messages after a target message',
+  usage: '!purge-until <message_id>',
+  details: 'Purges messages after a target message ID in the current channel; also available as a message context-menu action. Requires confirmation.',
   data,
   permissions: ['ManageMessages'],
   aliases: [],

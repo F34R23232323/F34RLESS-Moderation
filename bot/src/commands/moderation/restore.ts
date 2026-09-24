@@ -74,6 +74,7 @@ const command: BotCommand = {
   name: 'restore',
   category: 'moderation',
   description: 'Restore a member from the latest snapshot',
+  usage: '!restore <user>',
   data,
   permissions: ['ModerateMembers'],
   aliases: [],

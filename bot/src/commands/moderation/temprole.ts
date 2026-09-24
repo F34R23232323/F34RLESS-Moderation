@@ -73,6 +73,8 @@ const command: BotCommand = {
   name: 'temprole',
   category: 'moderation',
   description: 'Apply a role for a duration (auto-removes)',
+  usage: '!temprole <user> <role> <duration> <reason>',
+  details: 'The role is removed automatically once the duration expires.',
   data,
   permissions: ['ManageRoles'],
   aliases: ['tr'],

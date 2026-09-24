@@ -92,14 +92,14 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   await executeClear(app, guild, targetId, count, message.author.id, message);
 }
 
-async function executeClear(
+export async function executeClear(
   app: App,
   guild: { id: string },
   targetId: string,
-  expectedCount: number,
+  expectedCount: number | undefined,
   actorId: string,
   msg?: Message,
-): Promise<void> {
+): Promise<number> {
   const [rows] = await app.db.query<RowDataPacket[]>(
     'SELECT id, case_id FROM warnings WHERE guild_id = ? AND user_id = ? AND active = 1',
     [guild.id, targetId],
@@ -107,7 +107,7 @@ async function executeClear(
 
   if (rows.length === 0) {
     if (msg) await msg.reply('No active warnings found.').catch(() => undefined);
-    return;
+    return 0;
   }
 
   let cleared = 0;
@@ -123,18 +123,21 @@ async function executeClear(
     actorId,
     targetId,
     message: `<@${actorId}> cleared ${cleared} warning(s) for <@${targetId}>`,
-    details: { clearedCount: cleared, expectedCount },
+    details: { clearedCount: cleared, expectedCount: expectedCount ?? cleared },
   });
 
   if (msg) {
     await msg.reply(`Cleared ${cleared} warning(s) for <@${targetId}>.`).catch(() => undefined);
   }
+  return cleared;
 }
 
 const command: BotCommand = {
   name: 'clearwarnings',
   category: 'moderation',
   description: 'Clear all active warnings for a user (requires double confirmation)',
+  usage: '!clearwarnings <user>',
+  details: 'Restricted to a dedicated staff role and double confirmation. Clears every active warning and closes the related cases.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['clearwarns', 'cw'],

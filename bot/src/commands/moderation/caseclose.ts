@@ -156,6 +156,8 @@ const command: BotCommand = {
   name: 'caseclose',
   category: 'moderation',
   description: 'Close case(s) and revert the punishment',
+  usage: '!caseclose <case code or number>',
+  details: 'Closing reverts the punishment where possible (unban, unmute, warning removal, temp role removal) and DMs the user. Pass multiple cases comma-separated.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['closecase', 'close'],

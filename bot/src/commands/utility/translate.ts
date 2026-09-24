@@ -48,6 +48,8 @@ const command: BotCommand = {
   name: 'translate',
   category: 'utility',
   description: 'Translate text',
+  usage: ['!translate <text>', '!translate -<lang> <text>'],
+  details: 'Defaults to English as the target language; prefix a language code to choose another (e.g. `!translate -es hello`).',
   data,
   permissions: [],
   aliases: ['tr'],

@@ -47,6 +47,7 @@ const command: BotCommand = {
   name: 'embed',
   category: 'admin',
   description: 'Craft an announcement message (staff)',
+  usage: '!embed <title | body>',
   data,
   permissions: ['ManageMessages'],
   aliases: ['embedbuilder'],

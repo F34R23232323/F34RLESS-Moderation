@@ -74,6 +74,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     action: 'purge', targetUserId: targetUser?.id ?? interaction.id,
     guildId: interaction.guildId!, channelId: channel.id,
     reason: `Purge ${amount} messages`, actorId: interaction.user.id,
+    purgeAmount: amount,
     expiresAt: Date.now() + 60_000,
   });
 
@@ -126,6 +127,8 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
 
 const command: BotCommand = {
   name: 'purge', category: 'moderation', description: 'Purge messages with optional filters',
+  usage: '!purge <1-100> [user] [contains:text] [bots] [attachments]',
+  details: 'Deletes up to 100 recent messages, optionally filtered by author, `contains:text`, `bots`, or `attachments`. Requires a confirmation button.',
   data, permissions: ['ManageMessages'], aliases: ['clear', 'prune'], execute, prefixExecute,
 };
 

@@ -109,6 +109,7 @@ const command: BotCommand = {
   name: 'warns',
   category: 'moderation',
   description: 'List a user\'s warnings (defaults to your own)',
+  usage: '!warns [user]',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['warnings'],

@@ -3,6 +3,7 @@ import type { Message } from 'discord.js';
 export type CaseEvidenceItem =
   | { type: 'message'; messageId: string; channelId: string; content?: string | null; attachmentUrls?: string[] }
   | { type: 'archive'; url: string; code?: string | null; messages?: number | null }
+  | { type: 'image'; url: string; name?: string | null }
   | { type: 'link'; url: string; label?: string | null }
   | { url: string };
 
@@ -65,6 +66,12 @@ export function formatEvidenceLines(evidence: unknown, guildId?: string | null):
         item.messages ? `${item.messages} messages` : null,
       ].filter(Boolean).join(', ');
       lines.push(`Archive${meta ? ` (${meta})` : ''}: ${item.url}`);
+      continue;
+    }
+
+    if (item.type === 'image' && item.url) {
+      const name = item.name ? String(item.name).slice(0, 100) : null;
+      lines.push(`Image${name ? ` (${name})` : ''}: ${item.url}`);
       continue;
     }
 

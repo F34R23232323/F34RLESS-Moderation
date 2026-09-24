@@ -98,6 +98,8 @@ const command: BotCommand = {
   name: 'massban',
   category: 'moderation',
   description: 'Ban multiple users (IDs or by filter)',
+  usage: '!massban <id1,id2,...> <reason>',
+  details: 'The slash form can also filter by `joined_after_days` or `no_roles`. Hierarchy and whitelist checks still apply to each target.',
   data,
   permissions: ['BanMembers'],
   aliases: [],

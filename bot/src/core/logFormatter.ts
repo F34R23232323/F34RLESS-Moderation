@@ -22,6 +22,7 @@ import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, stri
   role_create: 'Role Created',
   role_delete: 'Role Deleted',
   nickname_change: 'Nickname Changed',
+  impersonation_detected: 'Impersonation Detected',
   channel_create: 'Channel Created',
   channel_update: 'Channel Updated',
   channel_delete: 'Channel Deleted',
@@ -59,8 +60,6 @@ import type { Guild } from 'discord.js';const DISPLAY_NAMES: Record<string, stri
   webhook_update: 'Webhook Updated',
   webhook_delete: 'Webhook Deleted',
   emergency_ping_triggered: 'Emergency Ping Triggered',
-  emergency_access_granted: 'Emergency Access Granted',
-  emergency_access_denied: 'Emergency Access Denied',
 };
 
 export function friendlyEventName(event: string): string {
@@ -161,9 +160,14 @@ const LABELS: Record<string, string> = {
   oldTier: 'Old Tier',
   usesToday: 'Uses (24h)',
   threshold: 'Threshold',
+  trigger: 'Trigger',
+  usedName: 'Used Name',
+  matchedName: 'Matched Name',
+  matchedUserId: 'Matched User',
+  resetNickname: 'Nickname Set To',
 };
 
-const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'targetUser', 'inviter', 'actorId']);
+const USER_ID_KEYS = new Set(['userId', 'authorId', 'moderatorId', 'targetId', 'targetUser', 'inviter', 'actorId', 'matchedUserId']);
 const CHANNEL_ID_KEYS = new Set(['channelId', 'parentId', 'inviteChannel']);
 const ROLE_ID_KEYS = new Set(['roleId']);
 /** Keys whose array values are role snowflakes — rendered as role mentions. */
@@ -297,8 +301,7 @@ export const LOG_EVENT_ACCENTS: Record<string, number> = {
   webhook_update: 0x5865f2,
   webhook_delete: 0xed4245,
   emergency_ping_triggered: 0xed4245,
-  emergency_access_granted: 0x57f287,
-  emergency_access_denied: 0xfee75c,
+  impersonation_detected: 0xeb459e,
 };
 
 export function logAccent(event: string): number {

@@ -12,6 +12,7 @@ import { createMiscRouter } from './routes/misc';
 import { createMessagesRouter } from './routes/messages';
 import { createArchivesRouter } from './routes/archives';
 import { createArchivePublicRouter } from './routes/archivePublic';
+import { createEvidencePublicRouter } from './routes/evidencePublic';
 import { createMessageLogRouter } from './routes/messageLog';
 import { createRoleConnectionsRouter } from './routes/roleConnections';
 import { createAppealsRouter } from './routes/appeals';
@@ -102,6 +103,9 @@ async function main(): Promise<void> {
 
   // Public archive share links + media (no auth required — the code is the key).
   app.use('/api/archive', createArchivePublicRouter(ctx));
+
+  // Public case-evidence images (no auth required — the random code is the key).
+  app.use('/api/evidence', createEvidencePublicRouter(ctx));
 
   // Public appeals portal API (self-authenticated: session + membership + CSRF).
   app.use('/api/appeals', createAppealsRouter(ctx));
