@@ -45,7 +45,7 @@ async function prefixExecute(message: Message, _args: string[], app: App): Promi
   }
 }
 
-export const command: BotCommand = {
+const command: BotCommand = {
   name: 'boosttest',
   category: 'admin',
   description: 'Test the booster message (owner only)',
@@ -53,3 +53,5 @@ export const command: BotCommand = {
   execute,
   prefixExecute,
 };
+
+export default command;
