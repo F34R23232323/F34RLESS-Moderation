@@ -3123,7 +3123,7 @@ goodbye:
     **{user}** has packed their bags and left the empire. > We wish them the best on their future journeys out in the cold. > The empire currently stands strong with **{member_count}** members remaining.
 booster:
   enabled: true
-  channel_id: "1467134579923095738"
+  channel_id: "1466990156199362880"
   message: |-
     Thank you for boosting, {mention}!
     **Server Boosted!**
