@@ -41,6 +41,14 @@ commands:
   warn:
     enabled: true
     slash: true
+    prefix: true
+    cooldown_seconds: 2
+    permissions: []
+    permission_group: trial_mod
+    immune_roles: []
+    aliases:
+      - w
+      - warning
   boosttest:
     enabled: true
     slash: true
@@ -50,14 +58,6 @@ commands:
     permission_group: owner
     immune_roles: []
     aliases: []
-    prefix: true
-    cooldown_seconds: 2
-    permissions: []
-    permission_group: trial_mod
-    immune_roles: []
-    aliases:
-      - w
-      - warning
   impersonationcheck:
     enabled: true
     slash: true
