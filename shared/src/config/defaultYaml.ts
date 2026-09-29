@@ -62,7 +62,7 @@ commands:
     prefix: true
     cooldown_seconds: 5
     permissions: []
-    permission_group: owner
+    permission_group: admin
     immune_roles: []
     aliases: []
   clearwarnings:
@@ -71,7 +71,7 @@ commands:
     prefix: true
     cooldown_seconds: 5
     permissions: []
-    permission_group: owner
+    permission_group: admin
     immune_roles: []
     aliases: ["clearwarns", "cw"]
   mute:
