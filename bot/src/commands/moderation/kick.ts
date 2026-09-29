@@ -6,9 +6,10 @@ import { v2Reply } from '../../utils/v2';
 import { resolveMemberOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
+import { sendConfirmation, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('kick')
@@ -39,12 +40,11 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
   const evidence = await collectSlashEvidence(app, interaction);
-  const actionId = storePendingAction({
-    action: 'kick', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId,
-    reason, evidence, actorId: interaction.user.id, expiresAt: Date.now() + 60_000, anonymous: anonymous || undefined,
+  await sendConfirmation(interaction, {
+    action: 'kick', targetUserId: resolved.user.id, reason,
+    guildId: guild.id, channelId: interaction.channelId, actorId: interaction.user.id,
+    anonymous: anonymous || undefined, evidence,
   });
-  const { components, flags } = buildConfirmEmbed('Kick', resolved.user.id, reason, undefined, actionId);
-  await interaction.editReply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -74,9 +74,16 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   const result = await app.punishmentManager.kick(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence, anonymous: anonymous || undefined });
-  const content = result.ok ? `Kicked <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
-  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
+  await sendModerationResponse(message, {
+    action: 'kick',
+    target: member,
+    ok: result.ok,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'kick', category: 'moderation', description: 'Kick a user from the server',
@@ -86,11 +93,7 @@ const command: BotCommand = {
   asUserContext: true,
   async contextExecute(interaction, app) {
     if (!interaction.isUserContextMenuCommand()) return;
-    await contextUserConfirm(app, interaction, 'kick', 'No reason provided', async () => {
-      const member = await interaction.guild?.members.fetch(interaction.targetUser.id).catch(() => null);
-      if (!member) return { ok: false, error: 'User not found in server', dmSent: false };
-      return app.punishmentManager.kick(member, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId });
-    });
+    await contextUserConfirm(app, interaction, 'kick', 'No reason provided');
   },
 };
 

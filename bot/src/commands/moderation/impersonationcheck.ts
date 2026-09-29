@@ -72,7 +72,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     await v2Reply(interaction, 'This command can only be used in a server.', { ephemeral: true });
     return;
   }
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const user = interaction.options.getUser('user');
   const content = user ? await checkOne(app, guild, user.id) : await checkGuild(app, guild);
   await v2Reply(interaction, content);

@@ -10,14 +10,8 @@ import {
   TextDisplayBuilder,
 } from 'discord.js';
 import type { App } from '../core/context';
-import { hexToInt } from '../utils/v2';
+import { hexToInt, v2Ephemeral, v2Result } from '../utils/v2';
 import type { SuggestionRow } from '../suggestions/service';
-
-function v2Ephemeral(text: string): { components: unknown[]; flags: number } {
-  const container = new ContainerBuilder()
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
-  return { components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
-}
 
 function buildSuggestionEmbed(suggestion: SuggestionRow, cfg: { thread_name_prefix: string; statuses: Array<{ name: string; color?: string }> }, statusOverride?: string) {
   const status = statusOverride ?? suggestion.status;
@@ -223,7 +217,7 @@ const statusPick = {
       }
     }
 
-    await interaction.update({ content: `Suggestion #${id} status updated to **${newStatus}**.`, components: [] });
+    await interaction.update(v2Result(`✅ Suggestion #${id} status updated to **${newStatus}**.`, 0x57f287) as never);
   },
 };
 

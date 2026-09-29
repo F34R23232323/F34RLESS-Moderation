@@ -7,9 +7,10 @@ import { resolveMemberOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
+import { sendConfirmation, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('mute')
@@ -43,9 +44,11 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
   const evidence = await collectSlashEvidence(app, interaction);
-  const actionId = storePendingAction({ action: 'mute', targetUserId: resolved.user.id, guildId: guild.id, channelId: interaction.channelId, reason, evidence, durationMs: duration.milliseconds, actorId: interaction.user.id, expiresAt: Date.now() + 60_000, anonymous: anonymous || undefined });
-  const { components, flags } = buildConfirmEmbed('Mute', resolved.user.id, reason, duration.milliseconds, actionId);
-  await interaction.editReply({ components, flags } as never);
+  await sendConfirmation(interaction, {
+    action: 'mute', targetUserId: resolved.user.id, reason, durationMs: duration.milliseconds,
+    guildId: guild.id, channelId: interaction.channelId, actorId: interaction.user.id,
+    anonymous: anonymous || undefined, evidence,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -78,10 +81,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   const result = await app.punishmentManager.timeout(member, duration.milliseconds, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, logEvent: 'member_mute', evidence, anonymous: anonymous || undefined });
-  const durStr = humanizeDuration(duration.milliseconds);
-  const content = result.ok ? `Muted <@${targetId}> for ${durStr} — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
-  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
+  await sendModerationResponse(message, {
+    action: 'mute',
+    target: member,
+    ok: result.ok,
+    durationMs: duration.milliseconds,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'mute', category: 'moderation', description: 'Mute (timeout) a user',
@@ -91,11 +101,7 @@ const command: BotCommand = {
   asUserContext: true,
   async contextExecute(interaction, app) {
     if (!interaction.isUserContextMenuCommand()) return;
-    await contextUserConfirm(app, interaction, 'mute', 'No reason provided', async () => {
-      const member = await interaction.guild?.members.fetch(interaction.targetUser.id).catch(() => null);
-      if (!member) return { ok: false, error: 'User not found in server', dmSent: false };
-      return app.punishmentManager.timeout(member, 600_000, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId, logEvent: 'member_mute' });
-    }, { durationMs: 600_000 });
+    await contextUserConfirm(app, interaction, 'mute', 'No reason provided', { durationMs: 600_000 });
   },
 };
 

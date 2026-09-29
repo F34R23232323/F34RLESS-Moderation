@@ -92,8 +92,15 @@ export class SchedulerService {
       return;
     }
     this.jobs.push({ id, cron: expression, run });
+    let inFlight = false;
     cron.schedule(expression, () => {
-      void Promise.resolve(run()).catch((err: unknown) => this.app.logManager.reportError(`cron job ${id}`, err));
+      // Skip this tick entirely if the previous run hasn't finished — a slow
+      // tick (e.g. DB poll executing punishments) must not overlap itself.
+      if (inFlight) return;
+      inFlight = true;
+      void Promise.resolve(run())
+        .catch((err: unknown) => this.app.logManager.reportError(`cron job ${id}`, err))
+        .finally(() => { inFlight = false; });
     });
   }
 

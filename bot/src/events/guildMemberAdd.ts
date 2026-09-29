@@ -55,8 +55,9 @@ export async function handleGuildMemberAdd(app: App, member: GuildMember): Promi
       event: 'member_join',
       guildId: guild.id,
       targetId: member.id,
-      message: `<@${member.id}> joined (account created ${member.user.createdAt.toISOString()})`,
+      message: `<@${member.id}> joined the server`,
       details: {
+        accountCreatedAt: member.user.createdAt.toISOString(),
         accountAgeDays: Math.round((Date.now() - member.user.createdTimestamp) / 86400000),
         ...(inviteInfo
           ? {

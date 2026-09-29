@@ -41,11 +41,11 @@ import { AppealService } from './services/appealService';
 import { MessageContentCache } from './utils/messageCache';
 import type { App } from './core/context';
 import { MusicService } from './music/MusicService';
-import { NsfwModerationService } from './nsfw/service';
 import { ReplyPingProtectionService } from './services/replyPingProtection/service';
 import { AntiNukeService } from './antinuke';
 import { EmojiManager, installEmojiOutboundNormalizer } from './emoji';
 import { ScamHashStore } from './automod/scamHashStore';
+import { BlocklistStore } from './automod/blocklistStore';
 import { EconomyService } from './economy/service';
 import { SuggestionService } from './suggestions/service';
 import { StickyMessageService } from './services/stickyMessageService';
@@ -135,11 +135,11 @@ async function main(): Promise<void> {
     roleConnections: null as unknown as RoleConnectionsService,
     music: null as unknown as MusicService,
     appeals: null as unknown as AppealService,
-    nsfw: null as unknown as NsfwModerationService,
     replyPingProtection: null as unknown as ReplyPingProtectionService,
     antiNuke: null as unknown as AntiNukeService,
     emojiManager: null as unknown as EmojiManager,
     scamHashStore: null as unknown as ScamHashStore,
+    blocklistStore: null as unknown as BlocklistStore,
     economy: null as unknown as EconomyService,
     suggestions: null as unknown as SuggestionService,
     stickyMessages: null as unknown as StickyMessageService,
@@ -162,6 +162,9 @@ async function main(): Promise<void> {
   app.scamHashStore = new ScamHashStore(db);
   await app.scamHashStore.load();
   logger.info(`Loaded ${app.scamHashStore.count()} scam image hashes`);
+  app.blocklistStore = new BlocklistStore(app);
+  await app.blocklistStore.load();
+  app.blocklistStore.startAutoRefresh();
   logManager.app = app;
 
   app.caseService = new CaseService(db);
@@ -187,7 +190,6 @@ async function main(): Promise<void> {
   app.roleConnections = new RoleConnectionsService(app);
   app.music = new MusicService(app);
   app.appeals = new AppealService(app);
-  app.nsfw = new NsfwModerationService(app);
   app.replyPingProtection = new ReplyPingProtectionService(app);
   app.logger.warn('Anti-nuke Redis adapter is unavailable; enforcement remains alert-only');
   app.antiNuke = new AntiNukeService(app, null, app.startedAt);
@@ -235,9 +237,6 @@ async function main(): Promise<void> {
     startImpersonationScans(app);
   });
 
-  // Load the NSFW model before login so no image job starts before it is
-  // ready. init() never rejects — a model failure disables the feature.
-  await app.nsfw.init();
   app.replyPingProtection.loadTrackedRules();
 
   // Raw gateway debug — fires before discord.js processes the event
@@ -246,7 +245,7 @@ async function main(): Promise<void> {
   });
 
   const shutdown = (): void => {
-    void app.nsfw.shutdown().finally(() => process.exit(0));
+    process.exit(0);
   };
   process.once('SIGINT', shutdown);
   process.once('SIGTERM', shutdown);

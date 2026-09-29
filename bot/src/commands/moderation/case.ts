@@ -29,7 +29,7 @@ async function resolveCase(app: App, guildId: string, id: string): Promise<{ c: 
 function relTime(date: Date | string | null | undefined): string | null {
   if (!date) return null;
   const ts = Math.floor(new Date(date).getTime() / 1000);
-  return Number.isFinite(ts) ? `<t:${ts}:R>` : null;
+  return Number.isFinite(ts) ? `<t:${ts}:F> (<t:${ts}:R>)` : null;
 }
 
 async function caseViewLines(app: App, guildId: string, c: any): Promise<string> {
@@ -72,7 +72,7 @@ async function caseViewLines(app: App, guildId: string, c: any): Promise<string>
 }
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const sub = interaction.options.getSubcommand();

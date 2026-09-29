@@ -1,13 +1,12 @@
 import { EventEmitter } from 'events';
-import { AttachmentBuilder, ChannelType } from 'discord.js';
-import type { Guild, GuildBasedChannel, TextChannel, ThreadChannel } from 'discord.js';
+import { AttachmentBuilder, ChannelType, EmbedBuilder } from 'discord.js';
+import type { Guild, GuildBasedChannel, TextChannel, ThreadChannel, User } from 'discord.js';
 import type { Pool } from 'mysql2/promise';
 import type { App } from './context';
 import { isLogIgnored, type LogIgnoreContext } from '../../../shared/src/index';
 import type { LoggingEntryConfig } from '../../../shared/src/index';
-import { v2Send } from '../utils/v2';
-import { buildRichV2 } from '../utils/v2';
-import { friendlyEventName, formatDetails, logAccent } from './logFormatter';
+import { friendlyEventName } from './logFormatter';
+import { buildLogEmbed, packByBudget, type LogEmbedSource } from './logEmbed';
 
 export interface RateLimitOrigin {
   file: string;
@@ -20,6 +19,9 @@ export interface LogInput {
   channelId?: string | null;
   actorId?: string | null;
   targetId?: string | null;
+  /** Optional display tag for the target (e.g. "bKcYCsf") — appended to the
+   *  embed title to produce Sapphire-style "Kick bKcYCsf" headers. */
+  targetTag?: string | null;
   message?: string;
   details?: unknown;
   mediaUrls?: string[];
@@ -27,14 +29,25 @@ export interface LogInput {
 }
 
 interface QueuedEntry {
-  input: LogInput;
-  header: string;
-  text: string;
+  source: LogEmbedSource & { files?: LogInput['files'] };
+  /** When the event happened (ms) — not when it is sent. */
   timestamp: number;
+  logId: number | null;
+  /** Send attempts so far — entries survive transient failures. */
+  attempts: number;
 }
 
 const FLUSH_INTERVAL_MS = 500;
-const MAX_BATCH_SIZE = 25;
+/** At this many pending entries for one channel, flush immediately instead of
+ *  waiting for the debounce — bursts still go out as one packed message. */
+const MERGE_THRESHOLD = 3;
+const MAX_QUEUE_SIZE = 500;
+const MAX_SEND_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 2_000;
+/** Discord: max 10 embeds and ~6000 chars per message. */
+const MAX_EMBEDS_PER_MESSAGE = 10;
+const MAX_MESSAGE_CHARS = 5800;
+const MAX_FILES_PER_MESSAGE = 10;
 
 export class LogManager extends EventEmitter {
   private readonly db: Pool;
@@ -142,7 +155,7 @@ export class LogManager extends EventEmitter {
       );
       this.emit('log', { ...input });
       const insertId = (result as { insertId: number }).insertId;
-      this.enqueueLog(input);
+      this.enqueueLog(input, insertId);
       return insertId;
     } catch (err) {
       console.error('LogManager.log failed:', err);
@@ -152,7 +165,7 @@ export class LogManager extends EventEmitter {
 
   // ── Per-channel batch queue ──────────────────────────────────────────────
 
-  private enqueueLog(input: LogInput): void {
+  private enqueueLog(input: LogInput, logId: number | null = null): void {
     const cfg = this.eventConfig(input.event);
     if (!cfg || !cfg.enabled) return;
     const guild = this.app?.client.guilds.cache.get(input.guildId);
@@ -163,35 +176,65 @@ export class LogManager extends EventEmitter {
       (cfg.channel_id && guild.channels.cache.get(cfg.channel_id));
     if (!channel || !('send' in channel)) return;
 
-    const header = friendlyEventName(input.event);
-    const lines: string[] = [];
-    if (input.message) lines.push(input.message);
-    if (input.channelId && !input.message?.includes(`<#${input.channelId}>`)) {
-      lines.push(`**Channel:** <#${input.channelId}>`);
-    }
-    if (input.actorId) lines.push(`**Actor:** <@${input.actorId}>`);
-    if (input.targetId) lines.push(`**User:** <@${input.targetId}>`);
-    lines.push(...formatDetails(input.details, guild));
-
     const details = input.details as Record<string, unknown> | null | undefined;
-    const messageId = details && typeof details.messageId === 'string' ? details.messageId : null;
-    if (messageId && input.channelId) {
-      lines.push(`**Link:** <https://discord.com/channels/${input.guildId}/${input.channelId}/${messageId}>`);
+    let header = friendlyEventName(input.event);
+    const caseCode = (details?.caseCode ?? details?.case_code) as string | undefined;
+    if (
+      caseCode &&
+      typeof caseCode === 'string' &&
+      ['member_kick', 'member_ban', 'member_unban', 'member_mute', 'member_timeout', 'member_warn', 'member_unwarn', 'softban'].includes(input.event)
+    ) {
+      header = `${friendlyEventName(input.event)} ${caseCode}`;
+    } else if (typeof details?.channelTypeTitle === 'string') {
+      header = details.channelTypeTitle;
+    } else if (input.targetTag) {
+      header = `${friendlyEventName(input.event)} ${input.targetTag}`;
     }
 
-    let text = lines.join('\n') || input.event;
-    if (text.length > 3800) text = `${text.slice(0, 3800)}… (+${text.length - 3800} chars)`;
+    const entry: QueuedEntry = {
+      source: {
+        header,
+        event: input.event,
+        guildId: input.guildId,
+        channelId: input.channelId,
+        actorId: input.actorId,
+        targetId: input.targetId,
+        message: input.message,
+        details: input.details,
+        mediaUrls: input.mediaUrls,
+        files: input.files,
+      },
+      timestamp: Date.now(),
+      logId,
+      attempts: 0,
+    };
+    this.pushEntry(`${input.guildId}:${channel.id}`, entry);
 
-    const queueKey = `${input.guildId}:${channel.id}`;
-    const entry: QueuedEntry = { input, header, text, timestamp: Date.now() };
-    const queue = this.pendingLogs.get(queueKey);
-    if (queue) {
-      queue.push(entry);
-      if (queue.length >= MAX_BATCH_SIZE) void this.flushLogs(queueKey);
+  }
+
+  private pushEntry(queueKey: string, entry: QueuedEntry): void {
+    let queue = this.pendingLogs.get(queueKey);
+    if (!queue) {
+      queue = [];
+      this.pendingLogs.set(queueKey, queue);
+    }
+    queue.push(entry);
+    // Hard cap: drop the oldest overflow rather than growing without bound.
+    if (queue.length > MAX_QUEUE_SIZE) queue.splice(0, queue.length - MAX_QUEUE_SIZE);
+    if (queue.length >= MERGE_THRESHOLD) {
+      this.clearFlushTimer(queueKey);
+      void this.flushLogs(queueKey);
     } else {
-      this.pendingLogs.set(queueKey, [entry]);
+      this.scheduleFlush(queueKey);
     }
-    this.scheduleFlush(queueKey);
+  }
+
+  private clearFlushTimer(key: string): void {
+    const timer = this.flushTimers.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.flushTimers.delete(key);
+    }
   }
 
   private scheduleFlush(key: string): void {
@@ -204,54 +247,128 @@ export class LogManager extends EventEmitter {
     this.flushTimers.set(key, timer);
   }
 
+  /** Best-effort avatar URL for the thumbnail — cache first, then fetch. */
+  private async resolveAvatar(userId: string | null | undefined): Promise<string | null> {
+    const user = await this.resolveUser(userId);
+    return user ? user.displayAvatarURL({ size: 128 }) : null;
+  }
+
+  /** Best-effort user lookup — cache first, then fetch. */
+  private async resolveUser(userId: string | null | undefined): Promise<User | null> {
+    const app = this.app;
+    if (!app || !userId) return null;
+    const cached = app.client.users.cache.get(userId);
+    return cached ?? await app.client.users.fetch(userId).catch(() => null);
+  }
+
   private async flushLogs(key: string): Promise<void> {
     const queue = this.pendingLogs.get(key);
     if (!queue || queue.length === 0) return;
-    this.pendingLogs.delete(key);
 
     const app = this.app;
     if (!app) return;
 
     const [guildId, channelId] = key.split(':');
     const guild = app.client.guilds.cache.get(guildId);
-    if (!guild) return;
-    const channel = guild.channels.cache.get(channelId);
-    if (!channel || !('send' in channel)) return;
+    const channel = guild?.channels.cache.get(channelId);
+    if (!guild || !channel || !('send' in channel)) {
+      this.pendingLogs.delete(key);
+      return;
+    }
+
+    // Take the whole batch out; failed sends are re-queued for retry.
+    const batch = queue.splice(0, queue.length);
+    if (queue.length === 0) this.pendingLogs.delete(key);
 
     try {
-      if (queue.length === 1) {
-        const e = queue[0];
-        const rich = buildRichV2({
-          accentColor: logAccent(e.input.event),
-          header: e.header,
-          text: e.text,
-          footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
-          mediaUrls: e.input.mediaUrls?.length ? e.input.mediaUrls : undefined,
-        });
-        const files = e.input.files?.map((f) => new AttachmentBuilder(Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data), { name: f.name }));
-        await channel.send({ ...rich, ...(files?.length ? { files } : {}), allowedMentions: { parse: [], repliedUser: false } } as never);
-      } else {
-        const sections: string[] = [];
-        for (const e of queue) {
-          sections.push(`**${e.header}**\n${e.text}`);
-        }
-        let text = sections.join('\n\n');
-        if (text.length > 3700) text = `${text.slice(0, 3700)}…`;
-
-        const rich = buildRichV2({
-          accentColor: 0x5865f2,
-          header: `${queue.length} log events`,
-          text,
-          footer: `${guild.name} • <t:${Math.floor(Date.now() / 1000)}:R>`,
-        });
-        await channel.send({ ...rich, allowedMentions: { parse: [], repliedUser: false } } as never);
-      }
+      await this.sendBatch(channel, guild, batch);
     } catch (err) {
-      console.error(`Failed to flush batched logs to channel ${channelId}:`, err);
+      this.requeueFailed(key, batch, err);
+    }
+  }
+
+  /** Re-queue a failed batch with backoff, or give up and report after
+   *  MAX_SEND_ATTEMPTS so transient rate limits never lose log entries. */
+  private requeueFailed(key: string, batch: QueuedEntry[], err: unknown): void {
+    for (const e of batch) e.attempts++;
+    const remaining = batch.filter((e) => e.attempts < MAX_SEND_ATTEMPTS);
+    if (remaining.length === 0) {
+      this.app?.logger.error(`Dropped ${batch.length} log entries for ${key} after ${MAX_SEND_ATTEMPTS} attempts:`, err);
+      void this.app?.logManager.reportError(`log flush ${key}`, err).catch(() => undefined);
+      return;
+    }
+    let queue = this.pendingLogs.get(key);
+    if (!queue) {
+      queue = [];
+      this.pendingLogs.set(key, queue);
+    }
+    // Preserve original ordering: failed entries go back to the front.
+    queue.unshift(...remaining);
+    if (this.flushTimers.has(key)) return; // a flush is already scheduled
+    const delay = RETRY_BASE_DELAY_MS * Math.max(...remaining.map((e) => e.attempts), 1);
+    const timer = setTimeout(() => {
+      this.flushTimers.delete(key);
+      void this.flushLogs(key);
+    }, delay);
+    timer.unref?.();
+    this.flushTimers.set(key, timer);
+  }
+
+  /** Build one embed per entry, pack them into message-sized groups (≤10
+   *  embeds, ≤~6000 chars), and send. Files travel with their entry's pack. */
+  private async sendBatch(channel: any, guild: Guild, batch: QueuedEntry[]): Promise<void> {
+    const built: Array<{ embed: EmbedBuilder; entry: QueuedEntry }> = [];
+    for (const entry of batch) {
+      // Only show a user avatar thumbnail for member/user events (matches Sapphire).
+      // Channel, message, webhook, emoji, and server events never show a thumbnail.
+      const shouldHaveThumbnail = [
+        'member_kick',
+        'member_ban',
+        'member_unban',
+        'member_mute',
+        'member_timeout',
+        'member_warn',
+        'member_unwarn',
+        'role_add',
+        'role_remove',
+        'role_change',
+        'member_join',
+        'member_leave',
+        'member_avatar_update',
+        'nickname_change',
+      ].includes(entry.source.event);
+      const thumbnailUrl = shouldHaveThumbnail && entry.source.targetId
+        ? await this.resolveAvatar(entry.source.targetId)
+        : null;
+      const actor = entry.source.actorId ? await this.resolveUser(entry.source.actorId) : null;
+
+      const embed = buildLogEmbed(entry.source, {
+        guildName: guild.name,
+        guildIconUrl: guild.iconURL({ size: 64 }),
+        thumbnailUrl,
+        logId: entry.logId,
+        timestamp: entry.timestamp,
+        actorName: actor?.username ?? null,
+        actorAvatarUrl: actor ? actor.displayAvatarURL({ size: 64 }) : null,
+      }, guild);
+      built.push({ embed, entry });
+    }
+
+    const packs = packByBudget(built, (b) => JSON.stringify(b.embed.toJSON()).length);
+    for (const pack of packs) {
+      const files = pack.flatMap((b) => b.entry.source.files ?? [])
+        .slice(0, MAX_FILES_PER_MESSAGE)
+        .map((f) => new AttachmentBuilder(Buffer.isBuffer(f.data) ? f.data : Buffer.from(f.data), { name: f.name }));
+      await channel.send({
+        embeds: pack.map((b) => b.embed),
+        ...(files.length ? { files } : {}),
+        allowedMentions: { parse: [], repliedUser: false },
+      } as never);
     }
   }
 
   // ── Automod logging ────────────────────────────────────────────────────────
+
 
   public async logAutomodTrigger(entry: {
     guildId: string;
@@ -322,41 +439,34 @@ export class LogManager extends EventEmitter {
     const channel = (threadId && guild.channels.cache.get(threadId)) || (targetId && guild.channels.cache.get(targetId));
     if (!channel || !('send' in channel)) return;
 
-    const lines: string[] = [`**User:** <@${entry.userId}>`];
-    if (entry.channelId) lines.push(`**Channel:** <#${entry.channelId}>`);
-    if (entry.messageId && entry.channelId) {
-      lines.push(`**Link:** <https://discord.com/channels/${entry.guildId}/${entry.channelId}/${entry.messageId}>`);
-    }
-    if (entry.contentSnippet) lines.push(`**Matched:** ${entry.contentSnippet.slice(0, 800)}`);
+    // Structured details — the shared embed builder renders these as fields.
+    const details: Record<string, unknown> = { rule: entry.rule, module: entry.module };
+    if (entry.contentSnippet) details.contentSnippet = entry.contentSnippet.slice(0, 800);
     const taken = entry.actionsTaken as string[] | null | undefined;
-    if (Array.isArray(taken) && taken.length > 0) lines.push(`**Actions:** ${taken.join(', ')}`);
+    if (Array.isArray(taken) && taken.length > 0) details.actionsTaken = taken.join(', ');
     const failed = entry.actionsFailed as Array<{ step?: string; error?: string }> | null | undefined;
     if (Array.isArray(failed) && failed.length > 0) {
-      lines.push(`**Failed:** ${failed.map((f) => `${f.step ?? 'step'} (${f.error ?? 'unknown'})`).join('; ')}`);
+      details.actionsFailed = failed.map((f) => `${f.step ?? 'step'} (${f.error ?? 'unknown'})`).join('; ');
     }
-    if (Array.isArray(entry.caseIds) && entry.caseIds.length > 0) lines.push(`**Cases:** ${entry.caseIds.join(', ')}`);
-    if (entry.archiveLink) lines.push(`**Evidence:** ${entry.archiveLink}`);
-    if (entry.responseSuppressed) lines.push(`**Response:** suppressed by throttle`);
+    if (Array.isArray(entry.caseIds) && entry.caseIds.length > 0) details.caseIds = entry.caseIds.join(', ');
+    if (entry.archiveLink) details.archiveLink = entry.archiveLink;
+    if (entry.responseSuppressed) details.responseSuppressed = 'suppressed by throttle';
+    if (entry.messageId) details.messageId = entry.messageId;
 
-    let text = lines.join('\n');
-    if (text.length > 3800) text = `${text.slice(0, 3800)}…`;
-
-    // Route through the same per-channel batch queue
-    const queueKey = `${entry.guildId}:${channel.id}`;
     const queued: QueuedEntry = {
-      input: { event: 'automod_trigger', guildId: entry.guildId },
-      header: `Automod: ${entry.module} — ${entry.rule}`,
-      text,
+      source: {
+        header: `Automod: ${entry.module} — ${entry.rule}`,
+        event: 'automod_trigger',
+        guildId: entry.guildId,
+        channelId: entry.channelId,
+        targetId: entry.userId,
+        details,
+      },
       timestamp: Date.now(),
+      logId: null,
+      attempts: 0,
     };
-    const queue = this.pendingLogs.get(queueKey);
-    if (queue) {
-      queue.push(queued);
-      if (queue.length >= MAX_BATCH_SIZE) void this.flushLogs(queueKey);
-    } else {
-      this.pendingLogs.set(queueKey, [queued]);
-    }
-    this.scheduleFlush(queueKey);
+    this.pushEntry(`${entry.guildId}:${channel.id}`, queued);
   }
 
   public async logCommandUsage(entry: {
@@ -395,19 +505,24 @@ export class LogManager extends EventEmitter {
     if (!cfg.enabled) return;
 
     const verbosity = cfg.verbosity === 'verbose' ? cleaned : err instanceof Error ? err.message : cleaned.slice(0, 500);
-    const content = `[Error] ${source}\n${verbosity.slice(0, 1800)}`;
+    const embed = new EmbedBuilder()
+      .setColor(0xed4245)
+      .setTitle(`❌ Error — ${source}`)
+      .setDescription(verbosity.slice(0, 3900))
+      .setFooter({ text: 'Error report' })
+      .setTimestamp();
 
     if (cfg.channel_id) {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
-        const sent = await v2Send(channel, content, { accentColor: '#ED4245', allowedMentions: { parse: [], repliedUser: false } })
+        const sent = await channel.send({ embeds: [embed], allowedMentions: { parse: [], repliedUser: false } } as never)
           .then(() => true)
           .catch(() => false);
         if (sent) return;
       }
     }
     if (cfg.webhook_url) {
-      await this.postWebhook(cfg.webhook_url, { content: `[Error] ${source}\n${cleaned.slice(0, 1900)}` }).catch(() => undefined);
+      await this.postWebhook(cfg.webhook_url, { embeds: [embed.toJSON()] }).catch(() => undefined);
     }
   }
 
@@ -432,29 +547,39 @@ export class LogManager extends EventEmitter {
     const cfg = app.config.rate_limit_reporting;
     if (!cfg.enabled) return;
 
-    const lines = ['Rate limited', `Method: ${data.method}`, `Route: ${data.route}`, `Timeout: ${data.timeout}ms`, `Global: ${data.global}`];
-    if (data.bucket) lines.push(`Bucket: ${data.bucket}`);
+    const fields: Array<{ name: string; value: string; inline: boolean }> = [
+      { name: 'Method', value: data.method, inline: true },
+      { name: 'Route', value: data.route.slice(0, 256), inline: true },
+      { name: 'Timeout', value: `${data.timeout}ms`, inline: true },
+      { name: 'Global', value: data.global ? 'Yes' : 'No', inline: true },
+    ];
+    if (data.bucket) fields.push({ name: 'Bucket', value: data.bucket.slice(0, 256), inline: false });
     if (data.origin) {
-      lines.push(`Source: ${data.origin.file}`);
-      lines.push(`Feature: ${data.origin.feature}`);
+      fields.push({ name: 'Source', value: data.origin.file.slice(0, 256), inline: true });
+      fields.push({ name: 'Feature', value: data.origin.feature.slice(0, 256), inline: true });
     }
-    const text = lines.join('\n');
+    const embed = new EmbedBuilder()
+      .setColor(0xfee75c)
+      .setTitle('⏳ Rate limited')
+      .addFields(fields)
+      .setFooter({ text: 'Rate limit report' })
+      .setTimestamp();
 
     if (cfg.channel_id) {
       const channel = app.client.channels.cache.get(cfg.channel_id);
       if (channel && 'send' in channel) {
-        const sent = await v2Send(channel, text, { accentColor: '#FEE75C', allowedMentions: { parse: [], repliedUser: false } })
+        const sent = await channel.send({ embeds: [embed], allowedMentions: { parse: [], repliedUser: false } } as never)
           .then(() => true)
           .catch(() => false);
         if (sent) return;
       }
     }
     if (cfg.webhook_url) {
-      await this.postWebhook(cfg.webhook_url, { content: text }).catch(() => undefined);
+      await this.postWebhook(cfg.webhook_url, { embeds: [embed.toJSON()] }).catch(() => undefined);
     }
   }
 
-  private async postWebhook(url: string, payload: { content: string }): Promise<void> {
+  private async postWebhook(url: string, payload: { content?: string; embeds?: unknown[] }): Promise<void> {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

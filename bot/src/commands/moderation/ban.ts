@@ -7,9 +7,10 @@ import { resolveUserOption } from '../../utils/discord';
 import { parseDuration, humanizeDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
+import { sendConfirmation, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('ban')
@@ -64,13 +65,12 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
 
   const evidence = await collectSlashEvidence(app, interaction);
-  const actionId = storePendingAction({
-    action: 'ban', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId,
-    reason, evidence, durationMs: durationMs > 0 ? durationMs : undefined, deleteDays: deleteDays || undefined,
-    actorId: interaction.user.id, expiresAt: Date.now() + 60_000, anonymous: anonymous || undefined,
+  await sendConfirmation(interaction, {
+    action: 'ban', targetUserId: user.id, reason,
+    durationMs: durationMs > 0 ? durationMs : undefined, deleteDays: deleteDays || undefined,
+    guildId: guild.id, channelId: interaction.channelId, actorId: interaction.user.id,
+    anonymous: anonymous || undefined, evidence,
   });
-  const { components, flags } = buildConfirmEmbed('Ban', user.id, reason, durationMs > 0 ? durationMs : undefined, actionId);
-  await interaction.editReply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -126,10 +126,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await (message.channel as any).send({ content: `❌ Ban failed: ${(err as Error).message}`, allowedMentions: { parse: [] } }).catch(() => undefined);
     return;
   }
-  const dur = durationMs > 0 ? ` for ${humanizeDuration(durationMs)}` : '';
-  const replyContent = result.ok ? `Banned <@${targetId}>${dur} — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
-  await (message.channel as any).send({ content: replyContent, allowedMentions: { parse: [] } }).catch(() => undefined);
+  await sendModerationResponse(message, {
+    action: durationMs > 0 ? 'tempban' : 'ban',
+    target: targetUser,
+    ok: result.ok,
+    durationMs: durationMs > 0 ? durationMs : undefined,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'ban',
@@ -145,11 +152,7 @@ const command: BotCommand = {
   asUserContext: true,
   async contextExecute(interaction, app) {
     if (!interaction.isUserContextMenuCommand()) return;
-    const targetUser = await app.client.users.fetch(interaction.targetUser.id).catch(() => null);
-    if (!targetUser) return;
-    await contextUserConfirm(app, interaction, 'ban', 'No reason provided', () =>
-      app.punishmentManager.ban(targetUser, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
-    );
+    await contextUserConfirm(app, interaction, 'ban', 'No reason provided');
   },
 };
 

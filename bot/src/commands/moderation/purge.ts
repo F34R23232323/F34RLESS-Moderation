@@ -4,7 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { sendConfirmation } from '../../components/moderation';
 
 async function performPurge(
   app: App,
@@ -70,22 +70,17 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (attachments) filters.push('attachments only');
   const filterStr = filters.length ? `\nFilters: ${filters.join(', ')}` : '';
 
-  const actionId = storePendingAction({
-    action: 'purge', targetUserId: targetUser?.id ?? interaction.id,
-    guildId: interaction.guildId!, channelId: channel.id,
-    reason: `Purge ${amount} messages`, actorId: interaction.user.id,
+  await sendConfirmation(interaction, {
+    action: 'purge',
+    display: `Purge ${amount} messages`,
+    targetUserId: targetUser?.id ?? interaction.user.id,
+    reason: `Purge ${amount} messages in <#${channel.id}>${filterStr}`,
+    guildId: interaction.guildId!,
+    channelId: channel.id,
+    actorId: interaction.user.id,
     purgeAmount: amount,
-    expiresAt: Date.now() + 60_000,
+    purgeUserId: targetUser?.id ?? null,
   });
-
-  const { components, flags } = buildConfirmEmbed(
-    `Purge ${amount} messages`,
-    targetUser?.id ?? interaction.user.id,
-    `Purge ${amount} messages in <#${channel.id}>${filterStr}`,
-    undefined,
-    actionId,
-  );
-  await interaction.editReply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {

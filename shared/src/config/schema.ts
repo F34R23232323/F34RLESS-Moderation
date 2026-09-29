@@ -438,26 +438,6 @@ export const configSchema = z
       .strict()
       .default({}),
 
-    // Self-hosted NSFW image moderation (NSFWJS MobileNetV2, in-process).
-    nsfw_moderation: z
-      .object({
-        enabled: boolean.default(false),
-        // Empty = every guild; otherwise only these guilds are scanned.
-        guilds: snowflakeArray,
-        ignored_channels: snowflakeArray,
-        exempt_roles: snowflakeArray,
-        max_attachment_bytes: z.number().int().min(1024).max(50 * 1024 * 1024).default(10 * 1024 * 1024),
-        download_timeout_ms: z.number().int().min(1000).max(120000).default(15000),
-        queue_capacity: z.number().int().min(1).max(500).default(25),
-        worker_concurrency: z.number().int().min(1).max(10).default(1),
-        review_threshold: z.number().min(0).max(1).default(0.6),
-        delete_threshold: z.number().min(0).max(1).default(0.8),
-        ignored_categories: z.array(z.string().min(1)).default([]),
-        log_only: boolean.default(false),
-      })
-      .strict()
-      .default({}),
-
     // Public appeals portal. The global block applies to every guild unless a
     // per-guild override exists under `guild_overrides` (any key omitted there
     // falls back to the global value).
@@ -516,6 +496,62 @@ export const configSchema = z
                 denylist: z.array(z.string()).default([]),
               })
               .strict(),
+            nsfw_link_blocklist: z
+              .object({
+                ...automodModuleBase,
+                refresh_interval_hours: z.number().int().min(1).max(168).default(12),
+                sources: z
+                  .array(z.object({ name: z.string().min(1), url: z.string().url() }).strict())
+                  .default([
+                    { name: 'StevenBlack Porn Hosts', url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts' },
+                    { name: 'Blocklist Project Porn', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/porn.txt' },
+                  ]),
+              })
+              .strict()
+              .default(() => ({
+                enabled: true,
+                immune_roles: [],
+                channel_ignore_list: [],
+                action_chain: [...DEFAULT_ACTION_CHAIN],
+                suppress_repeat_response_seconds: 30,
+                suppressed_response_mode: 'silent' as const,
+                shadow_mode: false,
+                refresh_interval_hours: 12,
+                sources: [
+                  { name: 'StevenBlack Porn Hosts', url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts' },
+                  { name: 'Blocklist Project Porn', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/porn.txt' },
+                ],
+              })),
+            malicious_link_blocklist: z
+              .object({
+                ...automodModuleBase,
+                refresh_interval_hours: z.number().int().min(1).max(168).default(12),
+                sources: z
+                  .array(z.object({ name: z.string().min(1), url: z.string().url() }).strict())
+                  .default([
+                    { name: 'StevenBlack Hosts', url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts' },
+                    { name: 'Spam404 Main Blacklist', url: 'https://raw.githubusercontent.com/Spam404/lists/master/main-blacklist.txt' },
+                    { name: 'Blocklist Project Phishing', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/phishing.txt' },
+                    { name: 'Blocklist Project Malware', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/malware.txt' },
+                  ]),
+              })
+              .strict()
+              .default(() => ({
+                enabled: true,
+                immune_roles: [],
+                channel_ignore_list: [],
+                action_chain: [...DEFAULT_ACTION_CHAIN],
+                suppress_repeat_response_seconds: 30,
+                suppressed_response_mode: 'silent' as const,
+                shadow_mode: false,
+                refresh_interval_hours: 12,
+                sources: [
+                  { name: 'StevenBlack Hosts', url: 'https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts' },
+                  { name: 'Spam404 Main Blacklist', url: 'https://raw.githubusercontent.com/Spam404/lists/master/main-blacklist.txt' },
+                  { name: 'Blocklist Project Phishing', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/phishing.txt' },
+                  { name: 'Blocklist Project Malware', url: 'https://raw.githubusercontent.com/blocklistproject/Lists/master/malware.txt' },
+                ],
+              })),
             image_spam: z
               .object({ ...automodModuleBase, threshold: z.number().int().min(2).default(5), window_seconds: z.number().int().min(1).default(10) })
               .strict(),
@@ -1509,7 +1545,6 @@ export type BotConfig = z.infer<typeof configSchema>;
 export type AutomodModuleConfig = z.infer<typeof configSchema.shape.automod.shape.modules.shape.spam>;
 export type CommandConfig = z.infer<typeof commandSchema>;
 export type LoggingEntryConfig = z.infer<typeof loggingEntrySchema>;
-export type NsfwModerationConfig = z.infer<typeof configSchema.shape.nsfw_moderation>;
 export type ReplyPingProtectionConfig = z.infer<typeof configSchema.shape.reply_ping_protection>;
 export type EscalationActionConfig = z.infer<typeof escalationActionSchema>;
 export type PunishmentDmTypeConfig = z.infer<typeof punishmentDmTypeSchema>;

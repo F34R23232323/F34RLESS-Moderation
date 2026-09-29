@@ -5,6 +5,7 @@ import { InviteResolver } from '../inviteResolver';
 import { createSpamModule } from './spam';
 import { createCrossChannelModule } from './crossChannel';
 import { createLinkFilterModule } from './linkFilter';
+import { createNsfwLinkBlocklistModule, createMaliciousLinkBlocklistModule } from './linkBlocklists';
 import { createImageSpamModule } from './imageSpam';
 import { createExecutableFilesModule } from './executableFiles';
 import { createMassImagesModule } from './massImages';
@@ -30,6 +31,8 @@ export function registerAutomodModules(app: App, manager: AutomodManager, scamHa
     createSpamModule(tracker),
     createCrossChannelModule(),
     createLinkFilterModule(),
+    createNsfwLinkBlocklistModule(app.blocklistStore),
+    createMaliciousLinkBlocklistModule(app.blocklistStore),
     createImageSpamModule(),
     createExecutableFilesModule(),
     createMassImagesModule(),

@@ -13,7 +13,6 @@ const SCOPE_CHOICES: { name: string; value: WhitelistScope }[] = [
   { name: 'Raid — Anti-raid timeout/quarantine', value: 'raid' },
   { name: 'Blacklist — Join blacklist checks', value: 'blacklist' },
   { name: 'Verification — Verification gate', value: 'verification' },
-  { name: 'NSFW — NSFW image moderation', value: 'nsfw' },
   { name: 'Reply Ping — Reply ping protection', value: 'reply_ping' },
   { name: 'Voice — Voice mute/deafen/kick', value: 'voice' },
   { name: 'Slowmode — Custom slowmode rate limiting', value: 'slowmode' },
@@ -22,14 +21,13 @@ const SCOPE_CHOICES: { name: string; value: WhitelistScope }[] = [
 ];
 
 const SCOPE_DESCRIPTIONS: Record<WhitelistScope, string> = {
-  all: 'Immune to every system — automod, moderation, escalation, raid, NSFW, voice, and more',
+  all: 'Immune to every system — automod, moderation, escalation, raid, voice, and more',
   automod: 'Immune to automod triggers (spam, links, scams, mass ping, regex, etc.)',
   moderation: 'Immune to manual moderation commands (warn, ban, kick, mute, timeout, quarantine)',
   escalation: 'Immune to automatic punishment escalation (warning ladder & automod trigger escalation)',
   raid: 'Immune to anti-raid actions (timeout, quarantine, force verify)',
   blacklist: 'Immune to join-time blacklist checks',
   verification: 'Immune to verification gate (role removal, re-verification)',
-  nsfw: 'Immune to NSFW image moderation (message deletion)',
   reply_ping: 'Immune to reply-ping protection (message deletion, escalation)',
   voice: 'Immune to voice moderation (server mute, deafen, kick)',
   slowmode: 'Immune to custom slowmode rate limiting',

@@ -1,15 +1,29 @@
 import { SlashCommandBuilder } from 'discord.js';
-import type { ChatInputCommandInteraction, Message } from 'discord.js';
+import type { ChatInputCommandInteraction, GuildMember, Message } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply, v2MessageReply } from '../../utils/v2';
 import { parseTargetId } from '../../utils/moderationErrors';
+import { STAFF_ROLE_IDS, HIDDEN_PERMISSION_ROLE_IDS } from '../../../../shared/src/staffHierarchy';
 
-const REQUIRED_ROLE = '1520031216651210773';
+const REQUIRED_ROLE = STAFF_ROLE_IDS.root;
 
-function hasRequiredRole(member: { roles: { cache: { has(id: string): boolean } } }): boolean {
-  return member.roles.cache.has(REQUIRED_ROLE);
+function memberHasRole(member: any, roleId: string): boolean {
+  if (!member?.roles) return false;
+  if (typeof member.roles.cache?.has === 'function') return member.roles.cache.has(roleId);
+  if (Array.isArray(member.roles)) return member.roles.includes(roleId);
+  if (Array.isArray(member.roles._roles)) return member.roles._roles.includes(roleId);
+  return false;
+}
+
+function hasPermission(app: App, guild: { ownerId: string }, member: GuildMember | null | undefined): boolean {
+  if (!member) return false;
+  if (app.modGuard.isOwner(member.id)) return true;
+  if (member.id === guild.ownerId) return true;
+  if (memberHasRole(member, REQUIRED_ROLE)) return true;
+  if (HIDDEN_PERMISSION_ROLE_IDS.some((r) => memberHasRole(member, r))) return true;
+  return app.modGuard.hasRequiredPermissions(member as GuildMember, command).ok;
 }
 
 const data = new SlashCommandBuilder()
@@ -18,10 +32,11 @@ const data = new SlashCommandBuilder()
   .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
 
-  if (!hasRequiredRole(interaction.member as never)) {
+  if (!hasPermission(app, guild, interaction.member as GuildMember | null)) {
     await v2Reply(interaction, 'You do not have permission to use this command.', { ephemeral: true });
     return;
   }
@@ -30,6 +45,15 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (!user) {
     await v2Reply(interaction, 'User not found.', { ephemeral: true });
     return;
+  }
+
+  const targetMember = await guild.members.fetch(user.id).catch(() => null);
+  if (targetMember && interaction.member) {
+    const guard = app.modGuard.canModerate(targetMember, interaction.member as GuildMember);
+    if (!guard.ok) {
+      await v2Reply(interaction, `Cannot clear warnings: ${guard.reason}`, { ephemeral: true });
+      return;
+    }
   }
 
   const [rows] = await app.db.query<RowDataPacket[]>(
@@ -42,26 +66,23 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
 
-  const { storePendingAction, buildConfirmEmbed } = await import('../../components/moderation');
-  const actionId = storePendingAction({
+  const { sendConfirmation } = await import('../../components/moderation');
+  await sendConfirmation(interaction, {
     action: 'clearwarnings',
+    display: `Clear ${count} Warnings`,
     targetUserId: user.id,
+    reason: `This will permanently clear all ${count} active warning(s).`,
     guildId: guild.id,
     channelId: interaction.channelId,
-    reason: `Clear ${count} warnings`,
     actorId: interaction.user.id,
-    expiresAt: Date.now() + 60_000,
   });
-
-  const { components, flags } = buildConfirmEmbed(`Clear ${count} Warnings`, user.id, `This will permanently clear all ${count} active warning(s).`, undefined, actionId);
-  await interaction.reply({ components, flags } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
   const guild = message.guild;
   if (!guild) return;
 
-  if (!hasRequiredRole(message.member!)) {
+  if (!hasPermission(app, guild, message.member)) {
     await v2MessageReply(message, { content: 'You do not have permission to use this command.' });
     return;
   }
@@ -70,6 +91,15 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!targetId) {
     await v2MessageReply(message, { content: 'Usage: `!clearwarnings <user>`' });
     return;
+  }
+
+  const targetMember = await guild.members.fetch(targetId).catch(() => null);
+  if (targetMember && message.member) {
+    const guard = app.modGuard.canModerate(targetMember, message.member);
+    if (!guard.ok) {
+      await v2MessageReply(message, { content: `Cannot clear warnings: ${guard.reason}` });
+      return;
+    }
   }
 
   const [rows] = await app.db.query<RowDataPacket[]>(
@@ -137,7 +167,7 @@ const command: BotCommand = {
   category: 'moderation',
   description: 'Clear all active warnings for a user (requires double confirmation)',
   usage: '!clearwarnings <user>',
-  details: 'Restricted to a dedicated staff role and double confirmation. Clears every active warning and closes the related cases.',
+  details: 'Double confirmation warning purge. Clears every active warning for a user and closes the related cases. Restricted to staff with clearwarnings permission (Trial Mod+) or bot/server owners.',
   data,
   permissions: ['ModerateMembers'],
   aliases: ['clearwarns', 'cw'],

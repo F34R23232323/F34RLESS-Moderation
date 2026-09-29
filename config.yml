@@ -1,4 +1,4 @@
-﻿bot:
+bot:
   prefixes:
     - "!"
     - "?"
@@ -41,6 +41,15 @@ commands:
   warn:
     enabled: true
     slash: true
+  boosttest:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    permission_group: owner
+    immune_roles: []
+    aliases: []
     prefix: true
     cooldown_seconds: 2
     permissions: []
@@ -71,6 +80,17 @@ commands:
     aliases:
       - closecase
       - close
+  clearwarnings:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    permission_group: owner
+    immune_roles: []
+    aliases:
+      - clearwarns
+      - cw
   mute:
     enabled: true
     slash: true
@@ -847,22 +867,6 @@ reports:
     channel_id: "1467100822176530453"
   merge_window_seconds: 300
   false_report_warning_enabled: false
-nsfw_moderation:
-  # Self-hosted NSFW image moderation (NSFWJS MobileNetV2, in-process). The
-  # model (~20MB) is downloaded from TF Hub once at boot when enabled.
-  # Reports go to reports.channel_id via the existing report system.
-  enabled: true
-  guilds: []                     # empty = every guild
-  ignored_channels: []
-  exempt_roles: []
-  max_attachment_bytes: 10485760
-  download_timeout_ms: 15000
-  queue_capacity: 25
-  worker_concurrency: 1
-  review_threshold: 0.60
-  delete_threshold: 0.80
-  ignored_categories: []         # e.g. ["Hentai"] â€” NSFWJS classes excluded from score
-  log_only: false                # test mode: reports without deleting
 appeals:
   # Public appeals portal Ã¢â‚¬â€ one config per guild. The global block below is
   # applied to every guild; per-guild overrides live under guild_overrides and
@@ -1104,6 +1108,85 @@ automod:
           footer: Thanks for helping keep {guild} friendly and safe.
           accent_color: "#ED4245"
           delete_after_seconds: 60
+    nsfw_link_blocklist:
+      enabled: true
+      refresh_interval_hours: 12
+      # Domains are pulled from these large community-maintained lists at
+      # startup and refreshed periodically — no manual NSFW domain entries.
+      sources:
+        - name: StevenBlack Porn Hosts
+          url: https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts
+        - name: Blocklist Project Porn
+          url: https://raw.githubusercontent.com/blocklistproject/Lists/master/porn.txt
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+        - "1466990156690227319"
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: NSFW Link Removed
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed because it contained a link to adult content.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: warn
+          reason: "[AUTOMOD] Routing users to explicit or sexually suggestive content."
+        - type: run_escalation_check
+    malicious_link_blocklist:
+      enabled: true
+      refresh_interval_hours: 6
+      # Malicious/phishing/malware domains are pulled from these large
+      # community-maintained lists at startup and refreshed periodically.
+      sources:
+        - name: StevenBlack Hosts
+          url: https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+        - name: Spam404 Main Blacklist
+          url: https://raw.githubusercontent.com/Spam404/lists/master/main-blacklist.txt
+        - name: Blocklist Project Phishing
+          url: https://raw.githubusercontent.com/blocklistproject/Lists/master/phishing.txt
+        - name: Blocklist Project Malware
+          url: https://raw.githubusercontent.com/blocklistproject/Lists/master/malware.txt
+      immune_roles: []
+      channel_ignore_list:
+        - "1518277392727015646"
+        - "1466990156690227319"
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: silent
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+        - type: delete_message
+        - type: send_channel_message
+          dm_first: true
+          format: components_v2
+          content: Your message was removed in {channel}.
+          title: Malicious Link Blocked
+          description: |-
+            Hey {user}, your message was removed.
+
+            Your message was removed and your account was banned because it linked to a site known to distribute malware, steal accounts, or phish credentials.
+
+            If you think this was a mistake, just message any staff member and we will happily take another look.
+          footer: Thanks for helping keep {guild} friendly and safe.
+          accent_color: "#ED4245"
+          delete_after_seconds: 60
+        - type: ban
+          duration: 30d
+          reason: "[AUTOMOD] Distributing malicious links or attempting to compromise user accounts."
+        - type: run_escalation_check
     image_spam:
       enabled: false
       threshold: 5
@@ -1417,47 +1500,6 @@ regex_engine:
           delete_after_seconds: 60
         - type: warn
           reason: "[AUTOMOD] Zalgo Text"
-        - type: run_escalation_check
-    - name: Tokens & Malware
-      patterns:
-        - (discord|account)\s*(nuke(r|ing)?|raid(er|ing)?|spam(mer|ming)?)\s*(bot|tool|service|script)
-        - (cookie|session|browser)\s*(steal(er|ing)?|grab(ber|bing)?|hijack(er|ing)?|logger)
-        - (rat|keylogger|ransom\s*ware|malware|spyware|adware)\s*(link|download|free|tool)
-        - (d{1,2}o[s5]|boot(er)?|stress(er)?)\s*(service|tool|attack)
-        - token\s*(grab|log|steal)|stealer\s*tool
-        - (grab|steal|log|sell(ing)?|buy(ing)?)\s*(discord\s+)?tokens?\b
-        - (token|account)\s*(logger|grabber|stealer|gen(erator)?|checker)\b
-        - (nitro|discord)\s*gen(erator)?\s*(for\s+)?(discord|nitro)?\b
-        - (dd[o0][s5]|boot(er)?|stress(er)?)[\s._\-]*(kit|service|tool|site|attack)\b
-        - \b(ip\s+grabber|ip\s+logger|grabber\s+link)\b
-        - (spam(mer|ming)?|raid(er|ing)?|nuke(r|ing)?)\s*(bot|tool|service|script|kit)\b
-      flags: gi
-      scope: message
-      enabled: true
-      immune_roles: []
-      channel_ignore_list:
-        - "1518277392727015646"
-        - "1466990156690227319"
-      action_chain:
-        - type: create_report
-        - type: delete_message
-        - type: send_channel_message
-          dm_first: true
-          format: components_v2
-          content: Your message was removed in {channel}.
-          title: Malicious Content Blocked
-          description: |-
-            Hey {user}, your message was removed.
-
-            Your message was removed and your account was banned because it referenced token grabbing, malware, or account-compromise tools.
-
-            If you think this was a mistake, just message any staff member and we will happily take another look.
-          footer: Thanks for helping keep {guild} friendly and safe.
-          accent_color: "#ED4245"
-          delete_after_seconds: 60
-        - type: ban
-          duration: 30d
-          reason: "[AUTOMOD] Distributing malicious files or attempting to compromise user accounts."
         - type: run_escalation_check
     - name: Threats
       patterns:
@@ -2232,44 +2274,6 @@ regex_engine:
         - type: warn
           reason: "[AUTOMOD] Sharing explicit or sexually suggestive content in a non-NSFW channel."
         - type: run_escalation_check
-    - name: "NSFW Links "
-      patterns:
-        - https?://[^\s]*(xvideos2|xhamsterlive|bravotube|thumbzilla|letdoit)\.(com|net)
-        - https?://[^\s]*(porn|nude|nsfw|hentai|blowjob|fetish|bdsm|milf|shemale|cum|creampie|orgasm|sextape|threesome)[-._]?[a-zA-Z0-9-]*\.(com|net|org|co|tv|xyz|info|biz|site|me|cc)([/\s]|$)
-        - https?://[^\s]*\.(xxx|adult|porn|sex|cams|tube)([/\s]|$)
-        - https?://[^\s]*(nhentai|hentaihaven|hanime|hentai-foundry|fakku|tsumino|hentaifox|rule34video|rule34|r34|gelbooru|sankakucomplex|e621|f95zone|kemono|coomer|e-hentai|hentaimama|hentaigasm|allporncomic)\.(net|com|tv|us|xxx|donmai\.us|party|sx)
-        - https?://[^\s]*(?:[/\-_.])(?:porn|nude|nsfw|hentai|sexy|adult|sex)[^\s]*
-        - https?://[^\s]*(camsoda|stripchat|cam4|myfreecams|livejasmin|jerkmate|camwhores|bongacams|flirt4free)\.(com|net|tv)
-        - https?://[^\s]*(onlyfans|fansly|manyvids|clips4sale|loyalfans|justforfans|modelhub|pocketstars)\.(com|net|tv)
-        - https?://[^\s]*(pornhub|xvideos|xnxx|xhamster|redtube|youporn|youjizz|chaturbate|eporner|spankbang|tubegalore|motherless|hqporner|beeg|nudevista|empflix|tnaflix|drtuber|porntrex|sunporno|porndig|pornhat|slutload|vporn)\.(com|net|org|tv|xxx)
-        - \b(onlyfans|fansly)\s*(\.com|link|dm|hmu|free|for\s+sale)\b
-      flags: gi
-      scope: message
-      enabled: true
-      immune_roles: []
-      channel_ignore_list:
-        - "1518277392727015646"
-        - "1466990156690227319"
-      action_chain:
-        - type: create_report
-        - type: delete_message
-        - type: send_channel_message
-          dm_first: true
-          format: components_v2
-          content: Your message was removed in {channel}.
-          title: NSFW Link Removed
-          description: |-
-            Hey {user}, your message was removed.
-
-            Your message was removed because it contained a link to adult content.
-
-            If you think this was a mistake, just message any staff member and we will happily take another look.
-          footer: Thanks for helping keep {guild} friendly and safe.
-          accent_color: "#ED4245"
-          delete_after_seconds: 60
-        - type: warn
-          reason: "[AUTOMOD] Routing users to explicit or sexually suggestive content."
-        - type: run_escalation_check
     - name: Executables
       patterns:
         - \.(exe|bat|cmd|scr|vbs|vbe|wsf|wsh|cpl|msi|msp|msc|hta|lnk|inf|reg|ps1|psm1|scf|jar|apk|app|dmg|pkg|deb|rpm|sh|bash|bin|run|elf|command|jse|msix|appx|sct|dll|sys|ocx)(?:\?.*)?(?:$|\s|/|"|')
@@ -3032,7 +3036,7 @@ native_automod:
       accent_color: "#FEE75C"
       delete_after_seconds: 30
 reply_ping_protection:
-  enabled: true
+  enabled: false
   native_rule_id: "1528109018227150969"
   protected_users:
     - "1075077561454973020"

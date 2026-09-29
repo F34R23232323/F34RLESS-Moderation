@@ -49,6 +49,17 @@ export class PunishmentManager {
     this.app = app;
   }
 
+  /** Run non-critical follow-up work (DM-after, archiving, logging, escalation)
+   *  in the background so the moderator sees the action applied immediately.
+   *  The heavy steps — archiving 40 messages, DM delivery, log flush — can take
+   *  seconds and used to block the confirmation reply. */
+  private background(label: string, work: () => Promise<void>): void {
+    void work().catch((err: unknown) => {
+      this.app.logger.warn(`${label} post-action failed:`, err);
+      void this.app.logManager.reportError(label, err).catch(() => undefined);
+    });
+  }
+
   public markMuteChange(guildId: string, userId: string, action: 'mute' | 'unmute'): void {
     this.muteSuppressions.set(`${guildId}:${userId}`, { action, at: Date.now() });
   }
@@ -222,20 +233,20 @@ export class PunishmentManager {
       ],
     );
 
-    await this.dmAfter('warn', guild, user, caseRow, options);
-
-    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
-
-    await this.app.logManager.log({
-      event: 'member_warn',
-      guildId: guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Warned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'warn', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+    this.background('warn', async () => {
+      await this.dmAfter('warn', guild, user, caseRow, options);
+      const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_warn',
+        guildId: guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        message: `Warned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+        details: { type: 'warn', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+      });
+      await this.app.warningEscalation.check(guild.id, target.id);
     });
 
-    await this.app.warningEscalation.check(guild.id, target.id);
     return { ok: true, case: caseRow, dmSent };
   }
 
@@ -270,18 +281,18 @@ export class PunishmentManager {
       [target.guild.id, target.id, caseRow.id, expiresAt, renewable ? 1 : 0],
     );
 
-    dmSent = (await this.dmAfter('mute', target.guild, target.user, caseRow, options, durationMs)) || dmSent;
-
-    const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
-
     const verb = logEvent === 'member_mute' ? 'Muted' : 'Timed out';
-    await this.app.logManager.log({
-      event: logEvent,
-      guildId: target.guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${renewable ? ' — auto-renews every 28 days' : ''}${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'mute', durationMs, expiresAt: expiresAt.toISOString(), caseCode: caseRow.case_code, reason: options.reason, archiveLink, renewable: renewable || undefined, ...this.evidenceDetails(target.guild.id, options.evidence) },
+    this.background('timeout', async () => {
+      dmSent = (await this.dmAfter('mute', target.guild, target.user, caseRow, options, durationMs)) || dmSent;
+      const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
+      await this.app.logManager.log({
+        event: logEvent,
+        guildId: target.guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        message: `${verb} <@${target.id}> for ${humanizeDuration(durationMs)} (case ${caseRow.case_code})${renewable ? ' — auto-renews every 28 days' : ''}${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+        details: { type: 'mute', durationMs, expiresAt: expiresAt.toISOString(), caseCode: caseRow.case_code, reason: options.reason, archiveLink, renewable: renewable || undefined, ...this.evidenceDetails(target.guild.id, options.evidence) },
+      });
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -306,15 +317,16 @@ export class PunishmentManager {
       moderatorId: options.moderatorId ?? null,
       reason: options.reason ?? 'Mute lifted',
     });
-    await this.dmAfter('unmute', target.guild, target.user, caseRow, options);
-
-    await this.app.logManager.log({
-      event: 'member_unmute',
-      guildId: target.guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Unmuted <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'unmute', caseCode: caseRow.case_code, reason: options.reason },
+    this.background('unmute', async () => {
+      await this.dmAfter('unmute', target.guild, target.user, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_unmute',
+        guildId: target.guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        message: `Unmuted <@${target.id}> (case ${caseRow.case_code})`,
+        details: { type: 'unmute', caseCode: caseRow.case_code, reason: options.reason },
+      });
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -335,15 +347,18 @@ export class PunishmentManager {
       reason: options.reason ?? 'No reason provided',
       evidence: options.evidence,
     });
-    await this.dmAfter('kick', target.guild, target.user, caseRow, options);
-    const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
-    await this.app.logManager.log({
-      event: 'member_kick',
-      guildId: target.guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Kicked <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'kick', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(target.guild.id, options.evidence) },
+    this.background('kick', async () => {
+      await this.dmAfter('kick', target.guild, target.user, caseRow, options);
+      const archiveLink = await this.archiveCaseEvidence(target.guild, target.id, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_kick',
+        guildId: target.guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        targetTag: target.displayName ?? target.user.username,
+        message: `Kicked <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+        details: { type: 'kick', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(target.guild.id, options.evidence) },
+      });
     });
     return { ok: true, case: caseRow, dmSent };
   }
@@ -381,17 +396,18 @@ export class PunishmentManager {
       );
     }
 
-    dmSent = (await this.dmAfter('ban', guild, user, caseRow, options, options.durationMs)) || dmSent;
-
-    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
-
-    await this.app.logManager.log({
-      event: 'member_ban',
-      guildId: guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, expiresAt: options.durationMs ? new Date(Date.now() + options.durationMs).toISOString() : undefined, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+    this.background('ban', async () => {
+      dmSent = (await this.dmAfter('ban', guild, user, caseRow, options, options.durationMs)) || dmSent;
+      const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_ban',
+        guildId: guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        targetTag: target instanceof GuildMember ? (target.displayName ?? target.user.username) : target.username,
+        message: `Banned <@${target.id}>${options.durationMs ? ` for ${humanizeDuration(options.durationMs)}` : ''} (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+        details: { type: 'ban', caseCode: caseRow.case_code, reason: options.reason, durationMs: options.durationMs, expiresAt: options.durationMs ? new Date(Date.now() + options.durationMs).toISOString() : undefined, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+      });
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -416,15 +432,17 @@ export class PunishmentManager {
       moderatorId: options.moderatorId ?? null,
       reason: options.reason ?? 'Ban lifted',
     });
-    if (user) await this.dmAfter('unban', guild, user, caseRow, options);
-
-    await this.app.logManager.log({
-      event: 'member_unban',
-      guildId: guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: userId,
-      message: `Unbanned <@${userId}> (case ${caseRow.case_code})`,
-      details: { type: 'unban', caseCode: caseRow.case_code, reason: options.reason },
+    this.background('unban', async () => {
+      if (user) await this.dmAfter('unban', guild, user, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_unban',
+        guildId: guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: userId,
+        targetTag: user?.username ?? null,
+        message: `Unbanned <@${userId}> (case ${caseRow.case_code})`,
+        details: { type: 'unban', caseCode: caseRow.case_code, reason: options.reason },
+      });
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -453,17 +471,17 @@ export class PunishmentManager {
       reason: options.reason ?? 'No reason provided',
       evidence: options.evidence,
     });
-    await this.dmAfter('kick', guild, user, caseRow, options);
-
-    const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
-
-    await this.app.logManager.log({
-      event: 'member_ban',
-      guildId: guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Softbanned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
-      details: { type: 'softban', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+    this.background('softban', async () => {
+      await this.dmAfter('kick', guild, user, caseRow, options);
+      const archiveLink = await this.archiveCaseEvidence(guild, target.id, caseRow, options);
+      await this.app.logManager.log({
+        event: 'member_ban',
+        guildId: guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        message: `Softbanned <@${target.id}> (case ${caseRow.case_code})${archiveLink ? ` — Evidence: ${archiveLink}` : ''}`,
+        details: { type: 'softban', caseCode: caseRow.case_code, reason: options.reason, archiveLink, ...this.evidenceDetails(guild.id, options.evidence) },
+      });
     });
 
     return { ok: true, case: caseRow, dmSent };
@@ -488,13 +506,15 @@ export class PunishmentManager {
       reason: options.reason ?? `Temporary role <@&${roleId}>`,
       durationMs,
     });
-    await this.app.logManager.log({
-      event: 'moderation_action',
-      guildId: target.guild.id,
-      actorId: options.moderatorId ?? null,
-      targetId: target.id,
-      message: `Applied temporary role <@&${roleId}> to <@${target.id}> (case ${caseRow.case_code})`,
-      details: { type: 'temp_role', roleId, durationMs, caseCode: caseRow.case_code },
+    this.background('tempRole', async () => {
+      await this.app.logManager.log({
+        event: 'moderation_action',
+        guildId: target.guild.id,
+        actorId: options.moderatorId ?? null,
+        targetId: target.id,
+        message: `Applied temporary role <@&${roleId}> to <@${target.id}> (case ${caseRow.case_code})`,
+        details: { type: 'temp_role', roleId, durationMs, caseCode: caseRow.case_code },
+      });
     });
     return { ok: true, case: caseRow, dmSent: false };
   }

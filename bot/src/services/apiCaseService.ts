@@ -23,17 +23,40 @@ interface PendingRequest {
  */
 export class ApiCaseService {
   private readonly app: App;
+  /** In-flight guard so overlapping cron ticks can't double-execute rows. */
+  private processing = false;
 
   constructor(app: App) {
     this.app = app;
   }
 
   public async processPending(): Promise<void> {
+    if (this.processing) return;
+    this.processing = true;
+    try {
+      await this.processPendingInner();
+    } finally {
+      this.processing = false;
+    }
+  }
+
+  private async processPendingInner(): Promise<void> {
+    // Recover rows stranded by a crash mid-execution (>5 min in 'processing').
+    await this.app.db.execute(
+      "UPDATE api_case_requests SET status = 'pending', processed_at = NULL WHERE status = 'processing' AND processed_at < NOW() - INTERVAL 5 MINUTE",
+    );
     const [rows] = await this.app.db.query<RowDataPacket[]>(
       "SELECT id, source, guild_id, type, user_id, reason, duration_ms, delete_message_days, evidence FROM api_case_requests WHERE status = 'pending' ORDER BY id ASC LIMIT 20",
     );
     for (const raw of rows) {
       const req = raw as unknown as PendingRequest;
+      // Claim the row atomically — a racing tick (or another process) that
+      // already claimed it sees affectedRows === 0 and skips.
+      const [claim] = await this.app.db.execute(
+        "UPDATE api_case_requests SET status = 'processing', processed_at = NOW() WHERE id = ? AND status = 'pending'",
+        [req.id],
+      );
+      if ((claim as { affectedRows: number }).affectedRows === 0) continue;
       try {
         const caseRow = await this.execute(req);
         await this.app.db.execute(

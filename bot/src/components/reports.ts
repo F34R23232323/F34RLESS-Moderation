@@ -1,4 +1,4 @@
-﻿import type { ButtonInteraction, ModalSubmitInteraction, TextBasedChannel } from 'discord.js';
+import type { ButtonInteraction, ModalSubmitInteraction, TextBasedChannel } from 'discord.js';
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -11,6 +11,7 @@ import {
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
 import { parseDuration } from '../../../shared/src/index';
+import { v2Ephemeral, v2Result } from '../utils/v2';
 
 const ACTIONS: Array<{ action: string; label: string; style: ButtonStyle }> = [
   { action: 'warn', label: 'Warn', style: ButtonStyle.Primary },
@@ -18,13 +19,6 @@ const ACTIONS: Array<{ action: string; label: string; style: ButtonStyle }> = [
   { action: 'kick', label: 'Kick', style: ButtonStyle.Danger },
   { action: 'ban', label: 'Ban', style: ButtonStyle.Danger },
 ];
-
-/** Build a simple v2 ephemeral reply container */
-function v2Ephemeral(text: string): { components: unknown[]; flags: number } {
-  const container = new ContainerBuilder()
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
-  return { components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
-}
 
 export function buildIgnoreAllConfirmation(count: number, actorId: string, ephemeral = true): { components: unknown[]; flags: number } {
   const container = new ContainerBuilder()
@@ -259,17 +253,17 @@ const ignoreAll = {
     }
     if (!(await resolve(app, interaction, 0))) return;
     if (decision === 'cancel') {
-      await interaction.update({ content: 'Bulk report ignore cancelled.', components: [] });
+      await interaction.update(v2Result('Bulk report ignore cancelled.', 0x80848e) as never);
       return;
     }
     if (decision !== 'confirm' || !interaction.guild) {
-      await interaction.update({ content: 'Invalid bulk report action.', components: [] });
+      await interaction.update(v2Result('Invalid bulk report action.', 0xed4245) as never);
       return;
     }
 
     await interaction.deferUpdate();
     const count = await app.reporting.ignoreAllOpen(interaction.guild.id, interaction.user.id);
-    await interaction.editReply({ content: `Ignored and archived ${count} open report(s).`, components: [] });
+    await interaction.editReply(v2Result(`✅ Ignored and archived **${count}** open report(s).`, 0x57f287) as never);
   },
 };
 

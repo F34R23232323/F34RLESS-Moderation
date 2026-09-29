@@ -4,6 +4,18 @@ All notable changes made in this session.
 
 ---
 
+### NSFW Image Scanner (Removed)
+- Removed the self-hosted NSFW image moderation feature entirely: `bot/src/nsfw/*` (service, processor, queue, model, types), its 28 unit tests, the `nsfw_moderation` config section (schema + default template + `config.yml`), the `messageCreate` attachment hook, the `App.nsfw` wiring, and the `nsfw` whitelist scope.
+- Dropped the `nsfwjs` and `@tensorflow/tfjs-node` dependencies (`sharp` remains — scam image hashing still uses it). Dockerfile comments updated accordingly.
+- NSFW link blocking now comes from remote blocklists instead (see below); existing `user_whitelist` rows with scope `nsfw` are inert leftovers.
+
+### Remote NSFW / Malicious Link Blocklists (New)
+- New `nsfw_link_blocklist` and `malicious_link_blocklist` automod modules fetch large community-maintained domain lists at startup (StevenBlack hosts, Blocklist Project porn/phishing/malware, Spam404) and refresh periodically (12h/6h). Messages are matched by hostname (including subdomains), with per-source reporting in the hit reason.
+- Removed the word-pattern `NSFW Links` and `Tokens & Malware` regex rules (they matched text like "ip grabber" rather than real links); their action chains moved to the new modules. Executables and Scam Links rules are unchanged.
+- Sources are configurable per module (`automod.modules.<module>.sources`); fetch failures keep the previous data and never crash startup.
+
+---
+
 ### Message Bulk Delete Archive Link
 - `messageBulkDelete` log now includes a clickable archive link (via `app.archives.archiveBatch`) alongside the existing transcript file attachment, so staff can review deleted messages in the dashboard without downloading a file.
 

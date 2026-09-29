@@ -7,6 +7,8 @@ import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 
+import { sendModerationResponse } from '../../utils/moderationResponse';
+
 const data = new SlashCommandBuilder()
   .setName('unban')
   .setDescription('Unban a user')
@@ -14,7 +16,7 @@ const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const user = await resolveUserOption(interaction, app);
@@ -24,11 +26,14 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const result = await app.punishmentManager.unban(guild, user.id, { reason, moderatorId: interaction.user.id });
-  if (!result.ok) {
-    await v2Reply(interaction, `Failed: ${mapDiscordError(result.error!)}`, { ephemeral: true });
-    return;
-  }
-  await v2Reply(interaction, `Unbanned <@${user.id}> — case ${result.case!.case_code}.`);
+  await sendModerationResponse(interaction, {
+    action: 'unban',
+    target: user,
+    ok: result.ok,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -39,9 +44,18 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     await v2MessageReply(message, { content: 'Usage: `!unban <user> <reason>`' });
     return;
   }
+  const targetUser = await app.client.users.fetch(targetId).catch(() => null);
   const result = await app.punishmentManager.unban(guild, targetId, { reason, moderatorId: message.author.id });
-  await v2MessageReply(message, { content: result.ok ? `Unbanned <@${targetId}> — case ${result.case!.case_code}.` : `Failed: ${mapDiscordError(result.error!)}` });
+  await sendModerationResponse(message, {
+    action: 'unban',
+    target: targetUser ?? { id: targetId },
+    ok: result.ok,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'unban',

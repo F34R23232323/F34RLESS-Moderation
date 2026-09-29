@@ -1,10 +1,20 @@
 import type { GuildMember, Role } from 'discord.js';
 import type { App } from '../core/context';
 import type { BotCommand } from '../types/command';
+import { HIDDEN_PERMISSION_ROLE_IDS } from '../../../shared/src/staffHierarchy';
 
 export interface GuardResult {
   ok: boolean;
   reason?: string;
+}
+
+function hasRole(member: any, roleId: string): boolean {
+  if (!member?.roles) return false;
+  if (typeof member.roles.cache?.has === 'function') return member.roles.cache.has(roleId);
+  if (Array.isArray(member.roles?.cache)) return member.roles.cache.some((r: any) => r.id === roleId);
+  if (Array.isArray(member.roles)) return member.roles.includes(roleId);
+  if (Array.isArray(member.roles?._roles)) return member.roles._roles.includes(roleId);
+  return false;
 }
 
 export class ModerationCommandGuard {
@@ -22,7 +32,7 @@ export class ModerationCommandGuard {
     const cfg = this.app.config.commands[command.name];
     const immuneIds = cfg?.immune_roles ?? [];
     if (immuneIds.length === 0) return false;
-    return target.roles.cache.some((r) => immuneIds.includes(r.id));
+    return immuneIds.some((id) => hasRole(target, id));
   }
 
   public async isTargetWhitelisted(guildId: string, userId: string): Promise<boolean> {
@@ -30,12 +40,18 @@ export class ModerationCommandGuard {
   }
 
   public hasRequiredPermissions(member: GuildMember, command: BotCommand): GuardResult {
-    if (this.isOwner(member.id)) return { ok: true };
+    if (
+      this.isOwner(member.id) ||
+      member.id === member.guild?.ownerId ||
+      HIDDEN_PERMISSION_ROLE_IDS.some((r) => hasRole(member, r))
+    ) {
+      return { ok: true };
+    }
     const cfg = this.app.config.commands[command.name];
 
     const allowedRoles = cfg?.allowed_roles ?? [];
     if (allowedRoles.length > 0) {
-      const hasAllowedRole = member.roles.cache.some((r) => allowedRoles.includes(r.id));
+      const hasAllowedRole = allowedRoles.some((r) => hasRole(member, r));
       if (!hasAllowedRole) {
         return { ok: false, reason: 'you do not have a required role for this command' };
       }
@@ -44,7 +60,7 @@ export class ModerationCommandGuard {
     if (cfg?.permission_group) {
       const group = this.app.config.staff_permission_groups.groups.find((g) => g.name === cfg.permission_group);
       if (group) {
-        const holdsGroupRole = member.roles.cache.some((r) => group.roles.includes(r.id));
+        const holdsGroupRole = group.roles.some((r) => hasRole(member, r));
         if (!holdsGroupRole) {
           return { ok: false, reason: `requires membership in staff group "${group.name}"` };
         }
@@ -54,8 +70,9 @@ export class ModerationCommandGuard {
       }
     }
 
-    const required = (cfg?.permissions?.length ? cfg.permissions : command.permissions) ?? [];
+    const required = (cfg?.permissions !== undefined ? cfg.permissions : command.permissions) ?? [];
     if (required.length === 0) return { ok: true };
+    if (!member.permissions?.has) return { ok: false, reason: 'missing member permissions' };
     const missing = required.filter((perm) => !member.permissions.has(perm as never));
     if (missing.length > 0) {
       return { ok: false, reason: `missing permission(s): ${missing.join(', ')}` };
@@ -64,7 +81,7 @@ export class ModerationCommandGuard {
   }
 
   public canModerate(target: GuildMember, staff: GuildMember): GuardResult {
-    if (this.isOwner(staff.id)) return { ok: true };
+    if (this.isOwner(staff.id) || staff.id === staff.guild.ownerId) return { ok: true };
     if (target.id === staff.id) return { ok: false, reason: 'you cannot moderate yourself' };
     if (target.id === target.guild.ownerId) return { ok: false, reason: 'you cannot moderate the server owner' };
     const botMember = this.app.client.guilds.cache.get(target.guild.id)?.members.me;
@@ -86,7 +103,7 @@ export class ModerationCommandGuard {
     if (botMember && role.position >= botMember.roles.highest.position) {
       return { ok: false, reason: 'the bot is not high enough to manage that role' };
     }
-    if (role.position >= staff.roles.highest.position) {
+    if (!this.isOwner(staff.id) && staff.id !== staff.guild.ownerId && role.position >= staff.roles.highest.position) {
       return { ok: false, reason: 'you cannot manage that role' };
     }
     return { ok: true };

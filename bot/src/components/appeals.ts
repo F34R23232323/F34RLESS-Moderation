@@ -4,21 +4,7 @@ import { ContainerBuilder, TextDisplayBuilder } from 'discord.js';
 import type { RowDataPacket } from 'mysql2/promise';
 import type { App } from '../core/context';
 import { isAppealsStaff } from '../services/appealService';
-
-// ---------------------------------------------------------------------------
-// Accept / Deny / Ignore buttons on the appeal card.
-//
-// Race safety: the DB status update is a conditional UPDATE ... WHERE status =
-// 'pending', so only the first clicker wins; the second gets 0 affected rows
-// and is told the appeal was already decided. The message is also edited to a
-// decided state immediately after the DB write (buttons removed) so later
-// clicks fail fast at the interaction level.
-// ---------------------------------------------------------------------------
-
-function v2Ephemeral(text: string): { components: unknown[]; flags: number } {
-  const container = new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
-  return { components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
-}
+import { v2Ephemeral } from '../utils/v2';
 
 type Decision = 'accept' | 'deny' | 'ignore';
 

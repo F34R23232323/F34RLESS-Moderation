@@ -21,7 +21,8 @@ function ts(date: Date | string | null): string {
   if (!date) return 'never';
   const ms = new Date(date).getTime();
   if (Number.isNaN(ms)) return 'never';
-  return `<t:${Math.floor(ms / 1000)}:R>`;
+  const unix = Math.floor(ms / 1000);
+  return `<t:${unix}:F> (<t:${unix}:R>)`;
 }
 
 const data = new SlashCommandBuilder()
@@ -93,7 +94,7 @@ async function renderWarns(
     const lines = [
       `**#${w.case_code}** · ${status(w)}`,
       `> Reason: ${w.reason || 'No reason provided'}`,
-      `> By: ${w.moderator_id ? `<@${w.moderator_id}>` : 'unknown'} · <t:${Math.floor(new Date(w.created_at).getTime() / 1000)}:R>`,
+      `> By: ${w.moderator_id ? `<@${w.moderator_id}>` : 'unknown'} · <t:${Math.floor(new Date(w.created_at).getTime() / 1000)}:F>`,
     ];
     if (w.expires_at) lines.push(`> Expires: ${ts(w.expires_at)}`);
     return lines.join('\n');

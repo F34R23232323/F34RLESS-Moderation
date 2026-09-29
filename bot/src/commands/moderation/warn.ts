@@ -6,9 +6,10 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
+import { sendConfirmation, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('warn')
@@ -34,9 +35,11 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   const reason = interaction.options.getString('reason', true);
   const anonymous = interaction.options.getBoolean('anonymous') ?? false;
   const imageEvidence = await collectSlashEvidence(app, interaction);
-  const actionId = storePendingAction({ action: 'warn', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, evidence: imageEvidence.length > 0 ? imageEvidence : undefined, actorId: interaction.user.id, expiresAt: Date.now() + 60_000, anonymous: anonymous || undefined });
-  const { components, flags } = buildConfirmEmbed('Warn', user.id, reason, undefined, actionId);
-  await interaction.editReply({ components, flags } as never);
+  await sendConfirmation(interaction, {
+    action: 'warn', targetUserId: user.id, reason,
+    guildId: guild.id, channelId: interaction.channelId, actorId: interaction.user.id,
+    evidence: imageEvidence.length > 0 ? imageEvidence : undefined, anonymous: anonymous || undefined,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -66,9 +69,16 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   if (!confirmed) return;
 
   const result = await app.punishmentManager.warn(member, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence, anonymous: anonymous || undefined });
-  const content = result.ok ? `Warned <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
-  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
+  await sendModerationResponse(message, {
+    action: 'warn',
+    target: member,
+    ok: result.ok,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'warn', category: 'moderation', description: 'Warn a user (creates a formal case)',
@@ -78,9 +88,7 @@ const command: BotCommand = {
   asUserContext: true,
   async contextExecute(interaction, app) {
     if (!interaction.isUserContextMenuCommand()) return;
-    await contextUserConfirm(app, interaction, 'warn', 'No reason provided', () =>
-      app.punishmentManager.warn(interaction.targetUser as any, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
-    );
+    await contextUserConfirm(app, interaction, 'warn', 'No reason provided');
   },
 };
 

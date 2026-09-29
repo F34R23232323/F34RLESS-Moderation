@@ -4,7 +4,8 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2Reply } from '../../utils/v2';
 import { v2MessageReply } from '../../utils/v2';
-import { buildConfirmEmbed, storePendingAction } from '../../components/moderation';
+import { sendConfirmation } from '../../components/moderation';
+import { buildRichV2 } from '../../utils/v2';
 
 const data = new SlashCommandBuilder()
   .setName('purge-until')
@@ -34,11 +35,13 @@ async function runPurgeUntil(app: App, interaction: ChatInputCommandInteraction 
   const guild = interaction.guild;
   if (!guild) return;
 
+  await interaction.deferReply({ ephemeral: true });
+
   let target;
   try {
     target = await channel.messages.fetch(targetId);
   } catch {
-    await (interaction as any).reply({ content: 'Target message not found in this channel.', ephemeral: true });
+    await v2Reply(interaction, 'Target message not found in this channel.', { ephemeral: true });
     return;
   }
 
@@ -47,53 +50,51 @@ async function runPurgeUntil(app: App, interaction: ChatInputCommandInteraction 
     const after = await channel.messages.fetch({ after: targetId, limit: 100 });
     toDelete = [...after.values()];
   } catch {
-    await (interaction as any).reply({ content: 'Could not fetch messages after the target.', ephemeral: true });
+    await v2Reply(interaction, 'Could not fetch messages after the target.', { ephemeral: true });
     return;
   }
 
   const count = toDelete.length + 1;
   if (count === 0) {
-    await (interaction as any).reply({ content: 'No messages to purge.', ephemeral: true });
+    await v2Reply(interaction, 'No messages to purge.', { ephemeral: true });
     return;
   }
 
-  const actionId = storePendingAction({
+  const reason = [
+    `This will delete **${count} message(s)** in <#${channel.id}>, including the target message.`,
+    `Target: [Message](${target.url})`,
+    `Author: ${target.author ? `<@${target.author.id}>` : 'unknown'}`,
+    `Content: ${(target.content || '').slice(0, 200) || '(no text)'}`,
+  ].join('\n');
+
+  await sendConfirmation(interaction, {
     action: 'purge',
-    targetUserId: targetId,
-    purgeAfterId: targetId,
+    display: 'Confirm Purge',
+    targetUserId: target.author?.id ?? interaction.user.id,
+    reason,
     guildId: guild.id,
     channelId: channel.id,
-    reason: `Purge until ${targetId}`,
     actorId: interaction.user.id,
-    expiresAt: Date.now() + 60_000,
+    purgeAfterId: targetId,
+    purgeAmount: 100,
+    card: (actionId) => {
+      const embed = buildRichV2({
+        accentColor: 0xfee75c,
+        header: '⚠️ Confirm Purge',
+        text: `${reason}\n\n⏱ Expires <t:${Math.floor((Date.now() + 5 * 60_000) / 1000)}:R>\n\n**Press Confirm to proceed, or Cancel to abort.**`,
+      });
+      const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`confirm:${actionId}`).setLabel('Confirm').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`cancel:${actionId}`).setLabel('Cancel').setStyle(ButtonStyle.Secondary),
+      );
+      return {
+        ...embed,
+        components: [...(embed.components as unknown[]), row],
+        flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+      } as { components: unknown[]; flags: number };
+    },
   });
-
-  const { buildRichV2 } = require('../../utils/v2');
-  const embed = buildRichV2({
-    accentColor: 0xfee75c,
-    header: '⚠️ Confirm Purge',
-    text: [
-      `This will delete **${count} message(s)** in <#${channel.id}>, including the target message.`,
-      '',
-      `Target: [Message](${target.url})`,
-      `Author: ${target.author ? `<@${target.author.id}>` : 'unknown'}`,
-      `Content: ${(target.content || '').slice(0, 200) || '(no text)'}`,
-      '',
-      '**Press Confirm to proceed, or Cancel to abort.**',
-    ].join('\n'),
-  });
-
-  const { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require('discord.js');
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`confirm:${actionId}`).setLabel('Confirm').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`cancel:${actionId}`).setLabel('Cancel').setStyle(ButtonStyle.Secondary),
-  );
-
-  await (interaction as any).reply({
-    ...embed,
-    components: [row],
-    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
-  } as never);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {

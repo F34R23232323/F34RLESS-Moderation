@@ -39,6 +39,7 @@ export async function handleMessageUpdate(app: App, oldMessage: Message | Partia
         channelId: newMessage.channelId,
         messageId: newMessage.id,
         authorId: author.id,
+        createdAt: newMessage.createdAt ? Math.floor(newMessage.createdAt.getTime() / 1000) : undefined,
         old: oldContent?.slice(0, 1000) ?? '(previous content not cached)',
         new: newContent.slice(0, 1000),
       },

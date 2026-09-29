@@ -25,6 +25,9 @@ export async function handleInteractionCreate(app: App, interaction: Interaction
   } catch (err) {
     app.logger.error('interactionCreate handler threw:', err);
     await app.logManager.reportError('interactionCreate', err);
+    if ('deferred' in interaction && !interaction.deferred && !interaction.replied) {
+      await interaction.reply({ content: 'Something went wrong while handling that interaction.', ephemeral: true } as never).catch(() => undefined);
+    }
   }
 }
 

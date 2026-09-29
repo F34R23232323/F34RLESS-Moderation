@@ -11,6 +11,7 @@ import {
   SeparatorBuilder,
   TextDisplayBuilder,
 } from 'discord.js';
+import { v2Result } from './v2';
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -234,23 +235,23 @@ export async function handleSocialCommand(
   const userId = interaction.user.id;
 
   if (userId === targetId) {
-    await interaction.editReply({ content: 'You can\'t use this on yourself!', components: [], flags: MessageFlags.IsComponentsV2 });
+    await interaction.editReply(v2Result("You can't use this on yourself!") as never);
     return;
   }
 
   if (await isDisabled(app.db, targetId)) {
-    await interaction.editReply({ content: 'This user has disabled social commands.', components: [], flags: MessageFlags.IsComponentsV2 });
+    await interaction.editReply(v2Result('This user has disabled social commands.') as never);
     return;
   }
 
   if (await isBlocked(app.db, targetId, userId)) {
-    await interaction.editReply({ content: 'This user has blocked you from using social commands on them.', components: [], flags: MessageFlags.IsComponentsV2 });
+    await interaction.editReply(v2Result('This user has blocked you from using social commands on them.') as never);
     return;
   }
 
   const gifUrl = await fetchSocialGif(action.apiPath);
   if (!gifUrl) {
-    await interaction.editReply({ content: 'Failed to fetch GIF. Try again later.', components: [], flags: MessageFlags.IsComponentsV2 });
+    await interaction.editReply(v2Result('Failed to fetch GIF. Try again later.') as never);
     return;
   }
 
@@ -313,7 +314,7 @@ export async function handleSoloCommand(
 
   const gifUrl = await fetchSocialGif(action.apiPath);
   if (!gifUrl) {
-    await interaction.editReply({ content: 'Failed to fetch GIF. Try again later.', components: [], flags: MessageFlags.IsComponentsV2 });
+    await interaction.editReply(v2Result('Failed to fetch GIF. Try again later.') as never);
     return;
   }
 

@@ -73,6 +73,12 @@ export async function handleGuildMemberUpdate(app: App, oldMember: GuildMember, 
           targetId: newMember.id,
           message: `<@${newMember.id}> boosted the server`,
         });
+        
+        // Trigger the booster announcement event
+        if (!oldBoost) {
+          const { handleBoosterEvent } = await import('./boosterEvent');
+          await handleBoosterEvent(app, newMember);
+        }
       } else {
         await app.logManager.log({
           event: 'member_unboost',

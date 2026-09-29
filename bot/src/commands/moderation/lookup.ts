@@ -50,7 +50,7 @@ const data = new SlashCommandBuilder()
   .addSubcommand((s) => s.setName('snowflake').setDescription('Decode a Discord ID into a timestamp').addStringOption((o) => o.setName('id').setDescription('Snowflake ID').setRequired(true)));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const sub = interaction.options.getSubcommand();

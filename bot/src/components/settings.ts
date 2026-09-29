@@ -7,11 +7,7 @@ import {
 import type { App } from '../core/context';
 import { renderSettingsMenu } from '../commands/admin/settings';
 import { emojiPrefix } from '../emoji';
-
-function v2Ephemeral(text: string): { components: unknown[]; flags: number } {
-  const container = new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
-  return { components: [container], flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral };
-}
+import { v2Ephemeral } from '../utils/v2';
 
 export default [
   {
@@ -21,7 +17,7 @@ export default [
       const parts = interaction.customId.split(':');
       const guildId = parts[2];
       if (!guildId || !interaction.guild) {
-        await interaction.update({ components: [] });
+        await interaction.deferUpdate();
         return;
       }
       
@@ -90,7 +86,7 @@ export default [
           new ButtonBuilder().setCustomId(`settings:btn:back:${guild.id}`).setLabel('Back to Menu').setStyle(ButtonStyle.Secondary)
         ));
       } else {
-        await interaction.update({ components: [] });
+        await interaction.deferUpdate();
         return;
       }
       
@@ -112,7 +108,7 @@ export default [
       const guildId = parts[3];
       
       if (!guildId || !interaction.guild) {
-        await interaction.update({ components: [] });
+        await interaction.deferUpdate();
         return;
       }
       

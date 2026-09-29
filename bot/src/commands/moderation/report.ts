@@ -22,9 +22,10 @@ const data = new SlashCommandBuilder()
       .setName('all')
       .setDescription('Ignore and archive every open report')));
 
-function canManageReports(member: { permissions: { has(permission: bigint): boolean }; roles: { cache: { some(callback: (role: { id: string }) => boolean): boolean } } }, app: App): boolean {
+function canManageReports(member: any, app: App): boolean {
+  if (app.modGuard.isOwner(member.id) || member.id === member.guild?.ownerId) return true;
   return member.permissions.has(PermissionFlagsBits.ModerateMembers) ||
-    (app.config.reports.action_roles.length > 0 && member.roles.cache.some((role) => app.config.reports.action_roles.includes(role.id)));
+    (app.config.reports.action_roles.length > 0 && member.roles.cache.some((role: any) => app.config.reports.action_roles.includes(role.id)));
 }
 
 async function showIgnoreAllConfirmation(

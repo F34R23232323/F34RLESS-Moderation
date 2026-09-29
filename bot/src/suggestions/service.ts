@@ -74,6 +74,9 @@ export class SuggestionService {
   }
 
   isStaff(member: GuildMember): boolean {
+    if (this.config.bot.owner_ids.includes(member.id) || member.id === member.guild.ownerId) {
+      return true;
+    }
     const { staff_role_ids } = this.config.community.suggestions;
     if (staff_role_ids.length === 0) {
       return member.permissions.has('ModerateMembers');

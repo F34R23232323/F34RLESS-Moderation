@@ -56,6 +56,24 @@ commands:
     permissions: ["ModerateMembers"]
     immune_roles: []
     aliases: ["w", "warning"]
+  boosttest:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    permission_group: owner
+    immune_roles: []
+    aliases: []
+  clearwarnings:
+    enabled: true
+    slash: true
+    prefix: true
+    cooldown_seconds: 5
+    permissions: []
+    permission_group: owner
+    immune_roles: []
+    aliases: ["clearwarns", "cw"]
   mute:
     enabled: true
     slash: true
@@ -210,36 +228,6 @@ reports:
   false_report_warning_enabled: false   # staff-marked bad-faith reports feed warnings
 
 # -----------------------------------------------------------------------------
-# Self-hosted NSFW image moderation (NSFWJS MobileNetV2, runs in-process).
-# Scans image attachments; flagged messages are reported through the existing
-# report system (reports.channel_id) and optionally deleted.
-#   enabled:              master switch (model is downloaded at boot when on)
-#   guilds:               empty = every guild, otherwise only these guild IDs
-#   ignored_channels:     channels never scanned
-#   exempt_roles:         members holding these roles are never scanned
-#   max_attachment_bytes: download size cap (default 10 MB)
-#   download_timeout_ms:  per-download cap (default 15s)
-#   queue_capacity:       max queued image jobs (default 25)
-#   worker_concurrency:   simultaneous inferences (default 1)
-#   review_threshold:     explicit (Porn + Hentai) score that triggers a report
-#   delete_threshold:     explicit score that triggers deletion + report
-#   log_only:             test mode — never deletes, reports marked TEST MODE
-# -----------------------------------------------------------------------------
-nsfw_moderation:
-  enabled: false
-  guilds: []
-  ignored_channels: []
-  exempt_roles: []
-  max_attachment_bytes: 10485760
-  download_timeout_ms: 15000
-  queue_capacity: 25
-  worker_concurrency: 1
-  review_threshold: 0.60
-  delete_threshold: 0.80
-  ignored_categories: []         # NSFWJS classes to exclude from explicit score (e.g. ["Hentai"])
-  log_only: false
-
-# -----------------------------------------------------------------------------
 # Appeals portal.
 # A public, per-guild page where members can appeal punishments (ban/mute/warn/
 # timeout/etc.). Cases are appealed by case number and attach to the existing
@@ -387,6 +375,63 @@ automod:
           delete_after_seconds: 15
         - type: warn
           reason: "Automod: link filter ({rule})"
+        - type: run_escalation_check
+    nsfw_link_blocklist:
+      enabled: true
+      refresh_interval_hours: 12         # re-fetch sources on this interval
+      # Domains are pulled from these large community-maintained lists at
+      # startup and refreshed periodically — no manual NSFW domain entries.
+      sources:
+        - name: "StevenBlack Porn Hosts"
+          url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/porn/hosts"
+        - name: "Blocklist Project Porn"
+          url: "https://raw.githubusercontent.com/blocklistproject/Lists/master/porn.txt"
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+          reason: "Automod: {rule}"
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: "{user}, your message was removed because it linked to adult content."
+          delete_after_seconds: 15
+        - type: warn
+          reason: "Automod: nsfw link blocklist ({rule})"
+        - type: run_escalation_check
+    malicious_link_blocklist:
+      enabled: true
+      refresh_interval_hours: 6          # re-fetch sources on this interval
+      # Malicious/phishing/malware domains are pulled from these large
+      # community-maintained lists at startup and refreshed periodically.
+      sources:
+        - name: "StevenBlack Hosts"
+          url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
+        - name: "Spam404 Main Blacklist"
+          url: "https://raw.githubusercontent.com/Spam404/lists/master/main-blacklist.txt"
+        - name: "Blocklist Project Phishing"
+          url: "https://raw.githubusercontent.com/blocklistproject/Lists/master/phishing.txt"
+        - name: "Blocklist Project Malware"
+          url: "https://raw.githubusercontent.com/blocklistproject/Lists/master/malware.txt"
+      immune_roles: []
+      channel_ignore_list: []
+      suppress_repeat_response_seconds: 30
+      suppressed_response_mode: "silent"
+      shadow_mode: false
+      action_chain:
+        - type: create_report
+          reason: "Automod: {rule}"
+        - type: delete_message
+        - type: send_channel_message
+          format: components_v2
+          content: "{user}, your message was removed because it linked to a known malicious site."
+          delete_after_seconds: 15
+        - type: ban
+          duration: "30d"
+          reason: "[AUTOMOD] Distributing malicious links or attempting to compromise user accounts."
         - type: run_escalation_check
     image_spam:
       enabled: true

@@ -15,7 +15,7 @@ const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const reason = interaction.options.getString('reason') ?? 'Mass action';
@@ -49,7 +49,8 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
 
   let banned = 0;
   let failed = 0;
-  for (const member of targets) {
+  for (let i = 0; i < targets.length; i++) {
+    const member = targets[i];
     const guard = app.modGuard.canModerate(member, interaction.member as never);
     if (!guard.ok) {
       failed++;
@@ -58,6 +59,10 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     const result = await app.punishmentManager.ban(member, { reason, moderatorId: interaction.user.id, silent: true, archive: false });
     if (result.ok) banned++;
     else failed++;
+    // Live progress so long runs don't look frozen.
+    if ((i + 1) % 5 === 0 || i === targets.length - 1) {
+      await v2Reply(interaction, `⏳ Mass ban progress: **${i + 1}/${targets.length}** processed — **${banned}** banned, **${failed}** failed.`);
+    }
   }
 
   await app.logManager.log({

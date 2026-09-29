@@ -7,6 +7,7 @@ import { resolveMemberOption } from '../../utils/discord';
 import { parseDuration } from '../../../../shared/src/index';
 import { v2MessageReply } from '../../utils/v2';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('temprole')
@@ -17,7 +18,7 @@ const data = new SlashCommandBuilder()
   .addStringOption((o) => o.setName('reason').setDescription('Reason').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const resolved = await resolveMemberOption(interaction, guild, app);
@@ -38,11 +39,15 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   }
   const reason = interaction.options.getString('reason') ?? `Temporary role ${role.name}`;
   const result = await app.punishmentManager.tempRole(resolved.member, role.id, duration.milliseconds, { reason, moderatorId: interaction.user.id });
-  if (!result.ok) {
-    await v2Reply(interaction, `Failed: ${mapDiscordError(result.error!)}`, { ephemeral: true });
-    return;
-  }
-  await v2Reply(interaction, `Applied <@&${role.id}> to <@${resolved.user!.id}> for ${duration.milliseconds / 60000} minutes.`);
+  await sendModerationResponse(interaction, {
+    action: 'temprole',
+    target: resolved.member,
+    ok: result.ok,
+    durationMs: duration.milliseconds,
+    reason: `${reason} (role: <@&${role.id}>)`,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -66,8 +71,17 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
     return;
   }
   const result = await app.punishmentManager.tempRole(member, roleId, duration.milliseconds, { reason, moderatorId: message.author.id });
-  await v2MessageReply(message, { content: result.ok ? `Applied <@&${roleId}> to <@${targetId}> for ${duration.milliseconds / 60000} minutes.` : `Failed: ${mapDiscordError(result.error!)}` });
+  await sendModerationResponse(message, {
+    action: 'temprole',
+    target: member,
+    ok: result.ok,
+    durationMs: duration.milliseconds,
+    reason: `${reason} (role: <@&${roleId}>)`,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'temprole',

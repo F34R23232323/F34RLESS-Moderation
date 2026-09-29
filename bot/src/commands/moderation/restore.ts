@@ -15,7 +15,7 @@ const data = new SlashCommandBuilder()
   .addUserOption((o) => o.setName('user').setDescription('Target user').setRequired(true));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
-  await interaction.deferReply();
+  await interaction.deferReply({ ephemeral: true });
   const guild = interaction.guild;
   if (!guild) return;
   const user = await resolveUserOption(interaction, app);

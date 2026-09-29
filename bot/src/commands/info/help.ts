@@ -1,17 +1,33 @@
-import { SlashCommandBuilder, ApplicationCommandOptionType } from 'discord.js';
+import {
+  SlashCommandBuilder,
+  ApplicationCommandOptionType,
+  ContainerBuilder,
+  SeparatorBuilder,
+  TextDisplayBuilder,
+  MessageFlags,
+} from 'discord.js';
 import type { ChatInputCommandInteraction, Message } from 'discord.js';
 import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
-import { v2Reply } from '../../utils/v2';
-import { v2MessageReply } from '../../utils/v2';
+import { v2Reply, v2MessageReply, hexToInt } from '../../utils/v2';
 import { emojiPrefix } from '../../emoji';
 import { slashPathForCommand } from '../../core/slashCommandGroups';
+import { paginateV2, chunkItems } from '../../utils/paginate';
 
 const MAX_USAGE_LINES = 10;
+const COMMANDS_PER_PAGE = 15;
+const ACCENT = '5865f2';
+const ACCENT_INT = 0x5865f2;
 
-function prefixOf(app: App): string {
+function prefixOf(app: App, trigger?: ListTrigger): string {
+  if (trigger && 'content' in trigger && trigger.content) {
+    for (const p of app.config.bot.prefixes) {
+      if (trigger.content.startsWith(p)) return p;
+    }
+  }
   return app.config.bot.prefixes[0] ?? '!';
 }
+
 
 function deriveUsage(app: App, cmd: BotCommand): string[] {
   const prefix = prefixOf(app);
@@ -84,39 +100,141 @@ function commandDetails(app: App, cmd: BotCommand): string {
   return lines.join('\n');
 }
 
-function commandList(app: App, category?: string | null): string {
-  const byCategory = new Map<string, string[]>();
+/**
+ * Build the Sapphire-style overview as a Components V2 payload.
+ *
+ * Layout (matches image 5):
+ *   ContainerBuilder (blurple accent)
+ *     TextDisplayBuilder — "**Overview**"
+ *     SeparatorBuilder
+ *     TextDisplayBuilder — blockquoted help shortcuts
+ *     SeparatorBuilder
+ *     TextDisplayBuilder — blockquoted config/permissions shortcuts
+ */
+function buildOverviewPayload(app: App, trigger?: ListTrigger): { components: unknown[]; flags: number } {
+  const p = prefixOf(app, trigger);
+  const container = new ContainerBuilder().setAccentColor(ACCENT_INT as never);
+
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent('**Overview**'),
+  );
+
+  container.addSeparatorComponents(new SeparatorBuilder());
+
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `> \`${p}help <command>\` - Shows information about a command`,
+        `> \`${p}help list\` - Lists all commands`,
+        `> \`${p}help <category>\` - Shows commands in a category`,
+      ].join('\n'),
+    ),
+  );
+
+  container.addSeparatorComponents(new SeparatorBuilder());
+
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `> \`${p}settings\` - Configures the bot`,
+        `> \`${p}permissions\` - Configures permissions`,
+      ].join('\n'),
+    ),
+  );
+
+  return { components: [container] as unknown[], flags: MessageFlags.IsComponentsV2 };
+}
+
+async function sendOverview(
+  trigger: ChatInputCommandInteraction | Message,
+  app: App,
+  ephemeral = false,
+): Promise<void> {
+  const payload = buildOverviewPayload(app, trigger);
+  const noPing = { parse: [] as string[] };
+
+  if ('user' in trigger) {
+    const intr = trigger as ChatInputCommandInteraction;
+    const flags = ephemeral
+      ? MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
+      : MessageFlags.IsComponentsV2;
+    const body: any = { components: payload.components, flags, allowedMentions: noPing };
+    if (intr.replied || intr.deferred) {
+      await intr.editReply(body);
+    } else {
+      await intr.reply(body);
+    }
+  } else {
+    await (trigger as Message).reply({
+      components: payload.components as any,
+      flags: MessageFlags.IsComponentsV2,
+      allowedMentions: noPing,
+    } as any);
+  }
+}
+
+function enabledCommands(app: App, category?: string | null): BotCommand[] {
+  const out: BotCommand[] = [];
   for (const cmd of app.commands.values()) {
-    const cat = category && cmd.category !== category ? null : cmd.category;
-    if (cat === null) continue;
-    const cfg = app.config.commands[cmd.name];
-    const enabled = cfg?.enabled ?? true;
+    if (category && cmd.category !== category) continue;
+    const enabled = app.config.commands[cmd.name]?.enabled ?? true;
     if (!enabled) continue;
-    const list = byCategory.get(cat) ?? [];
-    const aliases = [...(cmd.aliases ?? []), ...(cfg?.aliases ?? [])];
-    list.push(`\`${slashPathForCommand(cmd.name)}\`${aliases.length > 0 ? ` (${aliases.map((a) => `\`${a}\``).join(', ')})` : ''}`);
-    byCategory.set(cat, list);
+    out.push(cmd);
+  }
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Paginated command list — one blockquoted code line per command. */
+function commandPages(app: App, category?: string | null, prefix?: string): string[] {
+  const p = prefix ?? prefixOf(app);
+  const items = enabledCommands(app, category).map((cmd) => `> \`${p}${cmd.name}\``);
+  return chunkItems(items, COMMANDS_PER_PAGE).map((chunk) => chunk.join('\n'));
+}
+
+function categoriesOf(app: App): string[] {
+  return [...new Set([...app.commands.values()].map((c) => c.category))].sort();
+}
+
+type ListTrigger = ChatInputCommandInteraction | Message;
+
+function triggerAuthorId(trigger: ListTrigger): string {
+  return 'user' in trigger ? trigger.user.id : trigger.author.id;
+}
+
+async function sendList(trigger: ListTrigger, app: App, category?: string | null): Promise<void> {
+  const p = prefixOf(app, trigger);
+  const pages = commandPages(app, category, p);
+  // Title shown in the first text block of the container (Sapphire blue diamond emoji + bold title + usage hint).
+  const title = `🔷 **Available${category ? ` ${category}` : ''} commands**\n> Use \`${p}help <command>\` to get more information`;
+
+  if (pages.length === 0) {
+    const empty = `No enabled commands${category ? ` in \`${category}\`` : ''}. Categories: ${categoriesOf(app).map((c) => `\`${c}\``).join(', ')}`;
+    if ('user' in trigger) await v2Reply(trigger, empty, { ephemeral: true });
+    else await v2MessageReply(trigger, { content: empty });
+    return;
   }
 
-  const lines = [`**${emojiPrefix('vyxia_info')}Commands**`, ''];
-  for (const [cat, list] of byCategory) {
-    lines.push(`__${cat}__`);
-    lines.push(list.join('  '));
-    lines.push('');
-  }
-  lines.push(`Use \`${prefixOf(app)}help <command>\` or \`/help command:<name>\` for details on a specific command.`);
-  return lines.join('\n');
+  await paginateV2({
+    trigger,
+    authorId: triggerAuthorId(trigger),
+    title,
+    pages,
+    accentColor: ACCENT,
+  });
 }
+
 
 const data = new SlashCommandBuilder()
   .setName('help')
-  .setDescription('List available commands with aliases and status')
+  .setDescription('Show an overview, list commands, or view details for one command')
   .addStringOption((o) => o.setName('category').setDescription('Filter by category').setRequired(false))
-  .addStringOption((o) => o.setName('command').setDescription('Show details for one command').setRequired(false));
+  .addStringOption((o) => o.setName('command').setDescription('Show details for one command').setRequired(false))
+  .addBooleanOption((o) => o.setName('list').setDescription('List all commands').setRequired(false));
 
 async function execute(interaction: ChatInputCommandInteraction, app: App): Promise<void> {
   const category = interaction.options.getString('category');
   const commandName = interaction.options.getString('command');
+  const listAll = interaction.options.getBoolean('list');
 
   if (commandName) {
     const key = commandName.toLowerCase();
@@ -129,30 +247,57 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
     return;
   }
 
-  await v2Reply(interaction, commandList(app, category), { ephemeral: true });
+  if (listAll || category) {
+    await sendList(interaction, app, category);
+    return;
+  }
+
+  await sendOverview(interaction, app, true);
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
-  const commandName = args[0];
-  if (!commandName) {
-    await v2MessageReply(message, { content: commandList(app, null) });
+  const prefix = prefixOf(app);
+  const arg = args[0];
+
+  // Bare `!commands` (the alias) shows the list; bare `!help` shows the overview.
+  if (!arg) {
+    const invoked = (message.content ?? '').trim().split(/\s+/)[0]?.slice(prefix.length).toLowerCase();
+    if (invoked === 'commands') {
+      await sendList(message, app);
+      return;
+    }
+    await sendOverview(message, app, false);
     return;
   }
-  const key = commandName.toLowerCase();
+
+  if (arg === 'list') {
+    await sendList(message, app, args[1]);
+    return;
+  }
+
+  const key = arg.toLowerCase();
   const cmd = app.commands.get(key) ?? app.commands.get(app.aliases.get(key) ?? '');
-  if (!cmd) {
-    await v2MessageReply(message, { content: `Unknown command: ${commandName}` });
+  if (cmd) {
+    await v2MessageReply(message, { content: commandDetails(app, cmd) });
     return;
   }
-  await v2MessageReply(message, { content: commandDetails(app, cmd) });
+
+  if (categoriesOf(app).includes(key)) {
+    await sendList(message, app, key);
+    return;
+  }
+
+  await v2MessageReply(message, {
+    content: `Unknown command: ${arg}\nUse \`${prefix}help list\` to see every command.`,
+  });
 }
 
 const command: BotCommand = {
   name: 'help',
   category: 'info',
-  description: 'List available commands with aliases and status',
-  usage: ['!help', '!help <command>'],
-  details: 'Pass a command name or alias to see its usage, category, required permissions, and other details.',
+  description: 'Show an overview, list commands, or view details for one command',
+  usage: ['!help', '!help <command>', '!help list [category]'],
+  details: 'Pass a command name or alias for its usage and permissions, `list` (optionally followed by a category) to browse commands, or nothing for the overview.',
   data,
   aliases: ['h', 'commands'],
   execute,

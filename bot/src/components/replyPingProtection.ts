@@ -6,6 +6,7 @@ import {
   MessageFlags,
 } from 'discord.js';
 import type { App } from '../core/context';
+import { v2Result } from '../utils/v2';
 
 export default [
   {
@@ -15,19 +16,19 @@ export default [
       const parts = interaction.customId.split(':');
       const guildId = parts[2];
       if (!guildId) {
-        await interaction.update({ components: [] });
+        await interaction.deferUpdate();
         return;
       }
 
       const value = interaction.values[0];
       if (!value) {
-        await interaction.update({ components: [] });
+        await interaction.deferUpdate();
         return;
       }
 
       const guild = interaction.guild;
       if (!guild) {
-        await interaction.update({ content: 'Guild not found.', components: [] });
+        await interaction.update(v2Result('Guild not found.', 0xed4245) as never);
         return;
       }
 
@@ -37,7 +38,7 @@ export default [
         case 'setup_rule': {
           await interaction.deferUpdate();
           if (!cfg.native_rule_id) {
-            await interaction.editReply({ content: '❌ No `native_rule_id` configured in config.yml.', components: [] });
+            await interaction.editReply(v2Result('❌ No `native_rule_id` configured in config.yml.', 0xed4245) as never);
             return;
           }
           const { ReplyPingRuleManager } = await import('../services/replyPingProtection/ruleManager');
@@ -46,28 +47,28 @@ export default [
           if (info.exists) {
             const syncResult = await ruleManager.syncRuleKeywords(guild, cfg.native_rule_id, cfg.protected_users, cfg.protected_roles);
             if (syncResult.ok) {
-              await interaction.editReply({ content: `✅ Synced keywords for rule \`${cfg.native_rule_id}\`.`, components: [] });
+              await interaction.editReply(v2Result(`✅ Synced keywords for rule \`${cfg.native_rule_id}\`.`, 0x57f287) as never);
             } else {
-              await interaction.editReply({ content: `❌ Sync failed: ${syncResult.error}`, components: [] });
+              await interaction.editReply(v2Result(`❌ Sync failed: ${syncResult.error}`, 0xed4245) as never);
             }
           } else {
-            await interaction.editReply({ content: `❌ Rule \`${cfg.native_rule_id}\` not found on Discord.`, components: [] });
+            await interaction.editReply(v2Result(`❌ Rule \`${cfg.native_rule_id}\` not found on Discord.`, 0xed4245) as never);
           }
           break;
         }
         case 'remove_rule': {
           await interaction.deferUpdate();
           if (!cfg.native_rule_id) {
-            await interaction.editReply({ content: 'No rule ID configured.', components: [] });
+            await interaction.editReply(v2Result('No rule ID configured.', 0xed4245) as never);
             return;
           }
           const { ReplyPingRuleManager: RM } = await import('../services/replyPingProtection/ruleManager');
           const rm = new RM(app);
           const res = await rm.deleteRule(guild, cfg.native_rule_id);
           if (res.ok) {
-            await interaction.editReply({ content: '✅ Rule deleted.', components: [] });
+            await interaction.editReply(v2Result('✅ Rule deleted.', 0x57f287) as never);
           } else {
-            await interaction.editReply({ content: `❌ Failed: ${res.error}`, components: [] });
+            await interaction.editReply(v2Result(`❌ Failed: ${res.error}`, 0xed4245) as never);
           }
           break;
         }
@@ -75,7 +76,7 @@ export default [
           await interaction.deferUpdate();
           const incidents = await app.replyPingProtection.getRecentIncidents(guildId, undefined, 15);
           if (incidents.length === 0) {
-            await interaction.editReply({ content: 'No recent incidents.', components: [] });
+            await interaction.editReply(v2Result('No recent incidents.', 0x80848e) as never);
             return;
           }
           const lines = incidents.map((inc: any) => {
@@ -94,7 +95,7 @@ export default [
           break;
         }
         default:
-          await interaction.update({ components: [] });
+          await interaction.deferUpdate();
           break;
       }
     },

@@ -1,8 +1,8 @@
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 
-export type WhitelistScope = 'automod' | 'moderation' | 'raid' | 'blacklist' | 'verification' | 'escalation' | 'nsfw' | 'reply_ping' | 'voice' | 'slowmode' | 'api' | 'nick_lock' | 'all';
+export type WhitelistScope = 'automod' | 'moderation' | 'raid' | 'blacklist' | 'verification' | 'escalation' | 'reply_ping' | 'voice' | 'slowmode' | 'api' | 'nick_lock' | 'all';
 
-export const WHITELIST_SCOPES: WhitelistScope[] = ['automod', 'moderation', 'raid', 'blacklist', 'verification', 'escalation', 'nsfw', 'reply_ping', 'voice', 'slowmode', 'api', 'nick_lock', 'all'];
+export const WHITELIST_SCOPES: WhitelistScope[] = ['automod', 'moderation', 'raid', 'blacklist', 'verification', 'escalation', 'reply_ping', 'voice', 'slowmode', 'api', 'nick_lock', 'all'];
 
 export interface WhitelistEntry {
   id: number;

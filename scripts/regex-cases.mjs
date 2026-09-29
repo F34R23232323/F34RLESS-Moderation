@@ -251,32 +251,6 @@ export const CASES = {
       'slide into my dms', 'your snap name?',
     ],
   },
-  'NSFW Links ': {
-    shouldMatch: [
-      'https://xvideos2.com',
-      'https://xhamsterlive.net',
-      'https://www.porn.com',
-      'https://nude-pics.org',
-      'https://x.xxx',
-      'https://hentaihaven.net',
-      'https://rule34video.com',
-      'https://gelbooru.com',
-      'https://camsoda.com',
-      'https://onlyfans.com',
-      'https://pornhub.com',
-      'https://www.xnxx.com',
-      'https://xhamster.com',
-      'https://f95zone.com',
-      'https://kemono.party',
-      'https://nhentai.net',
-      'https://e-hentai.org',
-      'https://soundcloud.com/nsfw',
-      'https://my-porn-videos.net',
-    ],
-    shouldNotMatch: [
-      'https://youtube.com', 'https://twitch.tv', 'https://discord.gg/abc', 'https://example.com', 'https://soundcloud.com', 'https://soundcloud.com/ninja-edit',
-    ],
-  },
   'Executables': {
     shouldMatch: [
       'https://x.com/virus.exe',

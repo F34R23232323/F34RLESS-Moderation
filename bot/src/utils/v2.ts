@@ -198,14 +198,38 @@ export interface V2MessageOptions {
   imageUrl?: string;
   imageUrls?: string[];
   buttons?: Array<{ customId?: string; label: string; emojiName?: string; style?: ButtonStyle; disabled?: boolean; url?: string }>;
-  accentColor?: string;
+  accentColor?: string | number;
   allowedMentions?: MessageCreateOptions['allowedMentions'];
+}
+
+export function v2Container(text: string, accentColor?: number | string): ContainerBuilder {
+  const container = new ContainerBuilder();
+  if (accentColor !== undefined) {
+    const num = typeof accentColor === 'number' ? accentColor : hexToInt(accentColor);
+    if (num !== undefined) container.setAccentColor(num as never);
+  }
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(text));
+  return container;
+}
+
+export function v2Ephemeral(text: string, accentColor?: number | string): { components: unknown[]; flags: number } {
+  return {
+    components: [v2Container(text, accentColor)],
+    flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral,
+  };
+}
+
+export function v2Result(text: string, accentColor?: number | string): { components: unknown[]; flags: number } {
+  return {
+    components: [v2Container(text, accentColor)],
+    flags: MessageFlags.IsComponentsV2,
+  };
 }
 
 export function buildV2Content(content: string, opts: V2MessageOptions = {}): { components: unknown[]; flags: number } {
   const container = new ContainerBuilder();
-  if (opts.accentColor) {
-    const num = hexToInt(opts.accentColor);
+  if (opts.accentColor !== undefined) {
+    const num = typeof opts.accentColor === 'number' ? opts.accentColor : hexToInt(opts.accentColor);
     if (num !== undefined) container.setAccentColor(num as never);
   }
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(content));

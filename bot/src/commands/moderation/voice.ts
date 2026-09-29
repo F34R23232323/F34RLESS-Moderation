@@ -20,7 +20,7 @@ function voiceCommand(name: string, description: string, aliases: string[], acti
     permissions: ['MuteMembers'],
     aliases,
     async execute(interaction, app) {
-      await interaction.deferReply();
+      await interaction.deferReply({ ephemeral: true });
       const guild = interaction.guild;
       if (!guild) return;
       const resolved = await resolveMemberOption(interaction, guild, app);

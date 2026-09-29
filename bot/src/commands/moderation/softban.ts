@@ -6,9 +6,10 @@ import { v2Reply } from '../../utils/v2';
 import { resolveUserOption } from '../../utils/discord';
 import { v2MessageReply } from '../../utils/v2';
 import { resolveReplyContext, type CaseEvidenceItem } from '../../utils/evidence';
-import { buildConfirmEmbed, storePendingAction, contextUserConfirm } from '../../components/moderation';
+import { sendConfirmation, contextUserConfirm } from '../../components/moderation';
 import { parseTargetId, mapDiscordError } from '../../utils/moderationErrors';
 import { collectSlashEvidence, collectMessageImageEvidence } from '../../utils/evidenceImages';
+import { sendModerationResponse } from '../../utils/moderationResponse';
 
 const data = new SlashCommandBuilder()
   .setName('softban')
@@ -25,9 +26,10 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (!user) { await v2Reply(interaction, 'User not found.', { ephemeral: true }); return; }
   const reason = interaction.options.getString('reason') ?? 'No reason provided';
   const evidence = await collectSlashEvidence(app, interaction);
-  const actionId = storePendingAction({ action: 'softban', targetUserId: user.id, guildId: guild.id, channelId: interaction.channelId, reason, evidence, actorId: interaction.user.id, expiresAt: Date.now() + 60_000 });
-  const { components, flags } = buildConfirmEmbed('Softban', user.id, reason, undefined, actionId);
-  await interaction.editReply({ components, flags } as never);
+  await sendConfirmation(interaction, {
+    action: 'softban', targetUserId: user.id, reason,
+    guildId: guild.id, channelId: interaction.channelId, actorId: interaction.user.id, evidence,
+  });
 }
 
 async function prefixExecute(message: Message, args: string[], app: App): Promise<void> {
@@ -53,9 +55,16 @@ async function prefixExecute(message: Message, args: string[], app: App): Promis
   }
 
   const result = await app.punishmentManager.softban(targetUser, { reason, moderatorId: message.author.id, archiveChannelId: message.channel?.id ?? null, evidence });
-  const content = result.ok ? `Softbanned <@${targetId}> — case ${result.case!.case_code}.` : `❌ Failed: ${mapDiscordError(result.error!)}`;
-  await (message.channel as any).send({ content, allowedMentions: { parse: [] } }).catch(() => undefined);
+  await sendModerationResponse(message, {
+    action: 'softban',
+    target: targetUser,
+    ok: result.ok,
+    reason,
+    dmSent: result.dmSent,
+    error: result.error,
+  });
 }
+
 
 const command: BotCommand = {
   name: 'softban', category: 'moderation', description: 'Ban and immediately unban to purge messages',
@@ -65,11 +74,7 @@ const command: BotCommand = {
   asUserContext: true,
   async contextExecute(interaction, app) {
     if (!interaction.isUserContextMenuCommand()) return;
-    const targetUser = await app.client.users.fetch(interaction.targetUser.id).catch(() => null);
-    if (!targetUser) return;
-    await contextUserConfirm(app, interaction, 'softban', 'No reason provided', () =>
-      app.punishmentManager.softban(targetUser, { reason: 'No reason provided', moderatorId: interaction.user.id, archiveChannelId: interaction.channelId }),
-    );
+    await contextUserConfirm(app, interaction, 'softban', 'No reason provided');
   },
 };
 

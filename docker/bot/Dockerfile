@@ -1,4 +1,4 @@
-# bookworm-slim (glibc) — required by @tensorflow/tfjs-node (no musl build).
+# bookworm-slim (glibc) — native addons (sharp, ffmpeg-static) ship glibc prebuilds.
 FROM node:22-bookworm-slim
 
 # ffmpeg is required for audio playback (music system) — the bundled
@@ -6,8 +6,8 @@ FROM node:22-bookworm-slim
 # system package needed here.
 # yt-dlp is used for YouTube/URL playback — far more reliable against
 # YouTube's bot-detection than the JS extractors.
-# python3/make/g++ allow @tensorflow/tfjs-node to fall back to a source build
-# if its prebuilt binary download ever fails.
+# python3/make/g++ let native addons fall back to a source build
+# if a prebuilt binary download ever fails.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 make g++ curl ca-certificates \
   && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
@@ -27,7 +27,7 @@ COPY scripts/ scripts/
 COPY emojis/ emojis/
 
 # npm install (all deps) lets npx tsc find TypeScript and ensures native
-# addons (sharp, tfjs-node, ffmpeg-static) download their binaries.
+# addons (sharp, ffmpeg-static) download their binaries.
 # npm ci --omit=dev replaces with a clean production install (scripts still
 # run so platform binaries are fetched).  sharp is reinstalled explicitly
 # because --omit=dev can strip its prebuilt binaries.  npm rebuild is a

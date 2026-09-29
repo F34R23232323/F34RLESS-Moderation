@@ -19,7 +19,7 @@ async function execute(interaction: ChatInputCommandInteraction, app: App): Prom
   if (!guild) return;
   const sub = interaction.options.getSubcommand();
   const member = interaction.member as { permissions?: { has: (p: string) => boolean } } | null;
-  const isStaff = member?.permissions?.has('ManageMessages') ?? false;
+  const isStaff = app.modGuard.isOwner(interaction.user.id) || interaction.user.id === guild.ownerId || (member?.permissions?.has('ManageMessages') ?? false);
 
   if (sub === 'add') {
     if (!isStaff) {

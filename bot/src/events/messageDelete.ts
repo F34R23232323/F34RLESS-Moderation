@@ -28,7 +28,7 @@ export async function handleMessageDelete(app: App, message: Message | PartialMe
         channelId: message.channelId,
         messageId: message.id,
         authorId: message.author?.id,
-        createdAt: message.createdAt ? `<t:${Math.floor(message.createdAt.getTime() / 1000)}:f>` : undefined,
+        createdAt: message.createdAt ? Math.floor(message.createdAt.getTime() / 1000) : undefined,
         content: content.slice(0, 1500),
         attachments: message.attachments?.size ?? 0,
       },

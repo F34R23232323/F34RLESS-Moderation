@@ -4,6 +4,7 @@ import type { App } from '../../core/context';
 import type { BotCommand } from '../../types/command';
 import { v2MessageReply } from '../../utils/v2';
 import { InviteResolver } from '../../automod/inviteResolver';
+import { extractHosts } from '../../automod/blocklistStore';
 import { stripZeroWidth } from '../../../../shared/src/index';
 
 const CUSTOM_EMOJI_RE = /<a?:\w+:\d{15,20}>/g;
@@ -121,6 +122,32 @@ export async function testAutomodContent(
             actions: (link.action_chain as never) ?? [],
           });
           break;
+        }
+      }
+    }
+  }
+
+  // ── Remote link blocklists (NSFW / malicious domains) ───────────────────
+  if (content && app.blocklistStore) {
+    const hosts = extractHosts(content);
+    if (hosts.length > 0) {
+      const checks = [
+        { module: 'nsfw_link_blocklist' as const, category: 'nsfw' as const, cfg: app.config.automod.modules.nsfw_link_blocklist },
+        { module: 'malicious_link_blocklist' as const, category: 'malicious' as const, cfg: app.config.automod.modules.malicious_link_blocklist },
+      ];
+      for (const check of checks) {
+        if (!check.cfg.enabled) continue;
+        for (const host of hosts) {
+          const source = app.blocklistStore.match(check.category, host);
+          if (source) {
+            hits.push({
+              module: check.module,
+              rule: check.module,
+              reason: `blocked ${check.category} link: ${host} (blocklist: ${source})`,
+              actions: (check.cfg.action_chain as never) ?? [],
+            });
+            break;
+          }
         }
       }
     }
