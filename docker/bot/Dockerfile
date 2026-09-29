@@ -9,7 +9,7 @@ FROM node:22-bookworm-slim
 # python3/make/g++ let native addons fall back to a source build
 # if a prebuilt binary download ever fails.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      python3 make g++ curl ca-certificates \
+      python3 make g++ curl ca-certificates fonts-liberation fontconfig \
   && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
        -o /usr/local/bin/yt-dlp \
   && chmod +x /usr/local/bin/yt-dlp \
