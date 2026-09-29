@@ -1136,13 +1136,14 @@ automod:
           description: |-
             Hey {user}, your message was removed.
 
-            Your message was removed because it contained a link to adult content.
+            Your message was removed and your account was banned because it contained a link to adult content.
 
             If you think this was a mistake, just message any staff member and we will happily take another look.
           footer: Thanks for helping keep {guild} friendly and safe.
           accent_color: "#ED4245"
           delete_after_seconds: 60
-        - type: warn
+        - type: ban
+          duration: perm
           reason: "[AUTOMOD] Routing users to explicit or sexually suggestive content."
         - type: run_escalation_check
     malicious_link_blocklist:
@@ -1184,7 +1185,7 @@ automod:
           accent_color: "#ED4245"
           delete_after_seconds: 60
         - type: ban
-          duration: 30d
+          duration: perm
           reason: "[AUTOMOD] Distributing malicious links or attempting to compromise user accounts."
         - type: run_escalation_check
     image_spam:
@@ -2206,37 +2207,32 @@ regex_engine:
         - type: run_escalation_check
     - name: NSFW
       patterns:
-        - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
-        - \bg[o0*][o0*]n(?:ing|ed|er[s]?|ette|s|session|\s+(?:session|cave|mode|squad|club|brain))?\b
-        - (suck|swallow|choke|ride|fuck|eat|lick|kiss|touch|spank|finger|fist|peg|edge|step\s+on|worship|breed|impregnate|raw\s*dog)\s+(my|me|your|his|her)\b
-        - my\s+(body|ass|tits|dick|pussy|boobs|cock)\s+(is\s+for|for\s+you)\b
+        - \b(l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|m[a@]+[s$]+turb[a@]+t\w*|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
+        - (suck|fuck|peg|impregnate|raw\s*dog)\s+(my|me|your|his|her)\b
+        - my\s+(ass|tits|dick|pussy|boobs|cock)\s+(is\s+for|for\s+you)\b
         - (whats|what'?s|wassup|sup)\s+your\s+snap\s*(baby|babe|hot)?\s*$
         - snap\s+me\s+(baby|babe|beaut|hottie|gorgeous|cutie)\b
-        - (send|dm|slide|pm)\s+(me\s+|us\s+)?(your\s+|ur\s+)?(age|digits|insta|snap)\b
-        - (your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|balls|legs)\s+(is|looks?|are|be)\s+(hot|cute|good|nice|sexy|fine|amazing|pretty)
+        - (your|ur)\s+(ass|tits|dick|pussy|boobs|cock|balls)\s+(is|looks?|are|be)\s+(hot|cute|good|nice|sexy|fine|amazing|pretty)
         - (snap|insta|kik|tele|discord)\s*(me|you|us)\s*(your|the)?\s*(nude|nudes|pic|pics|body|ass|tits|dick|pussy|boobs|cock|lewd)
         - (add\s+my\s+(snap|insta|tele|kik|discord))\s+(for|to\s+(see|get|trade|find)?\s*(nudes?|pics?|body|ass|hot|sex))\b
         - (add|follow)\s+me\s+on\s+(snap|insta|kik|whatsapp|telegram|tinder|discord)\s+(for\s+(nudes?|pics?|body|ass|tits|dick|pussy|boobs|cock|lewd|hot|sex)\b|to\s+(see|get|trade|swap|find)\s+(nudes?|pics?|body|ass|tits|dick|pussy|boobs|cock|lewd|hot|sex)\b)
-        - (show|reveal|snap)\s+(me\s+)?(your|ur)\s+(body|ass|tits|dick|pussy|boobs|cock|cum|nude|nudes)
+        - (show|reveal|snap)\s+(me\s+)?(your|ur)\s+(ass|tits|dick|pussy|boobs|cock|cum|nude|nudes)
         - \bp[o0*][.\-_*]?r[.\-_*]?n\b
         - \b[s$][.\-_*|\s][e3][.\-_*|\s][x*]\b
         - \b(xxx|XXX)\b(?:\s*(porn|video|sex|movie|site|link|content|pic|pics|nude|chat|cam|hot|adult))|\b(free|watch|hot|xxx)\s+xxx\b
         - \b(gangbang\s+me|threesome\s+(anyone|when)?|orgy\s+when|bukkake|hotwife|gf\s+experience|cuck(?:hold)?\s+me|cbt\s+session|bondage|spanking\s+video|lactation\s+kink|feet\s+fetish|feet\s+pics?\s+for\s+sale)\b
         - \b(dm|pm)\s+(me\s+)?(baby|babe|beaut|hottie|gorgeous|cutie|daddy|mommy)\b
         - \br[o0]l[e3]\s*pla[yi]\s+(as|me|my|your|with)\s+(my|your|his|her|a|some|the)?\s*(slave|pet|sub|dom|daddy|mommy|master|owner|baby|boy|girl|waifu|senpai)\b
-        - \bcyber\s+(with\s+me|me|with\s+you|you)\b
-        - \b(wanna|want\s+to|lets?|gonna|down\s+to)\s+hook\s*up\b
-        - \b(wanna|want\s+to|lets?|let'?s|d[o0]wn\s+t[o0])\s+([s$][e3]xt|f[u*]?[ck*]+|ph[u*]ck|h[o0][o0]k\s*up|h[a@]v[e3]\s*[s$][e3]x|cyb[e3]r|r[o0]l[e3]?\s*pl[a@][yi])\b
+        - \b(wanna|want\s+to|lets?|let'?s|d[o0]wn\s+t[o0])\s+([s$][e3]xt|f[u*]?[ck*]+|ph[u*]ck|h[a@]v[e3]\s*[s$][e3]x|r[o0]l[e3]?\s*pl[a@][yi])\b
         - \b(tits?\s+or\s+gtfo|boob\s+reveal|cock\s+pic\s+trade)\b
         - \b(ass|dick|pussy|tits|boobs|cock)\s*(pic|pics|shot|shots?|reveal|pic\s+trade)\b
         - \b(send|dm|pm|share|snap|slide)\s+(me\s+)?(your\s+)?(nudes?|lewds?|feet\s*pics?|body|ass|tits|dick|pussy|boobs|cock|nude)\b
-        - \b(bl[o0]w\s+me|[s$]uck\s+(my|me|your|his|her)\s+(d[i1]ck|c[o0]ck|p[u*][s$][s$]y|t[i1]ts|b[o0]obs)|ch[o0]k[e3]\s+me|f[u*][ck*]+\s+me|ph[u*]ck\s+me|r[i1]d[e3]\s+me|[s$][i1]t\s+on\s+my\s+f[a@]c[e3]|[e3][a@]t\s+me\s+[o0]ut|f[i1]ng[e3]r\s+me|[s$]p[a@]nk\s+me|p[e3]g\s+me|f[i1][s$]t\s+me|[e3]dg[e3]\s+me|d[o0]m\s+me|[s$]t[e3]p\s+[o0]n\s+me|kn[e3][e3]l\s+(b[e3]f[o0]r[e3]|t[o0])\s+me|w[o0]r[s$]h[i1]p\s+my\s+f[e3][e3]t|br[e3][e3]d\s+me|[i1]mpr[e3]gn[a@]t[e3]\s+me|r[a@]w\s*d[o0]g\s+me|g[e3]t\s+n[a@]k[e3]d|[s$]tr[i1]p\s+f[o0]r\s+me|t[a@]k[e3]\s+[i1]t\s+[o0]ff|[s$]pr[e3][a@]d\s+f[o0]r\s+me|[o0]p[e3]n\s+y[o0]ur\s+l[e3]g[s$]?|t[o0]uch\s+y[o0]ur[s$][e3]lf|m[o0][a@]n\s+f[o0]r\s+me|[s$]cr[e3][a@]m\s+my\s+n[a@]m[e3]|[i1]'?m\s+w[e3]t|l[e3]t\s+me\s+c[u*]m|c[u*]m\s+[o0]n\s+me|j[e3]rk\s+[o0]ff|g[i1]v[e3]\s+me\s+h[e3][a@]d|bl[o0]wj[o0]b|t[i1]tty\s*f[u*][ck*]+|[a@][s$]{2}\s*t[o0]\s*m[o0]uth|cr[e3][a@]mp[i1][e3]|l[e3]t[s$]?\s*69|[a@]n[a@]l)\b
-        - \b(w[a@]nk(?:er|ing|ed)?|fapp(?:ing|ed)?|j[e3]rk(?:ing|ed|er)?)\b
+        - \b(bl[o0]w\s+me|[s$]uck\s+(my|me|your|his|her)\s+(d[i1]ck|c[o0]ck|p[u*][s$][s$]y|t[i1]ts|b[o0]obs)|ch[o0]k[e3]\s+me|f[u*][ck*]+\s+me|ph[u*]ck\s+me|r[i1]d[e3]\s+me|[s$][i1]t\s+on\s+my\s+f[a@]c[e3]|[e3][a@]t\s+me\s+[o0]ut|[s$]p[a@]nk\s+me|p[e3]g\s+me|f[i1][s$]t\s+me|[e3]dg[e3]\s+me|d[o0]m\s+me|[s$]t[e3]p\s+[o0]n\s+me|kn[e3][e3]l\s+(b[e3]f[o0]r[e3]|t[o0])\s+me|w[o0]r[s$]h[i1]p\s+my\s+f[e3][e3]t|br[e3][e3]d\s+me|[i1]mpr[e3]gn[a@]t[e3]\s+me|r[a@]w\s*d[o0]g\s+me|g[e3]t\s+n[a@]k[e3]d|[s$]tr[i1]p\s+f[o0]r\s+me|t[a@]k[e3]\s+[i1]t\s+[o0]ff|[s$]pr[e3][a@]d\s+f[o0]r\s+me|[o0]p[e3]n\s+y[o0]ur\s+l[e3]g[s$]?|t[o0]uch\s+y[o0]ur[s$][e3]lf|m[o0][a@]n\s+f[o0]r\s+me|[s$]cr[e3][a@]m\s+my\s+n[a@]m[e3]|[i1]'?m\s+w[e3]t|l[e3]t\s+me\s+c[u*]m|c[u*]m\s+[o0]n\s+me|g[i1]v[e3]\s+me\s+h[e3][a@]d|bl[o0]wj[o0]b|t[i1]tty\s*f[u*][ck*]+|[a@][s$]{2}\s*t[o0]\s*m[o0]uth|l[e3]t[s$]?\s*69|[a@]n[a@]l\s*s[e3]x)\b
+        - \b(w[a@]nk[s$]?|w[a@]nk(?:ing|ed)|fapp?(?:ing|ed)?|j[e3]rk\s*(?:ing\s*)?off)\b
         - \b(my|your|his|her|their|suck|eat|choke|ride|f[u*][ck*]+|big|huge|small|tiny|fat|little)\s+c[o0*]c?k\b|\bc[o0*]c?k\s*(pic|pics|shot|size|ring|suck)\b|\bsuck\s+(my|your|his|her)\s+c[o0*]c?k\b
         - \b(s[e3]+x+(?![yi]|u[a@]+l|ist|ism)|s3x|sex\s+(with|tape|video|chat|toy|doll|scene|act|worker|bot|cam|party|friend|me|her|him|them|us|pics?|nude|send|dm)|sext(?:ing|me|her|him|them|us|ed)?|have\s+sex|sex\s+(me|her|him|them|us)|sex\s+with)\b
         - r[34]l?[\s_-]?p[o0]rn
         - \bp[.\s\-_*|]+o[.\s\-_*|]+r[.\s\-_*|]+n\b
-        - \b(n[s$]+[f*]+[w*]+|l[e3]+wd[s$]*|[s$]+l[u*]+tt?[yi]*|th[o0]+[t+]+|bd[s$]+m|m[i1]+lf|[s$]+h[e3]+m[a@]+l[e3]+|g[a@4]+ngb[a@4]+ng|thr[e3]+[e3]+[s$]+[o0]+m[e3]+|f[e3]+t[i1]+[s$]+h|k[i1]+nk|m[a@]+[s$]+turb[a@]+t\w*|f[i1]+ng[e3]+r[i1]+ng|d[e3]{1,2}p\s?th?r[o0]+[a@]+t|f[a@]+c[i1]+[a@]+l[s$]*|[s$]+c[a@]+t\s*p[o0]*rn|ch[i1]+ld\s*p[o0]*rn|wh[o0]+r[e3]+|c[u*]+ck[o0]*l?d?)\b
         - \b(p+[o0*]+r+n+[o0]*|ph[o0]*rn[o0]*|pr[o0]+n|p[o0]*rn[o0]*gr[a@]+ph[yi]*)\b
         - (?<!\w)([h][e3]+nt[a@]+[i1]+|l[o0]+l[i1]+c?[o0]?n?|[e3]+cch[i1]+|[a@]?h[e3]+g[a@]+[o0]+|f[u*]+t[a@]+n[a@]+r[i1]+|[o0]+pp[a@]+[i1]+|p[a@]+[i1]+z[u*]+r[i1]+|tr[a@]p\s*h[e3]+nt[a@]+[i1]+|[e3]+r[o0]+\s*m[a@]+ng[a@]+|g[u*]+r[o0]+)(?!\w)
         - \b(p[u*v][s$][s$][yi3]|c[o0*]c?k|titt[yi]|titties|t[i1!][t*]s|b[o0][o0]b(?:ies?|s)?|v[a@]g[i1]n[a@]|p[e3]n[i1][s$]|cl[i1][t*]|p[u*]b[i1]c)\b
@@ -2245,7 +2241,7 @@ regex_engine:
         - \bhorny\b(?!\s+(?:toad|frog|lizard))
         - \b(nudes?|n[o0][o0]ds?)\s*(for\s+sale|dm|hmu|trade|swap)\b
         - \b(m[o0]sturb[a@]t(?:ing|i[o0]n|e)?|fap\s*session)\b
-        - \b(creampie|spl[i1]t\s+roast|a[n@][a@]l\s*(?:sex|play)?|sexting|send\s+sexts?)\b
+        - \b(spl[i1]t\s+roast\s+me|a[n@][a@]l\s*(?:sex|play)|sexting|send\s+sexts?)\b
         - \b(b[o0][o0]bs?\s*out|t[i1]ts?\s*out|sh[i1]rtl[e3]ss?)\b
       flags: gi
       scope: message
@@ -2265,13 +2261,14 @@ regex_engine:
           description: |-
             Hey {user}, your message was removed.
 
-            Your message was removed because it shared explicit or sexual content outside of allowed channels.
+            Your message was removed and your account was banned because it shared explicit or sexual content outside of allowed channels.
 
             If you think this was a mistake, just message any staff member and we will happily take another look.
           footer: Thanks for helping keep {guild} friendly and safe.
           accent_color: "#ED4245"
           delete_after_seconds: 60
-        - type: warn
+        - type: ban
+          duration: perm
           reason: "[AUTOMOD] Sharing explicit or sexually suggestive content in a non-NSFW channel."
         - type: run_escalation_check
     - name: Executables
